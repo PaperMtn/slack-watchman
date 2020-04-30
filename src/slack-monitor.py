@@ -1,11 +1,20 @@
+import re
 import requests
 import time
 import configparser
 
+PRIVATE_KEYS = ["BEGIN DSA PRIVATE",
+                "BEGIN EC PRIVATE",
+                "BEGIN OPENSSH PRIVATE",
+                "BEGIN PGP PRIVATE",
+                "BEGIN RSA PRIVATE"]
+
+PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
+
 
 def get_token():
     """Get Slack API token from .conf file"""
-    
+
     conf = configparser.ConfigParser()
     conf.read('../config/keys.conf')
     token = conf.get('auth', 'slack_user_token')
@@ -50,14 +59,18 @@ def write_output(out_path, out_list):
 
 
 def get_users(token):
-    """Return a list of all users in the instance"""
+    """Return a list of all active users in the instance"""
 
     cursor = ''
     results = []
 
     try:
-        r = requests.get('https://slack.com/api/users.list',
-                         params={'token': token, 'pretty': 1, 'limit': 1, 'cursor': cursor}).json()
+        while True:
+            r = requests.get('https://slack.com/api/users.list',
+                             params={'token': token, 'pretty': 1, 'limit': 1, 'cursor': cursor}).json()
+            if not rate_limit_check(r):
+                break
+
         if str(r['ok']) == 'False':
             print('END: Unable to dump the user list. Slack error: ' + str(r['error']))
         else:
@@ -66,6 +79,8 @@ def get_users(token):
                 request_url = 'https://slack.com/api/users.list'
                 params = {'token': token, 'pretty': 1, 'limit': 200, 'cursor': cursor}
                 r = requests.get(request_url, params=params).json()
+                if rate_limit_check(r):
+                    break
                 for value in r['members']:
                     cursor = r['response_metadata']['next_cursor']
                     if not value['deleted']:
@@ -83,10 +98,11 @@ def get_channels(token):
     results = []
 
     try:
-        r = requests.get('https://slack.com/api/conversations.list',
-                         params={'token': token, 'pretty': 1, 'limit': 1, 'cursor': cursor}).json()
-
-        rate_limit_check(r)
+        while True:
+            r = requests.get('https://slack.com/api/conversations.list',
+                             params={'token': token, 'pretty': 1, 'limit': 1, 'cursor': cursor}).json()
+            if not rate_limit_check(r):
+                break
 
         if str(r['ok']) == 'False':
             print('END: Unable to dump the channel list. Slack error: ' + str(r['error']))
@@ -94,7 +110,7 @@ def get_channels(token):
             cursor = r['response_metadata']['next_cursor']
             while str(r['ok']) == 'True' and cursor:
                 request_url = 'https://slack.com/api/conversations.list'
-                params = {'token': token, 'pretty': 1, 'limit': 200, 'cursor': cursor}
+                params = {'token': token, 'pretty': 1, 'limit': 1000, 'cursor': cursor}
                 r = requests.get(request_url, params=params).json()
                 rate_limit_check(r)
                 for value in r['channels']:
@@ -113,8 +129,12 @@ def search_files(token, query):
     results = []
 
     try:
-        r = requests.get('https://slack.com/api/search.files',
-                         params={'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100}).json()
+        while True:
+            r = requests.get('https://slack.com/api/search.files',
+                             params={'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100}).json()
+            if not rate_limit_check(r):
+                break
+
         page_count_by_query[query] = (r['files']['pagination']['page_count'])
         print(page_count_by_query)
 
@@ -124,6 +144,8 @@ def search_files(token, query):
                 params = {'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100, 'page': str(page)}
                 r = requests.get('https://slack.com/api/search.files',
                                  params=params).json()
+                if rate_limit_check(r):
+                    break
                 for value in r['files']['matches']:
                     results.append(value)
                 page += 1
@@ -141,17 +163,25 @@ def search_messages(token, query):
     results = []
 
     try:
-        r = requests.get('https://slack.com/api/search.messages',
-                         params={'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100}).json()
+        while True:
+            r = requests.get('https://slack.com/api/search.messages',
+                             params={'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100}).json()
+            if not rate_limit_check(r):
+                break
+
         page_count_by_query[query] = (r['messages']['pagination']['page_count'])
         print(page_count_by_query)
 
         for query, page_count in page_count_by_query.items():
             page = 1
             while page <= page_count:
-                params = {'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100, 'page': str(page)}
+                params = {'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100,
+                          'page': str(page)}
                 r = requests.get('https://slack.com/api/search.messages',
                                  params=params).json()
+                if rate_limit_check(r):
+                    break
+
                 for value in r['messages']['matches']:
                     results.append(value)
                 page += 1
@@ -186,35 +216,44 @@ def get_external_shared(channel_list):
     return results
 
 
+def find_keys(token):
+    for query in PRIVATE_KEYS:
+        message_list = search_messages(token, query)
+        for message in message_list:
+            regex_results = re.findall(PRIVATE_KEYS_REGEX, str(message))
+            # r = re.compile(".*cat")
+            # newlist = list(filter(r.match, mylist))  # Read Note
+            print(regex_results)
+
+
 def main():
     token = get_token()
 
-    print(time.time())
-
     # user_list = get_users(token)
-    channel_list = get_channels(token)
+    # channel_list = get_channels(token)
+
+    find_keys(token)
+
+
     # file_list = search_files(token, '.key')
-    #
     # for i in file_list:
     #     print(i)
-    #
-    # message_list = search_messages(token, 's3:')
-    #
+    # message_list = search_messages(token, 'bbc')
+
     # for i in message_list:
     #     print(i)
-    #
+
     # for i in channel_list:
     #     print(i)
 
     # admins = get_admins(user_list)
     # for i in admins:
     #     print(str(i['real_name']) + ' - ' + str(i['id']) + ' - ' + str(i['profile']['email']))
-    #     # print(i)
-
-    for i in get_external_shared(channel_list):
-        if month_old(i['created']):
-            print(i)
     #
+    # for i in get_external_shared(channel_list):
+    #     if month_old(i['created']):
+    #         print(i)
+
     # for item in user_list:
     #     print(item)
 
