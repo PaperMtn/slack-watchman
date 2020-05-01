@@ -30,7 +30,7 @@ FILE_EXTENSIONS = ['.exe',
                    '.docx',
                    '.docm',
                    '.xls',
-                   '.xlsx'
+                   '.xlsx',
                    '.xlsm',
                    '.conf']
 CERTIFICATE_EXTENSIONS = ['.key',
@@ -38,13 +38,21 @@ CERTIFICATE_EXTENSIONS = ['.key',
                           '.pem',
                           '.pfx',
                           '.pkcs12']
-CREDENTIAL_EXTENSIONS = ['.json']
+GCP_CREDENTIAL_EXTENSIONS = ['.json']
 AWS_KEYS_QUERIES = ['ASIA*', 'AKIA*']
+SLACK_KEY_QUERIES = ['xoxb*',
+                     'xoxa*',
+                     'xoxp*',
+                     'xoxr*',
+                     'xoxs*'
+                     ]
 
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
 PASSWORD_REGEX = r"(?i)(password\s*[`=:\"]+\s*[^\s]+|password is\s*[`=:\"]*\s*[^\s]+|pwd\s*[`=:\"]*\s*[^\s]+|passwd\s*[`=:\"]+\s*[^\s]+)"
 BANK_CARD_REGEX = r"^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$|^4[0-9]{12}(?:[0-9]{3})?$|^3[47][0-9]{13}$|^6(?:011|5[0-9]{2})[0-9]{12}$|^(?:2131|1800|35\d{3})\d{11}$"
 AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+])|(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9]))"
+SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+
 
 def get_token():
     """Get Slack API token from .conf file"""
@@ -275,7 +283,7 @@ def find_keys(token):
     """Look for private keys in public channels by first searching for common terms for private keys
     then trimming this list down using a regex search"""
 
-    headers = ['timestamp', 'channel-name', 'posted_by', 'content', 'link']
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
 
     for query in PRIVATE_KEYS:
         message_list = search_messages(token, query)
@@ -322,7 +330,7 @@ def find_gcp_credentials(token):
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
 
-    for query in CREDENTIAL_EXTENSIONS:
+    for query in GCP_CREDENTIAL_EXTENSIONS:
         message_list = search_files(token, query)
         results = []
         for message in message_list:
@@ -340,7 +348,7 @@ def find_aws_credentials(token):
     """Look for AWS credentials in public channels by first searching for common AWS key phrases
     these are then filtered down by regex"""
 
-    headers = ['timestamp', 'channel-name', 'posted_by', 'content', 'link']
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
 
     for query in AWS_KEYS_QUERIES:
         message_list = search_messages(token, query)
@@ -355,15 +363,59 @@ def find_aws_credentials(token):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '/Users/andrew/Desktop/aws_credentials{}'.format(query).replace(' ', '_'),
+                      '/Users/andrew/Desktop/aws_credentials_{}'.format(query).replace(' ', '_'),
                       results)
+
+
+def find_slack_tokens(token):
+    """Look for Slack tokens in public channels by first searching for Slack token prefixes
+    these are then filtered down by regex"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+
+    for query in SLACK_KEY_QUERIES:
+        message_list = search_messages(token, query)
+        results = []
+        for message in message_list:
+            r = re.compile(SLACK_REGEX)
+            print(message)
+            if r.search(str(message)):
+                results.append([convert_timestamp(message['ts']),
+                                message['channel']['name'],
+                                message['username'],
+                                message['text'],
+                                message['permalink']])
+        if results:
+            write_csv(headers,
+                      '/Users/andrew/Desktop/slack_token_{}'.format(query).replace(' ', '_'),
+                      results)
+
+
+def find_malicious_files(token):
+    """Look for interesting files in public channels by first searching for file extensions
+    these are then filtered down further to include only files of those extensions"""
+
+    headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
+
+    for query in FILE_EXTENSIONS:
+        message_list = search_files(token, query)
+        results = []
+        for message in message_list:
+            if query in message['name']:
+                results.append([convert_timestamp(message['timestamp']),
+                                message['name'],
+                                message['username'],
+                                message['preview'],
+                                message['permalink']])
+        if results:
+            write_csv(headers, '/Users/andrew/Desktop/interesting_files{}'.format(query).replace(' ', '_'), results)
 
 
 def find_passwords(token):
     """Look for passwords in public channels by first searching for common terms for private keys
         then trimming this list down using a regex search"""
 
-    headers = ['timestamp', 'channel-name', 'posted_by', 'content', 'link']
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
 
     for query in PASSWORD_QUERIES:
         message_list = search_messages(token, query)
@@ -387,7 +439,7 @@ def find_card_details(token):
     """Look for passwords in public channels by first searching for common terms for private keys
         then trimming this list down using a regex search"""
 
-    headers = ['timestamp', 'channel-name', 'posted_by', 'content', 'link']
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
 
     for query in BANK_CARD_QUERIES:
         message_list = search_messages(token, query)
@@ -418,12 +470,14 @@ def main():
     # find_card_details(token)
     # find_certificates(token)
     # find_gcp_credentials(token)
-    find_aws_credentials(token)
+    # find_aws_credentials(token)
+    # find_slack_tokens(token)
+    find_malicious_files(token)
 
     # file_list = search_files(token, '.json')
     # for i in file_list:
     #     print(i)
-    # message_list = search_messages(token, '4917*')
+    # message_list = search_messages(token, 'xoxa*')
     #
     # for i in message_list:
     #     print(i)
