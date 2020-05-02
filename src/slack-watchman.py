@@ -9,10 +9,10 @@ PRIVATE_KEYS = ["BEGIN DSA PRIVATE",
                 "BEGIN OPENSSH PRIVATE",
                 "BEGIN PGP PRIVATE",
                 "BEGIN RSA PRIVATE"]
-PASSWORD_QUERIES = ["password:",
-                    "password is",
-                    "pwd",
-                    "passwd"]
+PASSWORD_QUERIES = ['"password:"*',
+                    '"password is"*',
+                    'pwd',
+                    'passwd']
 BANK_CARD_QUERIES = ['cvv',
                      'card',
                      'cardno',
@@ -104,7 +104,7 @@ def convert_timestamp(timestamp):
     return output
 
 
-def write_output(out_path, out_list):
+def write_output_to_txt(out_path, out_list):
     with open(out_path, 'w+') as f:
         for item in out_list:
             f.write(str(item) + '\n')
@@ -185,6 +185,42 @@ def get_channels(token):
     return results
 
 
+def output_all_channels(channel_list):
+    """Write all channels to .csv"""
+
+    results = []
+    headers = ['created', 'id', 'name', 'description']
+
+    for channel in channel_list:
+        results.append([convert_timestamp(channel['created']),
+                        channel['id'],
+                        channel['name'],
+                        channel['topic']['value']])
+
+    if results:
+        write_csv(headers, '/Users/andrew/Desktop/all_channels', results)
+
+
+def output_all_users(user_list):
+    """Write all users to .csv"""
+
+    results = []
+    headers = ['id', 'name', 'email']
+
+    for user in user_list:
+        if 'email' in user['profile']:
+            results.append([user['id'],
+                            user['name'],
+                            user['profile']['email']])
+        else:
+            results.append([user['id'],
+                            user['name'],
+                            'NO EMAIL'])
+
+    if results:
+        write_csv(headers, '/Users/andrew/Desktop/all_users', results)
+
+
 def search_files(token, query):
     """Return a list of all files that match the given query"""
 
@@ -259,24 +295,33 @@ def get_admins(user_list):
     """Return all admin users from the input userlist"""
 
     results = []
+    headers = ['id', 'name', 'email']
 
-    for i in user_list:
-        if 'is_admin' in i.keys() and i['is_admin']:
-            results.append(i)
+    for user in user_list:
+        if 'is_admin' in user.keys() and user['is_admin']:
+            results.append([user['id'],
+                            user['name'],
+                            user['profile']['email']])
 
-    return results
+    if results:
+        write_csv(headers, '/Users/andrew/Desktop/admins', results)
 
 
 def get_external_shared(channel_list):
     """Return all external shared channels from the input channel list"""
 
     results = []
+    headers = ['created', 'id', 'name', 'description']
 
-    for i in channel_list:
-        if 'is_ext_shared' in i.keys() and i['is_ext_shared']:
-            results.append(i)
+    for channel in channel_list:
+        if 'is_ext_shared' in channel.keys() and channel['is_ext_shared']:
+            results.append([convert_timestamp(channel['created']),
+                            channel['id'],
+                            channel['name'],
+                            channel['topic']['value']])
 
-    return results
+    if results:
+        write_csv(headers, '/Users/andrew/Desktop/external_channels', results)
 
 
 def find_keys(token):
@@ -462,8 +507,8 @@ def find_card_details(token):
 def main():
     token = get_token()
 
-    # user_list = get_users(token)
-    # channel_list = get_channels(token)
+    user_list = get_users(token)
+    channel_list = get_channels(token)
 
     # find_keys(token)
     # find_passwords(token)
@@ -472,7 +517,7 @@ def main():
     # find_gcp_credentials(token)
     # find_aws_credentials(token)
     # find_slack_tokens(token)
-    find_malicious_files(token)
+    # find_malicious_files(token)
 
     # file_list = search_files(token, '.json')
     # for i in file_list:
@@ -485,19 +530,16 @@ def main():
     # for i in channel_list:
     #     print(i)
 
-    # admins = get_admins(user_list)
+    # get_admins(user_list)
     # for i in admins:
     #     print(str(i['real_name']) + ' - ' + str(i['id']) + ' - ' + str(i['profile']['email']))
     #
-    # for i in get_external_shared(channel_list):
+    # get_external_shared(channel_list)
     #     if month_old(i['created']):
     #         print(i)
 
-    # for item in user_list:
-    #     print(item)
-
-    # write_output('/Users/andrew/slack-hunter/results.txt', message_list)
-    # write_output('/Users/andrew/slack-monitor/channels.txt', channel_list)
+    output_all_channels(channel_list)
+    output_all_users(user_list)
 
 
 if __name__ == '__main__':
