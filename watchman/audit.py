@@ -1,57 +1,11 @@
+import calendar
 import re
 import requests
 import time
 import configparser
 import csv
 
-PRIVATE_KEYS = ["BEGIN DSA PRIVATE",
-                "BEGIN EC PRIVATE",
-                "BEGIN OPENSSH PRIVATE",
-                "BEGIN PGP PRIVATE",
-                "BEGIN RSA PRIVATE"]
-PASSWORD_QUERIES = ['"password:"*',
-                    '"password is"*',
-                    'pwd',
-                    'passwd']
-BANK_CARD_QUERIES = ['cvv',
-                     'card',
-                     'cardno',
-                     '"card no:"',
-                     '"card number:"',
-                     '4026*',
-                     '417500*',
-                     '4508*',
-                     '4844*',
-                     '4913*',
-                     '4917*']
-FILE_EXTENSIONS = ['.exe',
-                   '.zip',
-                   '.doc',
-                   '.docx',
-                   '.docm',
-                   '.xls',
-                   '.xlsx',
-                   '.xlsm',
-                   '.conf']
-CERTIFICATE_EXTENSIONS = ['.key',
-                          '.p12',
-                          '.pem',
-                          '.pfx',
-                          '.pkcs12']
-GCP_CREDENTIAL_EXTENSIONS = ['.json']
-AWS_KEYS_QUERIES = ['ASIA*', 'AKIA*']
-SLACK_KEY_QUERIES = ['xoxb*',
-                     'xoxa*',
-                     'xoxp*',
-                     'xoxr*',
-                     'xoxs*'
-                     ]
-
-PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
-PASSWORD_REGEX = r"(?i)(password\s*[`=:\"]+\s*[^\s]+|password is\s*[`=:\"]*\s*[^\s]+|pwd\s*[`=:\"]*\s*[^\s]+|passwd\s*[`=:\"]+\s*[^\s]+)"
-BANK_CARD_REGEX = r"^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$|^4[0-9]{12}(?:[0-9]{3})?$|^3[47][0-9]{13}$|^6(?:011|5[0-9]{2})[0-9]{12}$|^(?:2131|1800|35\d{3})\d{11}$"
-AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+])|(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9]))"
-SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+import watchman.constants as con
 
 
 def get_token():
@@ -96,6 +50,7 @@ def month_old(created_time):
 
 def convert_timestamp(timestamp):
     """Converts epoch timestamp into human readable time"""
+
     if isinstance(timestamp, str):
         timestamp = timestamp.split('.', 1)[0]
 
@@ -104,14 +59,10 @@ def convert_timestamp(timestamp):
     return output
 
 
-def write_output_to_txt(out_path, out_list):
-    with open(out_path, 'w+') as f:
-        for item in out_list:
-            f.write(str(item) + '\n')
+def write_csv(headers, path, input_list):
+    """Writes input list to .csv. The headers are and output path are passed as variables"""
 
-
-def write_csv(headers, filepath, input_list):
-    with open('{}.csv'.format(filepath), mode='w+') as csv_file:
+    with open('{}.csv'.format(path), mode='w+') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         writer.writerow(headers)
@@ -121,11 +72,12 @@ def write_csv(headers, filepath, input_list):
     csv_file.close()
 
 
-def get_users(token):
+def get_users():
     """Return a list of all active users in the instance"""
 
     cursor = ''
     results = []
+    token = get_token()
 
     try:
         while True:
@@ -154,11 +106,12 @@ def get_users(token):
     return results
 
 
-def get_channels(token):
+def get_channels():
     """Return a list of all channels in the instance"""
 
     cursor = ''
     results = []
+    token = get_token()
 
     try:
         while True:
@@ -185,17 +138,19 @@ def get_channels(token):
     return results
 
 
-def output_all_channels(channel_list):
+def output_all_channels(channel_list, timeframe=con.ALL_TIME):
     """Write all channels to .csv"""
 
     results = []
     headers = ['created', 'id', 'name', 'description']
+    now = calendar.timegm(time.gmtime())
 
     for channel in channel_list:
-        results.append([convert_timestamp(channel['created']),
-                        channel['id'],
-                        channel['name'],
-                        channel['topic']['value']])
+        if channel['created'] > now - timeframe:
+            results.append([convert_timestamp(channel['created']),
+                            channel['id'],
+                            channel['name'],
+                            channel['topic']['value']])
 
     if results:
         write_csv(headers, '/Users/andrew/Desktop/all_channels', results)
@@ -221,11 +176,12 @@ def output_all_users(user_list):
         write_csv(headers, '/Users/andrew/Desktop/all_users', results)
 
 
-def search_files(token, query):
+def search_files(query):
     """Return a list of all files that match the given query"""
 
     page_count_by_query = {}
     results = []
+    token = get_token()
 
     try:
         while True:
@@ -255,11 +211,12 @@ def search_files(token, query):
     return results
 
 
-def search_messages(token, query):
+def search_messages(query):
     """Return a list of all messages that match the given query"""
 
     page_count_by_query = {}
     results = []
+    token = get_token()
 
     try:
         while True:
@@ -307,14 +264,15 @@ def get_admins(user_list):
         write_csv(headers, '/Users/andrew/Desktop/admins', results)
 
 
-def get_external_shared(channel_list):
+def get_external_shared(channel_list, timeframe=con.ALL_TIME):
     """Return all external shared channels from the input channel list"""
 
     results = []
     headers = ['created', 'id', 'name', 'description']
+    now = calendar.timegm(time.gmtime())
 
     for channel in channel_list:
-        if 'is_ext_shared' in channel.keys() and channel['is_ext_shared']:
+        if 'is_ext_shared' in channel.keys() and channel['is_ext_shared'] and channel['created'] > now - timeframe:
             results.append([convert_timestamp(channel['created']),
                             channel['id'],
                             channel['name'],
@@ -324,18 +282,20 @@ def get_external_shared(channel_list):
         write_csv(headers, '/Users/andrew/Desktop/external_channels', results)
 
 
-def find_keys(token):
+def find_keys(timeframe=con.ALL_TIME):
     """Look for private keys in public channels by first searching for common terms for private keys
     then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in PRIVATE_KEYS:
-        message_list = search_messages(token, query)
+    for query in con.PRIVATE_KEYS:
+        message_list = search_messages(query)
         results = []
         for message in message_list:
-            r = re.compile(PRIVATE_KEYS_REGEX)
-            if r.search(str(message)):
+            r = re.compile(con.PRIVATE_KEYS_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
@@ -347,17 +307,19 @@ def find_keys(token):
                       results)
 
 
-def find_certificates(token):
+def find_certificates(timeframe=con.ALL_TIME):
     """Look for certificate files in public channels by first searching for certificate file extensions
     these are then filtered down further to include only true certificate files"""
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in CERTIFICATE_EXTENSIONS:
-        message_list = search_files(token, query)
+    for query in con.CERTIFICATE_EXTENSIONS:
+        message_list = search_files(query)
         results = []
         for message in message_list:
-            if 'text' in message['filetype'] and query in message['name']:
+            timestamp = message['timestamp']
+            if 'text' in message['filetype'] and query in message['name'] and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
@@ -369,17 +331,20 @@ def find_certificates(token):
                       results)
 
 
-def find_gcp_credentials(token):
+def find_gcp_credentials(timeframe=con.ALL_TIME):
     """Look for GCP credential files in public channels by first searching for certificate file extensions
     these are then filtered down further to include only true certificate files"""
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in GCP_CREDENTIAL_EXTENSIONS:
-        message_list = search_files(token, query)
+    for query in con.GCP_CREDENTIAL_EXTENSIONS:
+        message_list = search_files(query)
         results = []
         for message in message_list:
-            if 'javascript' in message['filetype'] and '"project_id"' in message['name']:
+            timestamp = message['timestamp']
+            if 'javascript' in message['filetype'] and '"project_id"' in message['name'] \
+                    and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
@@ -389,18 +354,20 @@ def find_gcp_credentials(token):
             write_csv(headers, '/Users/andrew/Desktop/gcp_credentials', results)
 
 
-def find_aws_credentials(token):
+def find_aws_credentials(timeframe=con.ALL_TIME):
     """Look for AWS credentials in public channels by first searching for common AWS key phrases
     these are then filtered down by regex"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in AWS_KEYS_QUERIES:
-        message_list = search_messages(token, query)
+    for query in con.AWS_KEYS_QUERIES:
+        message_list = search_messages(query)
         results = []
         for message in message_list:
-            r = re.compile(AWS_KEYS_REGEX)
-            if r.search(str(message)):
+            r = re.compile(con.AWS_KEYS_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
@@ -412,41 +379,45 @@ def find_aws_credentials(token):
                       results)
 
 
-def find_slack_tokens(token):
+def find_slack_tokens(timeframe=con.ALL_TIME):
     """Look for Slack tokens in public channels by first searching for Slack token prefixes
     these are then filtered down by regex"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in SLACK_KEY_QUERIES:
-        message_list = search_messages(token, query)
+    for query in con.SLACK_KEY_QUERIES:
+        message_list = search_messages(query)
         results = []
         for message in message_list:
-            r = re.compile(SLACK_REGEX)
-            print(message)
-            if r.search(str(message)):
+            r = re.compile(con.SLACK_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
                                 message['text'],
                                 message['permalink']])
+
         if results:
             write_csv(headers,
                       '/Users/andrew/Desktop/slack_token_{}'.format(query).replace(' ', '_'),
                       results)
 
 
-def find_malicious_files(token):
+def find_malicious_files(timeframe=con.ALL_TIME):
     """Look for interesting files in public channels by first searching for file extensions
     these are then filtered down further to include only files of those extensions"""
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in FILE_EXTENSIONS:
-        message_list = search_files(token, query)
+    for query in con.FILE_EXTENSIONS:
+        message_list = search_files(query)
         results = []
         for message in message_list:
-            if query in message['name']:
+            timestamp = message['timestamp']
+            if query in message['name'] and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
@@ -456,18 +427,20 @@ def find_malicious_files(token):
             write_csv(headers, '/Users/andrew/Desktop/interesting_files{}'.format(query).replace(' ', '_'), results)
 
 
-def find_passwords(token):
+def find_passwords(timeframe=con.ALL_TIME):
     """Look for passwords in public channels by first searching for common terms for private keys
         then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in PASSWORD_QUERIES:
-        message_list = search_messages(token, query)
+    for query in con.PASSWORD_QUERIES:
+        message_list = search_messages(query)
         results = []
         for message in message_list:
-            r = re.compile(PASSWORD_REGEX)
-            if r.search(str(message)):
+            r = re.compile(con.PASSWORD_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
@@ -480,18 +453,20 @@ def find_passwords(token):
                       results)
 
 
-def find_card_details(token):
+def find_card_details(timeframe=con.ALL_TIME):
     """Look for passwords in public channels by first searching for common terms for private keys
         then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
 
-    for query in BANK_CARD_QUERIES:
-        message_list = search_messages(token, query)
+    for query in con.BANK_CARD_QUERIES:
+        message_list = search_messages(query)
         results = []
         for message in message_list:
-            r = re.compile(BANK_CARD_REGEX)
-            if r.search(str(message)):
+            r = re.compile(con.BANK_CARD_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
@@ -505,41 +480,29 @@ def find_card_details(token):
 
 
 def main():
-    token = get_token()
+    user_list = get_users()
+    # channel_list = get_channels()
+    #
+    # find_keys(timeframe=con.WEEK_TIMEFRAME)
+    # find_passwords(timeframe=con.WEEK_TIMEFRAME)
+    # find_card_details(timeframe=con.WEEK_TIMEFRAME)
+    # find_certificates(timeframe=con.WEEK_TIMEFRAME)
+    # find_gcp_credentials(timeframe=con.WEEK_TIMEFRAME)
+    # find_aws_credentials(timeframe=con.WEEK_TIMEFRAME)
+    # find_slack_tokens()
+    # find_malicious_files(timeframe=con.WEEK_TIMEFRAME)
 
-    user_list = get_users(token)
-    channel_list = get_channels(token)
-
-    # find_keys(token)
-    # find_passwords(token)
-    # find_card_details(token)
-    # find_certificates(token)
-    # find_gcp_credentials(token)
-    # find_aws_credentials(token)
-    # find_slack_tokens(token)
-    # find_malicious_files(token)
-
-    # file_list = search_files(token, '.json')
+    # file_list = search_files('.json')
     # for i in file_list:
     #     print(i)
-    # message_list = search_messages(token, 'xoxa*')
+    # message_list = search_messages('xoxa*')
     #
-    # for i in message_list:
-    #     print(i)
-
-    # for i in channel_list:
-    #     print(i)
-
-    # get_admins(user_list)
-    # for i in admins:
-    #     print(str(i['real_name']) + ' - ' + str(i['id']) + ' - ' + str(i['profile']['email']))
-    #
-    # get_external_shared(channel_list)
+    # get_external_shared(channel_list, timeframe=con.MONTH_TIMEFRAME)
     #     if month_old(i['created']):
     #         print(i)
 
-    output_all_channels(channel_list)
-    output_all_users(user_list)
+    # output_all_channels(channel_list, timeframe=con.WEEK_TIMEFRAME)
+    # output_all_users(user_list)
 
 
 if __name__ == '__main__':
