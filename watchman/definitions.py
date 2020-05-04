@@ -1,3 +1,5 @@
+import os
+
 ### SLACK SEARCH QUERIES ###
 # List of queries to find private keys
 PRIVATE_KEYS = ["BEGIN DSA PRIVATE",
@@ -85,4 +87,9 @@ WEEK_TIMEFRAME = 604800
 
 # Epoch time for... a very long time
 # If you have Slack messages going back 50 years, bravo time traveller
+# If this project, Slack or indeed the planet is still here in 50 years, we'll have all done well.
 ALL_TIME = 1576800000
+
+# Config file location
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(ROOT_DIR, '/config/keys.conf')
