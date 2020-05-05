@@ -1,20 +1,24 @@
 import argparse
 import configparser
 import os
-from colorama import init
-from termcolor import colored
 import requests
+from colorama import init, deinit
+from termcolor import colored
 
 from watchman import audit
 from watchman import definitions as d
 
 
 def validate_conf(path):
+    """Check the file slack_watchman.conf exists"""
+
     if os.path.exists(path):
         return True
 
 
 def validate_token(conf_path):
+    """Check the .conf file contains a token, then check whether that token is valid"""
+
     config = configparser.ConfigParser()
     config.read(conf_path)
     token = config.get('auth', 'slack_token')
@@ -32,13 +36,12 @@ def main():
     try:
         init()
 
-        parser = argparse.ArgumentParser(description='Slack Watchman: Monitoring your Slack instances')
+        parser = argparse.ArgumentParser(description='Slack Watchman: Monitoring you Slack workspaces'
+                                                     ' for sensitive information')
 
         parser.add_argument('--timeframe', choices=['w', 'm', 'a'], dest='time',
                             help='How far back to search: w = one week, m = one month, a = all time',
                             required=True)
-        # parser.add_argument('--config', required=True, dest='conf',
-        #                     help='Path to .conf file')
         parser.add_argument('--all', dest='everything', action='store_true',
                             help='Find everything')
         parser.add_argument('-U', '--users', dest='users', action='store_true',
@@ -64,7 +67,6 @@ def main():
 
         args = parser.parse_args()
         time = args.time
-        # conf = args.conf
         everything = args.everything
         users = args.users
         channels = args.channels
@@ -85,27 +87,19 @@ def main():
             tf = d.ALL_TIME
 
         print(colored('''
-                 #####                                              
-                #     # #        ##    ####  #    #                 
-                #       #       #  #  #    # #   #                  
-                 #####  #      #    # #      ####                   
-                      # #      ###### #      #  #                   
-                #     # #      #    # #    # #   #                  
-                 #####  ###### #    #  ####  #    #                                                                                                
-                                                                    
-    #     #    #    #######  #####  #     # #     #    #    #     # 
-    #  #  #   # #      #    #     # #     # ##   ##   # #   ##    # 
-    #  #  #  #   #     #    #       #     # # # # #  #   #  # #   # 
-    #  #  # #     #    #    #       ####### #  #  # #     # #  #  # 
-    #  #  # #######    #    #       #     # #     # ####### #   # # 
-    #  #  # #     #    #    #     # #     # #     # #     # #    ## 
-     ## ##  #     #    #     #####  #     # #     # #     # #     #
-        ''', 'yellow'))
+      _            _      _  __        ___  _____ ____ _   _ __  __    _    _   _ 
+  ___| | __ _  ___| | __ | | \ \      / / \|_   _/ ___| | | |  \/  |  / \  | \ | |
+ / __| |/ _` |/ __| |/ / | |  \ \ /\ / / _ \ | || |   | |_| | |\/| | / _ \ |  \| |
+ \__ \ | (_| | (__|   <  | |   \ V  V / ___ \| || |___|  _  | |  | |/ ___ \| |\  |
+ |___/_|\__,_|\___|_|\_\ | |    \_/\_/_/   \_\_| \____|_| |_|_|  |_/_/   \_\_| \_|
+                         |_|                                                      
+                         
+                         ''', 'yellow'))
 
-        conf_path = '{}/.slack_watchman.conf'.format(os.path.expanduser('~'))
+        conf_path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
 
         if not validate_conf(conf_path):
-            raise Exception(colored('.slack_watchman.conf file not detected.'
+            raise Exception(colored('slack_watchman.conf file not detected.'
                             '\nEnsure a valid file is located in your home directory: {}', 'red')
                             .format(os.path.expanduser('~')))
         else:
@@ -184,7 +178,7 @@ def main():
 
         print(colored('++++++Audit completed++++++', 'green'))
 
-        colorama.deinit()
+        deinit()
 
     except Exception as e:
         print(colored(e, 'red'))
