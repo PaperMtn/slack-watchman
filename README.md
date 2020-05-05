@@ -1,6 +1,9 @@
 ![Slack Watchman](files/Slack_watchman_alt_var_1280x320.png)
 
 # Slack Watchman
+![Python 2.7 and 3 compatible](https://img.shields.io/pypi/pyversions/slack-watchman)
+![PyPI version](https://img.shields.io/pypi/v/slack-watchman.svg)
+![License: MIT](https://img.shields.io/pypi/l/slack-watchman.svg)
 
 Monitoring you Slack workspaces for sensitive information
 

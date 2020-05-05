@@ -299,9 +299,10 @@ def find_keys(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '{}/private_keys_{}'.format(out_path, query).replace(' ', '_'), results)
+                      '{}/private_keys_{}'.format(out_path, query).replace(' ', '_').replace('*', '0'), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/private_keys_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/private_keys_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_certificates(timeframe=d.ALL_TIME):
@@ -325,9 +326,10 @@ def find_certificates(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '{}/certificates_{}'.format(out_path, query).replace(' ', '_'), results)
+                      '{}/certificates_{}'.format(out_path, query).replace(' ', '_').replace('*', '0'), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/certificates_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/certificates_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_gcp_credentials(timeframe=d.ALL_TIME):
@@ -351,9 +353,10 @@ def find_gcp_credentials(timeframe=d.ALL_TIME):
                                 message['preview'],
                                 message['permalink']])
         if results:
-            write_csv(headers, '{}/gcp_credentials'.format(out_path), results)
+            write_csv(headers, '{}/gcp_credentials_{}.csv'.format(out_path, query).replace('*', '0'), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/gcp_credentials_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/gcp_credentials_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_aws_credentials(timeframe=d.ALL_TIME):
@@ -378,9 +381,10 @@ def find_aws_credentials(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '{}/aws_credentials_{}'.format(out_path, query).replace(' ', '_'), results)
+                      '{}/aws_credentials_{}'.format(out_path, query).replace(' ', '_').replace('*', '0'), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/aws_credentials_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/aws_credentials_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_slack_tokens(timeframe=d.ALL_TIME):
@@ -406,16 +410,17 @@ def find_slack_tokens(timeframe=d.ALL_TIME):
 
         if results:
             write_csv(headers,
-                      '{}/slack_token_{}'.format(out_path, query).replace(' ', '_'), results)
+                      '{}/slack_token_{}'.format(out_path, query).replace(' ', '_').replace('*', '0'), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'. format('{}/slack_token_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/slack_token_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_malicious_files(timeframe=d.ALL_TIME):
     """Look for interesting files in public channels by first searching for file extensions
     these are then filtered down further to include only files of those extensions"""
 
-    headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
+    headers = ['timestamp', 'file_name', 'posted_by', 'private_link']
     now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
@@ -428,16 +433,17 @@ def find_malicious_files(timeframe=d.ALL_TIME):
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
-                                message['preview'],
                                 message['permalink']])
         if results:
-            write_csv(headers, '{}/interesting_files_{}'.format(out_path, query).replace(' ', '_'), results)
+            write_csv(headers, '{}/interesting_files_{}'.format(out_path, query).replace(' ', '_').replace('*', '0'),
+                      results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/interesting_files_{}.csv'.format(out_path, query).replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/interesting_files_{}.csv'.format(out_path, query).replace(' ', '_').replace('*', '0')))
 
 
 def find_passwords(timeframe=d.ALL_TIME):
-    """Look for passwords in public channels by first searching for common terms for private keys
+    """Look for passwords in public channels by first searching for common terms for passwords
         then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
@@ -458,15 +464,16 @@ def find_passwords(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '{}/potential_leaked_passwords_{}'.format(out_path, query).replace(' ', '_')
+                      '{}/potential_leaked_passwords_{}'.format(out_path, query).replace(' ', '_').replace('*', '0')
                       .replace(':', ''), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/potential_leaked_passwords_{}.csv'.format(out_path, query)
-                                           .replace(' ', '_')))
+            print('CSV written: {}'.format(
+                '{}/potential_leaked_passwords_{}.csv'.format(out_path, query).replace('*', '0')
+                .replace(' ', '_')))
 
 
 def find_card_details(timeframe=d.ALL_TIME):
-    """Look for passwords in public channels by first searching for common terms for private keys
+    """Look for card details in public channels by first searching for common terms for cards
         then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
@@ -487,9 +494,9 @@ def find_card_details(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             write_csv(headers,
-                      '{}/potential_leaked_bank_cards_{}'.format(out_path, query).replace(' ', '_')
+                      '{}/potential_leaked_bank_cards_{}'.format(out_path, query).replace(' ', '_').replace('*', '0')
                       .replace(':', ''), results)
             print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format('{}/potential_leaked_bank_cards_{}.csv'.format(out_path, query)
-                                           .replace(' ', '_')))
-
+            print('CSV written: {}'.format(
+                '{}/potential_leaked_bank_cards_{}.csv'.format(out_path, query).replace('*', '0')
+                .replace(' ', '_')))

@@ -16,8 +16,10 @@ PASSWORD_QUERIES = ['"password:"*',
 
 # List of queries to find bank cards
 BANK_CARD_QUERIES = ['cvv',
-                     'card',
+                     'mastercard',
                      'cardno',
+                     'visa',
+                     '"american express"',
                      '"card no:"',
                      '"card number:"',
                      '4026*',
@@ -68,8 +70,7 @@ PASSWORD_REGEX = r"(?i)(password\s*[`=:\"]+\s*[^\s]+|password is\s*[`=:\"]*\s*[^
                  r"^\s]+|passwd\s*[`=:\"]+\s*[^\s]+) "
 
 # Regex to detect bank cards
-BANK_CARD_REGEX = r"^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$|^4[0-9]{12}(" \
-                  r"?:[0-9]{3})?$|^3[47][0-9]{13}$|^6(?:011|5[0-9]{2})[0-9]{12}$|^(?:2131|1800|35\d{3})\d{11}$ "
+BANK_CARD_REGEX = r"^((67\d{2})|(4\d{3})|(5[1-5]\d{2})|(6011))-?\s?\d{4}-?\s?\d{4}-?\s?\d{4}|3[4,7]\d{13}$"
 
 # Regex to detect AWS keys
 AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+])|(?<![" \
@@ -89,7 +90,3 @@ WEEK_TIMEFRAME = 604800
 # If you have Slack messages going back 50 years, bravo time traveller
 # If this project, Slack or indeed the planet is still here in 50 years, we'll have all done well.
 ALL_TIME = 1576800000
-
-# Config file location
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(ROOT_DIR, '/config/keys.conf')
