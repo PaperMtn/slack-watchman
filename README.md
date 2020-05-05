@@ -1,9 +1,6 @@
 ![Slack Watchman](files/Slack_watchman_alt_var_1280x320.png)
 
 # Slack Watchman
-![Python 2.7 and 3 compatible](https://img.shields.io/badge/python-2.7%2C%203.x-blue.svg)
-![PyPI version](https://img.shields.io/pypi/v/lil-pwny.svg)
-![License: MIT](https://img.shields.io/pypi/l/lil-pwny.svg)
 
 Monitoring you Slack workspaces for sensitive information
 
@@ -36,6 +33,35 @@ You can run Slack Watchman to look for results going back as far as:
 
 This means after one deep scan, you can schedule Slack Watchman to run regularly and only return results from your chosen timeframe.
 
+## Requirements
+### Slack API token
+To run Slack Watchman, you will need a Slack API OAuth access token. You can do this by creating a simple [Slack App](https://api.slack.com/apps).
+
+The app needs to have the following **User Token Scopes** added:
+```
+channels:read
+files:read
+groups:read
+im:read
+links:read
+mpim:read
+remote_files:read
+search:read
+team:read
+users:read
+users:read.email
+```
+**Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private channels and chats.
+
+
+### .conf file
+This API token needs to be stored in a file named `slack_watchman.conf` which is stored in your home directory. The file should take the following format:
+```
+[auth]
+slack_token = xoxp-xxxxxxxxxx-...
+```
+Slack Watchman will look for this file at runtime, and notify you if it's not there.
+
 ## Installation
 Install via pip
 
@@ -67,11 +93,9 @@ optional arguments:
   ```
 
 You can run Slack Watchman to look for everything:
+
 `slack-watchman --timeframe a --all`
 
 Or arguments can be grouped together to search more granularly. This will look for AWS keys, GCP keys and passwords for the last 30 days:
+
 `slack-watchman --timeframe m -agP`
-
-
-## TODO
-- a more elegant solution for managing config files
