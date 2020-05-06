@@ -78,6 +78,9 @@ AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-
 SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
 
 ### TIMEFRAMES ###
+# Epoch time for 24 hours
+DAY_TIMEFRAME = 86400
+
 # Epoch time for 30 days
 MONTH_TIMEFRAME = 2592000
 
