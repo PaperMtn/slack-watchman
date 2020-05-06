@@ -1,5 +1,3 @@
-import os
-
 ### SLACK SEARCH QUERIES ###
 # List of queries to find private keys
 PRIVATE_KEYS = ["BEGIN DSA PRIVATE",

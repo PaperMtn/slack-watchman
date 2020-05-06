@@ -1,14 +1,16 @@
 import os
+import watchman.__about__ as a
 from setuptools import setup
+
 
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md')) as f:
     README = f.read()
 
 setup(
     name='slack-watchman',
-    version='1.0.0',
-    url='https://github.com/PaperMtn/slack-watchman',
-    license='GPL-3.0',
+    version=a.__version__,
+    url=a.__uri__,
+    license=a.__license__,
     classifiers=[
         'Intended Audience :: Information Technology',
         'Topic :: Security',
@@ -19,11 +21,11 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    author='PaperMtn',
-    author_email='papermtn@protonmail.com',
+    author=a.__author__,
+    author_email=a.__email__,
     long_description=README,
     long_description_content_type='text/markdown',
-    description='Monitoring your Slack instances for data leaks',
+    description=a.__summary__,
     install_requires=[
         'requests',
         'colorama',
