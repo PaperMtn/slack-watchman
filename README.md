@@ -30,6 +30,7 @@ It also gives the following, which can be used for general auditing:
 
 #### Time based searching
 You can run Slack Watchman to look for results going back as far as:
+- 24 hours
 - 7 days
 - 30 days
 - All time
