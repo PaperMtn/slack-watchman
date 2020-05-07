@@ -7,6 +7,7 @@ from termcolor import colored
 
 from watchman import audit
 from watchman import definitions as d
+from watchman import __about__ as a
 
 
 def validate_conf(path):
@@ -39,9 +40,11 @@ def main():
         parser = argparse.ArgumentParser(description='Slack Watchman: Monitoring you Slack workspaces'
                                                      ' for sensitive information')
 
-        parser.add_argument('--timeframe', choices=['w', 'm', 'a'], dest='time',
-                            help='How far back to search: w = one week, m = one month, a = all time',
+        parser.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
+                            help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
                             required=True)
+        parser.add_argument('--version', action='version',
+                            version='slack-watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
                             help='Find everything')
         parser.add_argument('-U', '--users', dest='users', action='store_true',
@@ -79,7 +82,9 @@ def main():
         files = args.files
         passwords = args.passwords
 
-        if time == 'w':
+        if time == 'd':
+            tf = d.DAY_TIMEFRAME
+        elif time == 'w':
             tf = d.WEEK_TIMEFRAME
         elif time == 'm':
             tf = d.MONTH_TIMEFRAME

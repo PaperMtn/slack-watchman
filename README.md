@@ -30,6 +30,7 @@ It also gives the following, which can be used for general auditing:
 
 #### Time based searching
 You can run Slack Watchman to look for results going back as far as:
+- 24 hours
 - 7 days
 - 30 days
 - All time
@@ -73,26 +74,28 @@ Install via pip
 ## Usage
 Slack Watchman will be installed as a global command, use as follows:
 ```
-usage: slack-watchman [-h] --timeframe {w,m,a} [--all] [-U] [-C] [-a] [-g] [-s]
-                   [-p] [-c] [-t] [-f] [-P]
+usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [-U] [-C]
+                   [-a] [-g] [-s] [-p] [-c] [-t] [-f] [-P]
 
 Slack Watchman: Monitoring you Slack workspaces for sensitive information
 
 optional arguments:
-  -h, --help           show this help message and exit
-  --timeframe {w,m,a}  How far back to search: w = one week, m = one month, a
-                       = all time
-  --all                Find everything
-  -U, --users          Find all users, including admins
-  -C, --channels       Find all channels, including external shared channels
-  -a                   Look for AWS keys
-  -g                   Look for GCP keys
-  -s                   Look for Slack tokens
-  -p                   Look for private keys
-  -c                   Look for card details
-  -t                   Look for certificate files
-  -f                   Look for interesting files
-  -P                   Look for passwords
+  -h, --help            show this help message and exit
+  --timeframe {d,w,m,a}
+                        How far back to search: d = 24 hours w = 7 days, m =
+                        30 days, a = all time
+  --version             show program's version number and exit
+  --all                 Find everything
+  -U, --users           Find all users, including admins
+  -C, --channels        Find all channels, including external shared channels
+  -a                    Look for AWS keys
+  -g                    Look for GCP keys
+  -s                    Look for Slack tokens
+  -p                    Look for private keys
+  -c                    Look for card details
+  -t                    Look for certificate files
+  -f                    Look for interesting files
+  -P                    Look for passwords
   ```
 
 You can run Slack Watchman to look for everything:
