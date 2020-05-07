@@ -10,6 +10,8 @@ Monitoring you Slack workspaces for sensitive information
 ## About Slack Watchman
 Slack Watchman is an application that uses the Slack API to look for potentially sensitive data exposed in your Slack workspaces.
 
+More information about Slack Watchman can be found [on my blog](https://papermtn.co.uk/slack-watchman-monitoring-slack-workspaces-for-sensitive-information/)
+
 ### Features
 Slack Watchman searches for, and reports back on:
 

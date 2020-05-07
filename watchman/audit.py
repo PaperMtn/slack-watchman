@@ -57,7 +57,7 @@ def format_query(query):
 def write_csv(headers, path, input_list):
     """Writes input list to .csv. The headers are and output path are passed as variables"""
 
-    with open('{}'.format(path), mode='w+') as csv_file:
+    with open('{}'.format(path), mode='w+', encoding='utf-8') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         writer.writerow(headers)
