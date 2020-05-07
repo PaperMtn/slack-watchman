@@ -43,15 +43,15 @@ def convert_timestamp(timestamp):
     return output
 
 
-def format_query(path):
+def format_query(query):
     """Helper to strip special characters from filepaths"""
 
-    output = path.replace(' ', '_') \
-        .replace('*', '0') \
-        .replace(':', '') \
-        .replace('"', '_')
+    illegal_chars = [' ', '*', ':', '"', '<', '>', '/', '\\', '|', '?']
+    for i in illegal_chars:
+        if i in query:
+            query = query.replace(i, '_')
 
-    return output
+    return query
 
 
 def write_csv(headers, path, input_list):
@@ -311,7 +311,7 @@ def find_keys(timeframe=d.ALL_TIME):
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
-                                message['attachments'][0]['fallback'],
+                                message['text'],
                                 message['permalink']])
         if results:
             path = '{}/private_keys_{}.csv'.format(out_path, format_query(query))

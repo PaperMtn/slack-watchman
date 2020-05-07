@@ -1,10 +1,10 @@
 ### SLACK SEARCH QUERIES ###
 # List of queries to find private keys
-PRIVATE_KEYS = ["BEGIN DSA PRIVATE",
-                "BEGIN EC PRIVATE",
-                "BEGIN OPENSSH PRIVATE",
-                "BEGIN PGP PRIVATE",
-                "BEGIN RSA PRIVATE"]
+PRIVATE_KEYS = ['BEGIN DSA PRIVATE',
+                'BEGIN EC PRIVATE',
+                'BEGIN OPENSSH PRIVATE',
+                'BEGIN PGP PRIVATE',
+                'BEGIN RSA PRIVATE']
 
 # List of queries to find passwords
 PASSWORD_QUERIES = ['"password:"*',
