@@ -400,6 +400,33 @@ def find_aws_credentials(timeframe=d.ALL_TIME):
             print('CSV written: {}'.format(path))
 
 
+def find_google_credentials(timeframe=d.ALL_TIME):
+    """Look for Google credentials in public channels by first searching for common Goole key phrases
+    these are then filtered down by regex"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
+    out_path = os.getcwd()
+
+    for query in d.GOOGLE_API_QUERIES:
+        message_list = search_messages(query)
+        results = []
+        for message in message_list:
+            r = re.compile(d.GOOGLE_API_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message)) and int(timestamp) > now - timeframe:
+                results.append([convert_timestamp(message['ts']),
+                                message['channel']['name'],
+                                message['username'],
+                                message['text'],
+                                message['permalink']])
+        if results:
+            path = '{}/google_api_keys_{}.csv'.format(out_path, format_query(query))
+            write_csv(headers, path, results)
+            print('{} matches found for {}'.format(len(results), query))
+            print('CSV written: {}'.format(path))
+
+
 def find_slack_tokens(timeframe=d.ALL_TIME):
     """Look for Slack tokens in public channels by first searching for Slack token prefixes
     these are then filtered down by regex"""

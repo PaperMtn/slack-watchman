@@ -48,6 +48,10 @@ CERTIFICATE_EXTENSIONS = ['.key',
 # List of queries to find GCP credential files
 GCP_CREDENTIAL_EXTENSIONS = ['.json']
 
+# List of queries to find Google API keys
+GOOGLE_API_QUERIES = ['AIza',
+                      '.apps.googleusercontent.com']
+
 # List of queries to find AWS keys
 AWS_KEYS_QUERIES = ['ASIA*',
                     'AKIA*']
@@ -69,6 +73,9 @@ PASSWORD_REGEX = r"(?i)(password\s*[`=:\"]+\s*[^\s]+|password is\s*[`=:\"]*\s*[^
 
 # Regex to detect bank cards
 BANK_CARD_REGEX = r"^((67\d{2})|(4\d{3})|(5[1-5]\d{2})|(6011))-?\s?\d{4}-?\s?\d{4}-?\s?\d{4}|3[4,7]\d{13}$"
+
+# Regex to find Google API keys
+GOOGLE_API_REGEX = r"AIza[0-9A-Za-z\\-_]{35}|[0-9]+-[0-9A-Za-z_]{32}.apps.googleusercontent.com"
 
 # Regex to detect AWS keys
 AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-Za-z0-9/+]{40}(?![A-Za-z0-9/+])|(?<![" \

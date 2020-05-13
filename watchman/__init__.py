@@ -55,6 +55,8 @@ def main():
                             help='Look for AWS keys')
         parser.add_argument('-g', dest='gcp', action='store_true',
                             help='Look for GCP keys')
+        parser.add_argument('-G', dest='google', action='store_true',
+                            help='Look for Google API keys')
         parser.add_argument('-s', dest='slack', action='store_true',
                             help='Look for Slack tokens')
         parser.add_argument('-p', dest='priv', action='store_true',
@@ -75,6 +77,7 @@ def main():
         channels = args.channels
         aws = args.aws
         gcp = args.gcp
+        google = args.google
         slack = args.slack
         priv = args.priv
         card = args.card
@@ -129,6 +132,8 @@ def main():
             audit.find_aws_credentials(tf)
             print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
             audit.find_gcp_credentials(tf)
+            print(colored('Getting Google API keys\n+++++++++++++++++++++', 'yellow'))
+            audit.find_google_credentials(tf)
             print(colored('Getting private keys\n+++++++++++++++++++++', 'yellow'))
             audit.find_keys(tf)
             print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
@@ -162,6 +167,9 @@ def main():
             if gcp:
                 print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
                 audit.find_gcp_credentials(tf)
+            if google:
+                print(colored('Getting Google API keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_google_credentials(tf)
             if slack:
                 print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
                 audit.find_slack_tokens(tf)
