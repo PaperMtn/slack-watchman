@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 __title__ = 'Slack Watchman'
-__summary__ = 'Monitoring you Slack workspaces for sensitive information'
+__summary__ = 'Monitoring your Slack workspaces for sensitive information'
 __uri__ = 'https://github.com/PaperMtn/slack-watchman'
 __version__ = '1.1.0'
 __author__ = 'PaperMtn'

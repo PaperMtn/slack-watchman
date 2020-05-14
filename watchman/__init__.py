@@ -37,8 +37,7 @@ def main():
     try:
         init()
 
-        parser = argparse.ArgumentParser(description='Slack Watchman: Monitoring you Slack workspaces'
-                                                     ' for sensitive information')
+        parser = argparse.ArgumentParser(description=a.__summary__)
 
         parser.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
                             help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
