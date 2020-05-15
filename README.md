@@ -19,6 +19,7 @@ Slack Watchman searches for, and reports back on:
 - Potential leaked passwords
 - AWS Keys
 - GCP keys
+- Google API keys
 - Slack API keys
 - Private keys
 - Bank card details
@@ -77,9 +78,9 @@ Install via pip
 Slack Watchman will be installed as a global command, use as follows:
 ```
 usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [-U] [-C]
-                   [-a] [-g] [-s] [-p] [-c] [-t] [-f] [-P]
+                   [-a] [-g] [-G] [-s] [-p] [-c] [-t] [-f] [-P]
 
-Slack Watchman: Monitoring you Slack workspaces for sensitive information
+Monitoring your Slack workspaces for sensitive information
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -92,6 +93,7 @@ optional arguments:
   -C, --channels        Find all channels, including external shared channels
   -a                    Look for AWS keys
   -g                    Look for GCP keys
+  -G                    Look for Google API keys
   -s                    Look for Slack tokens
   -p                    Look for private keys
   -c                    Look for card details
