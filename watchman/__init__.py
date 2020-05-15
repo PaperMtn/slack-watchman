@@ -1,5 +1,4 @@
 import argparse
-import configparser
 import os
 import requests
 from colorama import init, deinit
@@ -17,12 +16,9 @@ def validate_conf(path):
         return True
 
 
-def validate_token(conf_path):
-    """Check the .conf file contains a token, then check whether that token is valid"""
-
-    config = configparser.ConfigParser()
-    config.read(conf_path)
-    token = config.get('auth', 'slack_token')
+def validate_token():
+    """Check that slack token is valid"""
+    token = audit.get_token()
 
     r = requests.get('https://slack.com/api/users.list',
                      params={'token': token,
@@ -94,13 +90,13 @@ def main():
             tf = d.ALL_TIME
 
         print(colored('''
-      _            _      _  __        ___  _____ ____ _   _ __  __    _    _   _ 
+      _            _      _  __        ___  _____ ____ _   _ __  __    _    _   _
   ___| | __ _  ___| | __ | | \ \      / / \|_   _/ ___| | | |  \/  |  / \  | \ | |
  / __| |/ _` |/ __| |/ / | |  \ \ /\ / / _ \ | || |   | |_| | |\/| | / _ \ |  \| |
  \__ \ | (_| | (__|   <  | |   \ V  V / ___ \| || |___|  _  | |  | |/ ___ \| |\  |
  |___/_|\__,_|\___|_|\_\ | |    \_/\_/_/   \_\_| \____|_| |_|_|  |_/_/   \_\_| \_|
-                         |_|                                                      
-                         
+                         |_|
+
                          ''', 'yellow'))
 
         conf_path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
