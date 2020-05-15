@@ -12,7 +12,7 @@ from watchman import __about__ as a
 def validate_conf(path):
     """Check the file slack_watchman.conf exists"""
 
-    if os.path.exists(path):
+    if os.environ.get('SLACK_WATCHMAN_TOKEN') or os.path.exists(path):
         return True
 
 
@@ -102,8 +102,8 @@ def main():
         conf_path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
 
         if not validate_conf(conf_path):
-            raise Exception(colored('slack_watchman.conf file not detected.'
-                            '\nEnsure a valid file is located in your home directory: {}', 'red')
+            raise Exception(colored('SLACK_WATCHMAN_TOKEN envvar or slack_watchman.conf file not detected.'
+                            '\nEnsure envvar is set or a valid file is located in your home directory: {}', 'red')
                             .format(os.path.expanduser('~')))
         else:
             validate_token(conf_path)

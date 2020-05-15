@@ -59,6 +59,8 @@ users:read.email
 ```
 **Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private channels and chats.
 
+#### Providing token
+Slack Watchman will first try to get the the Slack token from the environment variable `SLACK_WATCHMAN_TOKEN`, if this fails it will load the token from .conf file (see below).
 
 ### .conf file
 This API token needs to be stored in a file named `slack_watchman.conf` which is stored in your home directory. The file should take the following format:
