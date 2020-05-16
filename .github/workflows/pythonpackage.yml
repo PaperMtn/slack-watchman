@@ -38,7 +38,7 @@ jobs:
       run: |
         pip install setuptools wheel
         python setup.py sdist bdist_wheel
-        python setup.py install
+        pip install dist/*.whl
     - name: Test run
       run: |
         slack-watchman --version
@@ -72,7 +72,7 @@ jobs:
       run: |
         pip install setuptools wheel
         python setup.py sdist bdist_wheel
-        python setup.py install
+        pip install dist/*.whl
     - name: Test run
       run: |
         slack-watchman --version
