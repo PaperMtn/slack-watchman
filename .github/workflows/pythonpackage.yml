@@ -36,7 +36,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test setup & install
       run: |
-        pip install setuptooks wheel
+        pip install setuptools wheel
         python setup.py sdist bdist_wheel
         python setup.py install
     - name: Test run
