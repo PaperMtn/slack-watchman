@@ -1,5 +1,4 @@
 import argparse
-import configparser
 import os
 import requests
 from colorama import init, deinit
@@ -11,18 +10,22 @@ from watchman import __about__ as a
 
 
 def validate_conf(path):
-    """Check the file slack_watchman.conf exists"""
+    """Check the file watchman.conf exists"""
 
+    if os.environ.get('SLACK_WATCHMAN_TOKEN'):
+        return True
     if os.path.exists(path):
+        return True
+    if os.path.exists('{}/slack_watchman.conf'.format(os.path.expanduser('~'))):
+        print('Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
+        os.rename(r'{}/slack_watchman.conf'.format(os.path.expanduser('~')),
+                  r'{}/watchman.conf'.format(os.path.expanduser('~')))
         return True
 
 
-def validate_token(conf_path):
-    """Check the .conf file contains a token, then check whether that token is valid"""
-
-    config = configparser.ConfigParser()
-    config.read(conf_path)
-    token = config.get('auth', 'slack_token')
+def validate_token():
+    """Check that slack token is valid"""
+    token = audit.get_token()
 
     r = requests.get('https://slack.com/api/users.list',
                      params={'token': token,
@@ -94,23 +97,24 @@ def main():
             tf = d.ALL_TIME
 
         print(colored('''
-      _            _      _  __        ___  _____ ____ _   _ __  __    _    _   _ 
+      _            _      _  __        ___  _____ ____ _   _ __  __    _    _   _
   ___| | __ _  ___| | __ | | \ \      / / \|_   _/ ___| | | |  \/  |  / \  | \ | |
  / __| |/ _` |/ __| |/ / | |  \ \ /\ / / _ \ | || |   | |_| | |\/| | / _ \ |  \| |
  \__ \ | (_| | (__|   <  | |   \ V  V / ___ \| || |___|  _  | |  | |/ ___ \| |\  |
  |___/_|\__,_|\___|_|\_\ | |    \_/\_/_/   \_\_| \____|_| |_|_|  |_/_/   \_\_| \_|
-                         |_|                                                      
-                         
+                         |_|
+
                          ''', 'yellow'))
 
-        conf_path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
+        conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
 
         if not validate_conf(conf_path):
-            raise Exception(colored('slack_watchman.conf file not detected.'
-                            '\nEnsure a valid file is located in your home directory: {}', 'red')
+            raise Exception(colored('SLACK_WATCHMAN_TOKEN environment variable or watchman.conf file not detected. '
+                                    '\nEnsure environment variable is set or a valid file is located in your home '
+                                    'directory: {} ', 'red')
                             .format(os.path.expanduser('~')))
         else:
-            validate_token(conf_path)
+            validate_token()
 
         if everything:
             print('You want everything? I like you...')
