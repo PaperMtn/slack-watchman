@@ -46,7 +46,7 @@ jobs:
 
   build-windows:
 
-    runs-on: ubuntu-windows
+    runs-on: windows-latest
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
