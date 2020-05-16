@@ -64,7 +64,7 @@ users:read.email
 Slack Watchman will first try to get the the Slack token from the environment variable `SLACK_WATCHMAN_TOKEN`, if this fails it will load the token from .conf file (see below).
 
 ### .conf file
-This API token needs to be stored in a file named `slack_watchman.conf` which is stored in your home directory. The file should take the following format:
+This API token needs to be stored in a file named `watchman.conf` which is stored in your home directory. The file should take the following format:
 ```
 [auth]
 slack_token = xoxp-xxxxxxxxxx-...
