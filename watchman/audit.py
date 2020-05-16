@@ -16,7 +16,7 @@ def get_token():
         token = os.environ['SLACK_WATCHMAN_TOKEN']
     except KeyError:
         conf = configparser.ConfigParser()
-        path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
+        path = '{}/watchman.conf'.format(os.path.expanduser('~'))
         conf.read(path)
         token = conf.get('auth', 'slack_token')
 
