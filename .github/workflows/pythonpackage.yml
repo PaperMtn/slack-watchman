@@ -36,7 +36,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test setup & install
       run: |
-        pip install setuptools wheel
+        pip install wheel setuptools requests colorama termcolor
         python setup.py sdist bdist_wheel
         pip install dist/*.whl
     - name: Test run
@@ -70,7 +70,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test setup & install
       run: |
-        pip install setuptools wheel
+        pip install wheel setuptools requests colorama termcolor
         python setup.py sdist bdist_wheel
         pip install dist/*.whl
     - name: Test run
