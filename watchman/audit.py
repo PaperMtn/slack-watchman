@@ -10,12 +10,15 @@ import watchman.definitions as d
 
 
 def get_token():
-    """Get Slack API token from .conf file"""
+    """Get Slack API token from environment or .conf file"""
 
-    conf = configparser.ConfigParser()
-    path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
-    conf.read(path)
-    token = conf.get('auth', 'slack_token')
+    try:
+        token = os.environ['SLACK_WATCHMAN_TOKEN']
+    except KeyError:
+        conf = configparser.ConfigParser()
+        path = '{}/slack_watchman.conf'.format(os.path.expanduser('~'))
+        conf.read(path)
+        token = conf.get('auth', 'slack_token')
 
     return token
 
