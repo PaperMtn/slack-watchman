@@ -92,8 +92,7 @@ def get_users():
                 request_url = 'https://slack.com/api/users.list'
                 params = {'token': token, 'pretty': 1, 'limit': 200, 'cursor': cursor}
                 r = requests.get(request_url, params=params).json()
-                if rate_limit_check(r):
-                    break
+                rate_limit_check(r)
                 for value in r['members']:
                     cursor = r['response_metadata']['next_cursor']
                     if not value['deleted']:

@@ -1,4 +1,4 @@
-![Slack Watchman](files/Slack_watchman_alt_var_1280x320.png)
+<img src="https://i.imgur.com/nAetYbG.png" width="550">
 
 # Slack Watchman
 ![Python 2.7 and 3 compatible](https://img.shields.io/pypi/pyversions/slack-watchman)
