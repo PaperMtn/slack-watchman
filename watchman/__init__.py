@@ -65,6 +65,8 @@ def main():
                             help='Look for private keys')
         parser.add_argument('-c', dest='card', action='store_true',
                             help='Look for card details')
+        parser.add_argument('-b', dest='paypal', action='store_true',
+                            help='Look for PayPal Braintree details')
         parser.add_argument('-t', dest='cert', action='store_true',
                             help='Look for certificate files')
         parser.add_argument('-f', dest='files', action='store_true',
@@ -83,6 +85,7 @@ def main():
         slack = args.slack
         priv = args.priv
         card = args.card
+        paypal = args.paypal
         cert = args.cert
         files = args.files
         passwords = args.passwords
@@ -141,6 +144,8 @@ def main():
             audit.find_keys(tf)
             print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
             audit.find_card_details(tf)
+            print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
+            audit.find_paypal_details(tf)
             print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
             audit.find_certificates(tf)
             print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
@@ -182,6 +187,9 @@ def main():
             if card:
                 print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
                 audit.find_card_details(tf)
+            if paypal:
+                print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
+                audit.find_paypal_details(tf)
             if cert:
                 print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
                 audit.find_certificates(tf)

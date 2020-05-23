@@ -66,6 +66,10 @@ SLACK_KEY_QUERIES = ['xoxb*',
                      'xoxr*',
                      'xoxs*']
 
+# List of queries to find PayPal Braintree access tokens
+PAYPAL_QUERIES = ['paypal',
+                  'braintree']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -89,6 +93,9 @@ GCP_CREDENTIAL_REGEX = r"([-]+BEGIN PRIVATE KEY[-]+[\s]*[^-]*[-]+END PRIVATE KEY
 
 # Regex to detect Slack API keys
 SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+
+# Regex to detect Braintree tokens
+PAYPAL_REGEX = r"access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}"
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours
