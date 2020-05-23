@@ -73,6 +73,8 @@ def main():
                             help='Look for interesting files')
         parser.add_argument('-P', dest='passwords', action='store_true',
                             help='Look for passwords')
+        parser.add_argument('-d', dest='dob', action='store_true',
+                            help='Look for passwords')
 
         args = parser.parse_args()
         time = args.time
@@ -89,6 +91,7 @@ def main():
         cert = args.cert
         files = args.files
         passwords = args.passwords
+        dob = args.dob
 
         if time == 'd':
             tf = d.DAY_TIMEFRAME
@@ -154,6 +157,8 @@ def main():
             audit.find_passwords(tf)
             print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
             audit.find_malicious_files(tf)
+            print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
+            audit.find_dob(tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -199,6 +204,9 @@ def main():
             if passwords:
                 print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
                 audit.find_passwords(tf)
+            if dob:
+                print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
+                audit.find_dob(tf)
 
         print(colored('++++++Audit completed++++++', 'green'))
 
