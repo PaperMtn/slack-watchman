@@ -22,6 +22,7 @@ Slack Watchman searches for, and reports back on:
 - Google API keys
 - Slack API keys
 - Private keys
+- Paypal Braintree tokens
 - Bank card details
 - Certificate files
 - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
