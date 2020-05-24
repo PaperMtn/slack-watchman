@@ -17,7 +17,7 @@ Slack Watchman searches for, and reports back on:
 
 - Externally shared channels
 - Potential leaked passwords
-- AWS Keys
+- AWS keys
 - GCP keys
 - Google API keys
 - Slack API keys
@@ -25,6 +25,8 @@ Slack Watchman searches for, and reports back on:
 - Bank card details
 - Certificate files
 - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
+- Passport numbers
+- Dates of birth
 
 It also gives the following, which can be used for general auditing:
 - All channels
@@ -99,9 +101,12 @@ optional arguments:
   -s                    Look for Slack tokens
   -p                    Look for private keys
   -c                    Look for card details
+  -b                    Look for PayPal Braintree details
   -t                    Look for certificate files
   -f                    Look for interesting files
   -P                    Look for passwords
+  -d                    Look for dates of birth
+  -pn                   Look for passport numbers
   ```
 
 You can run Slack Watchman to look for everything:

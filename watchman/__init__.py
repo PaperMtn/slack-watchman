@@ -75,8 +75,8 @@ def main():
                             help='Look for passwords')
         parser.add_argument('-d', dest='dob', action='store_true',
                             help='Look for dates of birth')
-        parser.add_argument('--pp', dest='passport', action='store_true',
-                            help='Look for passport details')
+        parser.add_argument('-pn', dest='passport', action='store_true',
+                            help='Look for passport numbers')
 
         args = parser.parse_args()
         time = args.time
