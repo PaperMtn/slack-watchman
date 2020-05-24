@@ -76,9 +76,10 @@ DOB_QUERIES = ['date of birth',
                'birthday']
 
 # List of queries to find passport numbers
-PASSPORT_QUERIES = ['"PassportID"',
+PASSPORT_QUERIES = ['PassportID',
                     'passport',
-                    '"Passport No"']
+                    'Passportno',
+                    'passportnumber']
 
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
@@ -110,6 +111,9 @@ PAYPAL_REGEX = r"access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}"
 # Regex to detect dates of birth
 DOB_REGEX = r"(19|20)\d\d([- \/.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$|^([0-2][0-9]|(3)[0-1])([- \/.])(((0)[" \
             r"0-9])|((1)[0-2]))([- \/.])\d{2,4}$ "
+
+# Regex to detect passport numbers
+PASSPORT_REGEX = r"\b[a-zA-Z0-9]{2}[0-9]{5,10}\b"
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

@@ -563,7 +563,7 @@ def find_paypal_details(timeframe=d.ALL_TIME):
             print('CSV written: {}'.format(path))
 
 
-def find_dob(timeframe=d.ALL_TIME):
+def find_dates_of_birth(timeframe=d.ALL_TIME):
     """Look for dates of birth in public channels by first searching for common terms for DOB
         then trimming this list down using a regex search"""
 
@@ -585,6 +585,33 @@ def find_dob(timeframe=d.ALL_TIME):
                                 message['permalink']])
         if results:
             path = '{}/potential_dates_of_birth_{}.csv'.format(out_path, format_query(query))
+            write_csv(headers, path, results)
+            print('{} matches found for {}'.format(len(results), query))
+            print('CSV written: {}'.format(path))
+
+
+def find_passport_details(timeframe=d.ALL_TIME):
+    """Look for passport details in public channels by first searching for common terms for passports
+        then trimming this list down using a regex search"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
+    out_path = os.getcwd()
+
+    for query in d.PASSPORT_QUERIES:
+        message_list = search_messages(query)
+        results = []
+        for message in message_list:
+            r = re.compile(d.PASSPORT_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message['text'])) and int(timestamp) > now - timeframe:
+                results.append([convert_timestamp(message['ts']),
+                                message['channel']['name'],
+                                message['username'],
+                                message['text'],
+                                message['permalink']])
+        if results:
+            path = '{}/potential_passport_numbers_{}.csv'.format(out_path, format_query(query))
             write_csv(headers, path, results)
             print('{} matches found for {}'.format(len(results), query))
             print('CSV written: {}'.format(path))
