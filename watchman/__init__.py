@@ -65,12 +65,18 @@ def main():
                             help='Look for private keys')
         parser.add_argument('-c', dest='card', action='store_true',
                             help='Look for card details')
+        parser.add_argument('-b', dest='paypal', action='store_true',
+                            help='Look for PayPal Braintree details')
         parser.add_argument('-t', dest='cert', action='store_true',
                             help='Look for certificate files')
         parser.add_argument('-f', dest='files', action='store_true',
                             help='Look for interesting files')
         parser.add_argument('-P', dest='passwords', action='store_true',
                             help='Look for passwords')
+        parser.add_argument('-d', dest='dob', action='store_true',
+                            help='Look for dates of birth')
+        parser.add_argument('-pn', dest='passport', action='store_true',
+                            help='Look for passport numbers')
 
         args = parser.parse_args()
         time = args.time
@@ -83,9 +89,12 @@ def main():
         slack = args.slack
         priv = args.priv
         card = args.card
+        paypal = args.paypal
         cert = args.cert
         files = args.files
         passwords = args.passwords
+        dob = args.dob
+        passport = args.passport
 
         if time == 'd':
             tf = d.DAY_TIMEFRAME
@@ -141,6 +150,8 @@ def main():
             audit.find_keys(tf)
             print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
             audit.find_card_details(tf)
+            print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
+            audit.find_paypal_details(tf)
             print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
             audit.find_certificates(tf)
             print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
@@ -149,6 +160,10 @@ def main():
             audit.find_passwords(tf)
             print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
             audit.find_malicious_files(tf)
+            print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
+            audit.find_dates_of_birth(tf)
+            print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
+            audit.find_passport_details(tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -182,6 +197,9 @@ def main():
             if card:
                 print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
                 audit.find_card_details(tf)
+            if paypal:
+                print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
+                audit.find_paypal_details(tf)
             if cert:
                 print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
                 audit.find_certificates(tf)
@@ -191,6 +209,12 @@ def main():
             if passwords:
                 print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
                 audit.find_passwords(tf)
+            if dob:
+                print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
+                audit.find_dates_of_birth(tf)
+            if passport:
+                print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
+                audit.find_passport_details(tf)
 
         print(colored('++++++Audit completed++++++', 'green'))
 
