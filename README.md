@@ -1,4 +1,4 @@
-<img src="https://i.imgur.com/nAetYbG.png" width="550">
+<img src="https://i.imgur.com/RsZPaC9.png" width="550">
 
 # Slack Watchman
 ![Python 2.7 and 3 compatible](https://img.shields.io/pypi/pyversions/slack-watchman)
