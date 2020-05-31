@@ -99,7 +99,7 @@ optional arguments:
   -a                    Look for AWS keys
   -g                    Look for GCP keys
   -G                    Look for Google API keys
-  -s                    Look for Slack tokens
+  -s                    Look for Slack API tokens and webhooks
   -p                    Look for private keys
   -c                    Look for card details
   -b                    Look for PayPal Braintree details
