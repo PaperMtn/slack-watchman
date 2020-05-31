@@ -66,6 +66,9 @@ SLACK_KEY_QUERIES = ['xoxb*',
                      'xoxr*',
                      'xoxs*']
 
+# List of queries to find Slack webhooks
+SLACK_WEBHOOK_QUERIES = ['https://hooks.slack.com/']
+
 # List of queries to find PayPal Braintree access tokens
 PAYPAL_QUERIES = ['paypal',
                   'braintree']
@@ -103,7 +106,10 @@ AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-
 GCP_CREDENTIAL_REGEX = r"([-]+BEGIN PRIVATE KEY[-]+[\s]*[^-]*[-]+END PRIVATE KEY[-]+)"
 
 # Regex to detect Slack API keys
-SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+SLACK_API_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+
+# Regex to detect Slack webhooks
+SLACK_WEBHOOK_REGEX = r"https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}"
 
 # Regex to detect Braintree tokens
 PAYPAL_REGEX = r"access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}"

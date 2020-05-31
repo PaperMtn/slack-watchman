@@ -156,6 +156,8 @@ def main():
             audit.find_certificates(tf)
             print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
             audit.find_slack_tokens(tf)
+            print(colored('Getting Slack webhooks\n+++++++++++++++++++++', 'yellow'))
+            audit.find_slack_webhooks(tf)
             print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
             audit.find_passwords(tf)
             print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
@@ -191,6 +193,8 @@ def main():
             if slack:
                 print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
                 audit.find_slack_tokens(tf)
+                print(colored('Getting Slack webhooks\n+++++++++++++++++++++', 'yellow'))
+                audit.find_slack_webhooks(tf)
             if priv:
                 print(colored('Getting private keys\n+++++++++++++++++++++', 'yellow'))
                 audit.find_keys(tf)
