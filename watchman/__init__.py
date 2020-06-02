@@ -77,6 +77,8 @@ def main():
                             help='Look for dates of birth')
         parser.add_argument('-pn', dest='passport', action='store_true',
                             help='Look for passport numbers')
+        parser.add_argument('-tw', dest='twitter', action='store_true',
+                            help='Look for Twitter keys')
 
         args = parser.parse_args()
         time = args.time
@@ -95,6 +97,7 @@ def main():
         passwords = args.passwords
         dob = args.dob
         passport = args.passport
+        twitter = args.twitter
 
         if time == 'd':
             tf = d.DAY_TIMEFRAME
@@ -158,6 +161,8 @@ def main():
             audit.find_slack_tokens(tf)
             print(colored('Getting Slack webhooks\n+++++++++++++++++++++', 'yellow'))
             audit.find_slack_webhooks(tf)
+            print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
+            audit.find_twitter_tokens(tf)
             print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
             audit.find_passwords(tf)
             print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
@@ -219,6 +224,9 @@ def main():
             if passport:
                 print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
                 audit.find_passport_details(tf)
+            if twitter:
+                print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_twitter_tokens(tf)
 
         print(colored('++++++Audit completed++++++', 'green'))
 

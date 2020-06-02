@@ -84,6 +84,11 @@ PASSPORT_QUERIES = ['PassportID',
                     'Passportno',
                     'passportnumber']
 
+# List of queries to find Twitter API keys
+TWITTER_QUERIES = ['api.twitter.com',
+                   'twitter api',
+                   '"oauth_token"_secret']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -120,6 +125,10 @@ DOB_REGEX = r"(19|20)\d\d([- \/.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$|^([
 
 # Regex to detect passport numbers
 PASSPORT_REGEX = r"\b[a-zA-Z0-9]{2}[0-9]{5,10}\b"
+
+# Regex to detect Twitter API keys
+TWITTER_REGEX = r"api\.twitter\.com\/oauth.*[0-9a-zA-Z]{35,44}|api\.twitter\.com\/oauth.*[1-9][0-9]+-[0-9a-zA-Z]{40}|" \
+                r"([t|T][w|W][i|I][t|T][t|T][e|E][r|R]|oauth_token).*[0-9a-zA-Z]{35,44}"
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours
