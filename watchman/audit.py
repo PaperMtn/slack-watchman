@@ -669,3 +669,57 @@ def find_twitter_tokens(timeframe=d.ALL_TIME):
             write_csv(headers, path, results)
             print('{} matches found for {}'.format(len(results), query))
             print('CSV written: {}'.format(path))
+
+
+def find_facebook_access_tokens(timeframe=d.ALL_TIME):
+    """Look for Facebook access tokens in public channels by first searching for common terms for tokens
+        then trimming this list down using a regex search"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
+    out_path = os.getcwd()
+
+    for query in d.FACEBOOK_QUERIES:
+        message_list = search_messages(query)
+        results = []
+        for message in message_list:
+            r = re.compile(d.FACEBOOK_ACCESS_TOKEN_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message['text'])) and int(timestamp) > now - timeframe:
+                results.append([convert_timestamp(message['ts']),
+                                message['channel']['name'],
+                                message['username'],
+                                message['text'],
+                                message['permalink']])
+        if results:
+            path = '{}/potential_facebook_tokens_{}.csv'.format(out_path, format_query(query))
+            write_csv(headers, path, results)
+            print('{} matches found for {}'.format(len(results), query))
+            print('CSV written: {}'.format(path))
+
+
+def find_facebook_secret_keys(timeframe=d.ALL_TIME):
+    """Look for Facebook secret keys in public channels by first searching for common terms for tokens
+        then trimming this list down using a regex search"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    now = calendar.timegm(time.gmtime())
+    out_path = os.getcwd()
+
+    for query in d.FACEBOOK_QUERIES:
+        message_list = search_messages(query)
+        results = []
+        for message in message_list:
+            r = re.compile(d.FACEBOOK_SECRET_REGEX)
+            timestamp = message['ts'].split('.', 1)[0]
+            if r.search(str(message['text'])) and int(timestamp) > now - timeframe:
+                results.append([convert_timestamp(message['ts']),
+                                message['channel']['name'],
+                                message['username'],
+                                message['text'],
+                                message['permalink']])
+        if results:
+            path = '{}/potential_facebook_keys_{}.csv'.format(out_path, format_query(query))
+            write_csv(headers, path, results)
+            print('{} matches found for {}'.format(len(results), query))
+            print('CSV written: {}'.format(path))

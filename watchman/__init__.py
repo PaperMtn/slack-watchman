@@ -79,6 +79,8 @@ def main():
                             help='Look for passport numbers')
         parser.add_argument('-tw', dest='twitter', action='store_true',
                             help='Look for Twitter keys')
+        parser.add_argument('-fb', dest='facebook', action='store_true',
+                            help='Look for Facebook secret keys and access tokens')
 
         args = parser.parse_args()
         time = args.time
@@ -98,6 +100,7 @@ def main():
         dob = args.dob
         passport = args.passport
         twitter = args.twitter
+        facebook = args.facebook
 
         if time == 'd':
             tf = d.DAY_TIMEFRAME
@@ -179,6 +182,10 @@ def main():
             audit.find_dates_of_birth(tf)
             print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
             audit.find_passport_details(tf)
+            print(colored('Getting Facebook access tokens\n+++++++++++++++++++++', 'yellow'))
+            audit.find_facebook_access_tokens(tf)
+            print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
+            audit.find_facebook_secret_keys(tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -235,6 +242,11 @@ def main():
             if twitter:
                 print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
                 audit.find_twitter_tokens(tf)
+            if facebook:
+                print(colored('Getting Facebook access tokens\n+++++++++++++++++++++', 'yellow'))
+                audit.find_facebook_access_tokens(tf)
+                print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_facebook_secret_keys(tf)
 
         print(colored('++++++Audit completed++++++', 'green'))
 

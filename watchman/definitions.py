@@ -89,6 +89,12 @@ TWITTER_QUERIES = ['api.twitter.com',
                    'twitter api',
                    '"oauth_token"_secret']
 
+# List of queries to find Facbook tokens
+FACEBOOK_QUERIES = ['graph.facebook.com',
+                    'facebook.com/dialog/oauth',
+                    'eaaced',
+                    'client_secret']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -129,6 +135,13 @@ PASSPORT_REGEX = r"\b[a-zA-Z0-9]{2}[0-9]{5,10}\b"
 # Regex to detect Twitter API keys
 TWITTER_REGEX = r"api\.twitter\.com\/oauth.*[0-9a-zA-Z]{35,44}|api\.twitter\.com\/oauth.*[1-9][0-9]+-[0-9a-zA-Z]{40}|" \
                 r"([t|T][w|W][i|I][t|T][t|T][e|E][r|R]|oauth_token).*[0-9a-zA-Z]{35,44}"
+
+# Regex to detect Facebook access tokens
+FACEBOOK_ACCESS_TOKEN_REGEX = r'EAACEdEose0cBA[0-9A-Za-z]+'
+
+# Regex to detect Facebook secret keys
+FACEBOOK_SECRET_REGEX = r'[f|F][a|A][c|C][e|E][b|B][o|O][o|O][k|K].*[0-9a-f]{32}'
+
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

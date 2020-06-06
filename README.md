@@ -25,6 +25,9 @@ Slack Watchman searches for, and reports back on:
     - Access token
     - oauth_token
     - oauth_token_secret
+- Facebook API Keys
+    - Access token
+    - Secret keys
 - Private keys
 - Paypal Braintree tokens
 - Bank card details
@@ -114,6 +117,7 @@ optional arguments:
   -d                    Look for dates of birth
   -pn                   Look for passport numbers
   -tw                   Look for Twitter keys
+  -fb                   Look for Facebook secret keys and access tokens
   ```
 
 You can run Slack Watchman to look for everything:
