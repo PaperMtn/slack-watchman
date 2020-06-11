@@ -66,6 +66,9 @@ SLACK_KEY_QUERIES = ['xoxb*',
                      'xoxr*',
                      'xoxs*']
 
+# List of queries to find Slack webhooks
+SLACK_WEBHOOK_QUERIES = ['https://hooks.slack.com/']
+
 # List of queries to find PayPal Braintree access tokens
 PAYPAL_QUERIES = ['paypal',
                   'braintree']
@@ -80,6 +83,17 @@ PASSPORT_QUERIES = ['PassportID',
                     'passport',
                     'Passportno',
                     'passportnumber']
+
+# List of queries to find Twitter API keys
+TWITTER_QUERIES = ['api.twitter.com',
+                   'twitter api',
+                   '"oauth_token"_secret']
+
+# List of queries to find Facbook tokens
+FACEBOOK_QUERIES = ['graph.facebook.com',
+                    'facebook.com/dialog/oauth',
+                    'eaaced',
+                    'client_secret']
 
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
@@ -103,7 +117,10 @@ AWS_KEYS_REGEX = r"(?!com/archives/[A-Z0-9]{9}/p[0-9]{16})((?<![A-Za-z0-9/+])[A-
 GCP_CREDENTIAL_REGEX = r"([-]+BEGIN PRIVATE KEY[-]+[\s]*[^-]*[-]+END PRIVATE KEY[-]+)"
 
 # Regex to detect Slack API keys
-SLACK_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+SLACK_API_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
+
+# Regex to detect Slack webhooks
+SLACK_WEBHOOK_REGEX = r"https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}"
 
 # Regex to detect Braintree tokens
 PAYPAL_REGEX = r"access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}"
@@ -114,6 +131,17 @@ DOB_REGEX = r"(19|20)\d\d([- \/.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$|^([
 
 # Regex to detect passport numbers
 PASSPORT_REGEX = r"\b[a-zA-Z0-9]{2}[0-9]{5,10}\b"
+
+# Regex to detect Twitter API keys
+TWITTER_REGEX = r"api\.twitter\.com\/oauth.*[0-9a-zA-Z]{35,44}|api\.twitter\.com\/oauth.*[1-9][0-9]+-[0-9a-zA-Z]{40}|" \
+                r"([t|T][w|W][i|I][t|T][t|T][e|E][r|R]|oauth_token).*[0-9a-zA-Z]{35,44}"
+
+# Regex to detect Facebook access tokens
+FACEBOOK_ACCESS_TOKEN_REGEX = r'EAACEdEose0cBA[0-9A-Za-z]+'
+
+# Regex to detect Facebook secret keys
+FACEBOOK_SECRET_REGEX = r'[f|F][a|A][c|C][e|E][b|B][o|O][o|O][k|K].*[0-9a-f]{32}'
+
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

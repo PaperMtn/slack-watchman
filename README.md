@@ -20,7 +20,14 @@ Slack Watchman searches for, and reports back on:
 - AWS keys
 - GCP keys
 - Google API keys
-- Slack API keys
+- Slack API keys & webhooks
+- Twitter API keys
+    - Access token
+    - oauth_token
+    - oauth_token_secret
+- Facebook API Keys
+    - Access token
+    - Secret keys
 - Private keys
 - Paypal Braintree tokens
 - Bank card details
@@ -83,7 +90,8 @@ Install via pip
 Slack Watchman will be installed as a global command, use as follows:
 ```
 usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [-U] [-C]
-                   [-a] [-g] [-G] [-s] [-p] [-c] [-t] [-f] [-P]
+                   [-a] [-g] [-G] [-s] [-p] [-c] [-b] [-t] [-f] [-P] [-d]
+                   [-pn] [-tw]
 
 Monitoring your Slack workspaces for sensitive information
 
@@ -108,6 +116,8 @@ optional arguments:
   -P                    Look for passwords
   -d                    Look for dates of birth
   -pn                   Look for passport numbers
+  -tw                   Look for Twitter keys
+  -fb                   Look for Facebook secret keys and access tokens
   ```
 
 You can run Slack Watchman to look for everything:
