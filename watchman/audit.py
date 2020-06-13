@@ -181,7 +181,7 @@ def output_all_users(user_list):
         print('CSV written: {}'.format(path))
 
 
-def search_files(query):
+def search_files(query, timeframe):
     """Wrapper for Slack search.files"""
 
     page_count_by_query = {}
@@ -191,7 +191,7 @@ def search_files(query):
     try:
         while True:
             r = requests.get('https://slack.com/api/search.files',
-                             params={'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100}).json()
+                             params={'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1, 'count': 100}).json()
             if not rate_limit_check(r):
                 break
 
@@ -201,7 +201,7 @@ def search_files(query):
         for query, page_count in page_count_by_query.items():
             page = 1
             while page <= page_count:
-                params = {'token': token, 'query': "\"{}\"".format(query), 'pretty': 1, 'count': 100, 'page': str(page)}
+                params = {'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1, 'count': 100, 'page': str(page)}
                 r = requests.get('https://slack.com/api/search.files',
                                  params=params).json()
                 if rate_limit_check(r):
@@ -216,7 +216,7 @@ def search_files(query):
     return results
 
 
-def search_messages(query):
+def search_messages(query, timeframe):
     """Wrapper for Slack search.messages"""
 
     page_count_by_query = {}
@@ -226,7 +226,7 @@ def search_messages(query):
     try:
         while True:
             r = requests.get('https://slack.com/api/search.messages',
-                             params={'token': token, 'query': query, 'pretty': 1, 'count': 100}).json()
+                             params={'token': token, 'query': 'after:{} {}'.format(timeframe, query), 'pretty': 1, 'count': 100}).json()
             if not rate_limit_check(r):
                 break
 
@@ -236,7 +236,7 @@ def search_messages(query):
         for query, page_count in page_count_by_query.items():
             page = 1
             while page <= page_count:
-                params = {'token': token, 'query': query, 'pretty': 1, 'count': 100,
+                params = {'token': token, 'query': 'after:{} {}'.format(timeframe, query), 'pretty': 1, 'count': 100,
                           'page': str(page)}
                 r = requests.get('https://slack.com/api/search.messages',
                                  params=params).json()
@@ -303,15 +303,13 @@ def find_certificates(timeframe=d.ALL_TIME):
     """
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
-    now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
     for query in d.CERTIFICATE_EXTENSIONS:
-        message_list = search_files(query)
+        message_list = search_files(query, timeframe)
         results = []
         for message in message_list:
-            timestamp = message['timestamp']
-            if 'text' in message['filetype'] and query in message['name'] and int(timestamp) > now - timeframe:
+            if 'text' in message['filetype'] and query in message['name']:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
@@ -329,16 +327,14 @@ def find_messages(query_list, regex, file_name, timeframe=d.ALL_TIME):
         then trimming this list down using a regex search"""
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
-    now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
     for query in query_list:
-        message_list = search_messages(query)
+        message_list = search_messages(query, timeframe)
         results = []
         for message in message_list:
             r = re.compile(regex)
-            timestamp = message['ts'].split('.', 1)[0]
-            if r.search(str(message['text'])) and int(timestamp) > now - timeframe:
+            if r.search(str(message['text'])):
                 results.append([convert_timestamp(message['ts']),
                                 message['channel']['name'],
                                 message['username'],
@@ -356,15 +352,13 @@ def find_files(query_list, file_name, timeframe=d.ALL_TIME):
     these are then filtered down further to include only files of those extensions"""
 
     headers = ['timestamp', 'file_name', 'posted_by', 'private_link']
-    now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
     for query in query_list:
-        message_list = search_files(query)
+        message_list = search_files(query, timeframe)
         results = []
         for message in message_list:
-            timestamp = message['timestamp']
-            if query in message['name'] and int(timestamp) > now - timeframe:
+            if query in message['name']:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],

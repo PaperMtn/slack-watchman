@@ -13,33 +13,41 @@ Slack Watchman is an application that uses the Slack API to look for potentially
 More information about Slack Watchman can be found [on my blog](https://papermtn.co.uk/slack-watchman-monitoring-slack-workspaces-for-sensitive-information/).
 
 ### Features
-Slack Watchman searches for, and reports back on:
+Slack Watchman looks for:
 
-- Externally shared channels
-- Potential leaked passwords
-- AWS keys
-- GCP keys
-- Google API keys
-- Slack API keys & webhooks
-- Twitter API keys
-    - Access token
-    - oauth_token
-    - oauth_token_secret
-- Facebook API Keys
-    - Access token
-    - Secret keys
-- Private keys
-- Paypal Braintree tokens
-- Bank card details
-- Certificate files
-- Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
-- Passport numbers
-- Dates of birth
+- Tokens
+  - AWS keys
+  - GCP keys
+  - Google API keys
+  - Slack API keys & webhooks
+  - Twitter API keys
+      - Access token
+      - oauth_token
+      - oauth_token_secret
+  - Facebook API Keys
+      - Access token
+      - Secret keys
+  - Private keys
+- Files
+    - Certificate files
+    - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
+- Personal Data
+    - Potential leaked passwords
+    - Passport numbers
+    - Dates of birth
+- Financial data
+    - Paypal Braintree tokens
+    - Bank card details
 
 It also gives the following, which can be used for general auditing:
-- All channels
-- All users
-- All admins
+- User data
+    - All users
+    - All admins
+- Channel data
+    - Externally shared channels
+    - All channels
+    
+Any matches get returned in .csv files
 
 #### Time based searching
 You can run Slack Watchman to look for results going back as far as:
@@ -117,6 +125,6 @@ You can run Slack Watchman to look for everything:
 
 `slack-watchman --timeframe a --all`
 
-Or arguments can be grouped together to search more granularly. This will look for AWS keys, GCP keys and passwords for the last 30 days:
+Or arguments can be grouped together to search more granularly. This will look for tokens for the last 30 days:
 
-`slack-watchman --timeframe m -agP`
+`slack-watchman --timeframe m --tokens`

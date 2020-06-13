@@ -1,6 +1,7 @@
 import argparse
 import os
 import requests
+import time
 from colorama import init, deinit
 from termcolor import colored
 
@@ -47,9 +48,6 @@ def main():
         required.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
                             help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
                             required=True)
-        # parser.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
-        #                     help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
-        #                     required=True)
         parser.add_argument('--version', action='version',
                             version='slack-watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
@@ -68,39 +66,8 @@ def main():
         parser.add_argument('--files', dest='files', action='store_true',
                             help='Find files: Certificates, interesting/malicious files')
 
-        # parser.add_argument('-a', dest='aws', action='store_true',
-        #                     help='Look for AWS keys')
-        # parser.add_argument('-g', dest='gcp', action='store_true',
-        #                     help='Look for GCP keys')
-        # parser.add_argument('-G', dest='google', action='store_true',
-        #                     help='Look for Google API keys')
-        # parser.add_argument('-s', dest='slack', action='store_true',
-        #                     help='Look for Slack tokens')
-        # parser.add_argument('-p', dest='priv', action='store_true',
-        #                     help='Look for private keys')
-        # parser.add_argument('-c', dest='card', action='store_true',
-        #                     help='Look for card details')
-        # parser.add_argument('-b', dest='paypal', action='store_true',
-        #                     help='Look for PayPal Braintree details')
-        # parser.add_argument('-t', dest='cert', action='store_true',
-        #                     help='Look for certificate files')
-        # parser.add_argument('-f', dest='files', action='store_true',
-        #                     help='Look for interesting files')
-        # parser.add_argument('-P', dest='passwords', action='store_true',
-        #                     help='Look for passwords')
-        # parser.add_argument('-d', dest='dob', action='store_true',
-        #                     help='Look for dates of birth')
-        # parser.add_argument('-pn', dest='passport', action='store_true',
-        #                     help='Look for passport numbers')
-        # parser.add_argument('-tw', dest='twitter', action='store_true',
-        #                     help='Look for Twitter keys')
-        # parser.add_argument('-fb', dest='facebook', action='store_true',
-        #                     help='Look for Facebook secret keys and access tokens')
-        # parser.add_argument('-gh', dest='github', action='store_true',
-        #                     help='Look for GitHub API tokens')
-
         args = parser.parse_args()
-        time = args.time
+        tm = args.time
         everything = args.everything
         users = args.users
         channels = args.channels
@@ -109,31 +76,22 @@ def main():
         tokens = args.tokens
         files = args.files
 
-
-        # aws = args.aws
-        # gcp = args.gcp
-        # google = args.google
-        # slack = args.slack
-        # priv = args.priv
-        # card = args.card
-        # paypal = args.paypal
-        # cert = args.cert
-        # files = args.files
-        # passwords = args.passwords
-        # dob = args.dob
-        # passport = args.passport
-        # twitter = args.twitter
-        # facebook = args.facebook
-        # github = args.github
-
-        if time == 'd':
-            tf = d.DAY_TIMEFRAME
-        elif time == 'w':
-            tf = d.WEEK_TIMEFRAME
-        elif time == 'm':
-            tf = d.MONTH_TIMEFRAME
+        if tm == 'd':
+            now = int(time.time())
+            tf_int = now - d.DAY_TIMEFRAME
+            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+        elif tm == 'w':
+            now = int(time.time())
+            tf_int = now - d.WEEK_TIMEFRAME
+            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+        elif tm == 'm':
+            now = int(time.time())
+            tf_int = now - d.MONTH_TIMEFRAME
+            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
         else:
-            tf = d.ALL_TIME
+            now = int(time.time())
+            tf_int = now - d.ALL_TIME
+            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
 
         print(colored('''
   #####                                                          
@@ -150,7 +108,7 @@ def main():
  #  #  # #     #    #    #       ####### #  #  # #     # #  #  # 
  #  #  # #######    #    #       #     # #     # ####### #   # # 
  #  #  # #     #    #    #     # #     # #     # #     # #    ## 
-  ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'blue'))
+  ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'yellow'))
         print('Version: {}\n'.format(a.__version__))
 
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
@@ -265,7 +223,6 @@ def main():
                 audit.find_messages(d.PASSPORT_QUERIES, d.PASSPORT_REGEX, 'passport_numbers', tf)
                 print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.PASSWORD_QUERIES, d.PASSWORD_REGEX, 'leaked_passwords', tf)
-
 
         print(colored('++++++Audit completed++++++', 'green'))
 
