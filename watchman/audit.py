@@ -368,3 +368,26 @@ def find_files(query_list, file_name, timeframe=d.ALL_TIME):
             write_csv(headers, path, results)
             print('{} matches found for {}'.format(len(results), query))
             print('CSV written: {}'.format(path))
+
+
+def find_custom_queries(query_list, timeframe=d.ALL_TIME):
+    """Look in public channels by first searching for common terms in query list
+        then trimming this list down using a regex search"""
+
+    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
+    out_path = os.getcwd()
+
+    for query in query_list:
+        message_list = search_messages(query, timeframe)
+        results = []
+        for message in message_list:
+            results.append([convert_timestamp(message['ts']),
+                            message['channel']['name'],
+                            message['username'],
+                            message['text'],
+                            message['permalink']])
+        if results:
+            path = '{}/custom_string_{}.csv'.format(out_path, format_query(query))
+            write_csv(headers, path, results)
+            print('{} matches found for {}'.format(len(results), query))
+            print('CSV written: {}'.format(path))

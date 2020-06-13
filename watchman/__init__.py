@@ -38,6 +38,18 @@ def validate_token():
         raise Exception('Invalid Slack API key')
 
 
+def import_custom_queries(custom_queries):
+    """Import a .txt file containing user defined searches"""
+
+    queries = []
+
+    with open(custom_queries) as infile:
+        for line in infile:
+            queries.append(line.strip())
+
+    return queries
+
+
 def main():
     try:
         init()
@@ -65,6 +77,9 @@ def main():
                                  ' Facebook, Twitter, GitHub')
         parser.add_argument('--files', dest='files', action='store_true',
                             help='Find files: Certificates, interesting/malicious files')
+        parser.add_argument('--custom', dest='custom',
+                            help='Search for user defined custom search queries. Provide path '
+                                 'to .txt file containing one search per line')
 
         args = parser.parse_args()
         tm = args.time
@@ -75,23 +90,20 @@ def main():
         financial = args.financial
         tokens = args.tokens
         files = args.files
+        custom = args.custom
 
         if tm == 'd':
             now = int(time.time())
-            tf_int = now - d.DAY_TIMEFRAME
-            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.DAY_TIMEFRAME))
         elif tm == 'w':
             now = int(time.time())
-            tf_int = now - d.WEEK_TIMEFRAME
-            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.WEEK_TIMEFRAME))
         elif tm == 'm':
             now = int(time.time())
-            tf_int = now - d.MONTH_TIMEFRAME
-            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.MONTH_TIMEFRAME))
         else:
             now = int(time.time())
-            tf_int = now - d.ALL_TIME
-            tf = time.strftime('%Y-%m-%d', time.localtime(tf_int))
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.ALL_TIME))
 
         print(colored('''
   #####                                                          
@@ -223,6 +235,13 @@ def main():
                 audit.find_messages(d.PASSPORT_QUERIES, d.PASSPORT_REGEX, 'passport_numbers', tf)
                 print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.PASSWORD_QUERIES, d.PASSWORD_REGEX, 'leaked_passwords', tf)
+        if custom:
+            if os.path.exists(custom):
+                queries = import_custom_queries(custom)
+                print(colored('Searching for user input strings\n+++++++++++++++++++++', 'yellow'))
+                audit.find_custom_queries(queries, tf)
+            else:
+                print(colored('Custom query file does not exist', 'red'))
 
         print(colored('++++++Audit completed++++++', 'green'))
 

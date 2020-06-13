@@ -58,6 +58,11 @@ You can run Slack Watchman to look for results going back as far as:
 
 This means after one deep scan, you can schedule Slack Watchman to run regularly and only return results from your chosen timeframe.
 
+#### Custom query input
+You can enter your own queries to search for to find sensitive data being mentioned in your workspace (e.g. confidential project names).
+
+Pass a .txt file with one search query per line using the `--custom` command line option. All posts containing custom queries will be returned. Generic terms may return a lot of results over a long timeframe.
+
 ## Requirements
 ### Slack API token
 To run Slack Watchman, you will need a Slack API OAuth access token. You can do this by creating a simple [Slack App](https://api.slack.com/apps).
@@ -99,6 +104,7 @@ Slack Watchman will be installed as a global command, use as follows:
 ```
 usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [--users]
                    [--channels] [--pii] [--financial] [--tokens] [--files]
+                   [--custom CUSTOM]
 
 Monitoring your Slack workspaces for sensitive information
 
@@ -114,6 +120,8 @@ optional arguments:
   --tokens              Find tokens: Private keys, AWS, GCP, Google API,
                         Slack, Slack webhooks, Facebook, Twitter, GitHub
   --files               Find files: Certificates, interesting/malicious files
+  --custom CUSTOM       Search for user defined custom search queries. Provide
+                        path to .txt file containing one search per line
 
 required arguments:
   --timeframe {d,w,m,a}
@@ -125,6 +133,6 @@ You can run Slack Watchman to look for everything:
 
 `slack-watchman --timeframe a --all`
 
-Or arguments can be grouped together to search more granularly. This will look for tokens for the last 30 days:
+Or arguments can be grouped together to search more granularly. This will look for tokens for the last 30 days, as well as queries from the user input file custom.txt:
 
-`slack-watchman --timeframe m --tokens`
+`slack-watchman --timeframe m --tokens --custom ../custom.txt`

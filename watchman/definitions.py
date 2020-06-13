@@ -43,7 +43,9 @@ CERTIFICATE_EXTENSIONS = ['.key',
                           '.p12',
                           '.pem',
                           '.pfx',
-                          '.pkcs12']
+                          '.pkcs12',
+                          '.crt',
+                          '.cert']
 
 # List of queries to find GCP credential files
 GCP_CREDENTIAL_EXTENSIONS = ['.json']
