@@ -89,35 +89,28 @@ Install via pip
 ## Usage
 Slack Watchman will be installed as a global command, use as follows:
 ```
-usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [-U] [-C]
-                   [-a] [-g] [-G] [-s] [-p] [-c] [-b] [-t] [-f] [-P] [-d]
-                   [-pn] [-tw]
+usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [--users]
+                   [--channels] [--pii] [--financial] [--tokens] [--files]
 
 Monitoring your Slack workspaces for sensitive information
 
 optional arguments:
   -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --all                 Find everything
+  --users               Find all users, including admins
+  --channels            Find all channels, including external shared channels
+  --pii                 Find personal data: Passwords, DOB, passport details
+  --financial           Find financial data: Card details, PayPal Braintree
+                        tokens
+  --tokens              Find tokens: Private keys, AWS, GCP, Google API,
+                        Slack, Slack webhooks, Facebook, Twitter, GitHub
+  --files               Find files: Certificates, interesting/malicious files
+
+required arguments:
   --timeframe {d,w,m,a}
                         How far back to search: d = 24 hours w = 7 days, m =
                         30 days, a = all time
-  --version             show program's version number and exit
-  --all                 Find everything
-  -U, --users           Find all users, including admins
-  -C, --channels        Find all channels, including external shared channels
-  -a                    Look for AWS keys
-  -g                    Look for GCP keys
-  -G                    Look for Google API keys
-  -s                    Look for Slack tokens
-  -p                    Look for private keys
-  -c                    Look for card details
-  -b                    Look for PayPal Braintree details
-  -t                    Look for certificate files
-  -f                    Look for interesting files
-  -P                    Look for passwords
-  -d                    Look for dates of birth
-  -pn                   Look for passport numbers
-  -tw                   Look for Twitter keys
-  -fb                   Look for Facebook secret keys and access tokens
   ```
 
 You can run Slack Watchman to look for everything:
