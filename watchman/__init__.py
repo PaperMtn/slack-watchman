@@ -81,6 +81,8 @@ def main():
                             help='Look for Twitter keys')
         parser.add_argument('-fb', dest='facebook', action='store_true',
                             help='Look for Facebook secret keys and access tokens')
+        parser.add_argument('-gh', dest='github', action='store_true',
+                            help='Look for GitHub API tokens')
 
         args = parser.parse_args()
         time = args.time
@@ -101,6 +103,7 @@ def main():
         passport = args.passport
         twitter = args.twitter
         facebook = args.facebook
+        github = args.github
 
         if time == 'd':
             tf = d.DAY_TIMEFRAME
@@ -186,6 +189,8 @@ def main():
             audit.find_facebook_access_tokens(tf)
             print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
             audit.find_facebook_secret_keys(tf)
+            print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
+            audit.find_github_tokens(tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -247,6 +252,9 @@ def main():
                 audit.find_facebook_access_tokens(tf)
                 print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
                 audit.find_facebook_secret_keys(tf)
+            if github:
+                print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_github_tokens(tf)
 
         print(colored('++++++Audit completed++++++', 'green'))
 
