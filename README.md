@@ -46,7 +46,7 @@ It also gives the following, which can be used for general auditing:
 - Channel data
     - Externally shared channels
     - All channels
-    
+
 Any matches get returned in .csv files
 
 #### Time based searching
