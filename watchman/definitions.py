@@ -1,6 +1,6 @@
 ### SLACK SEARCH QUERIES ###
 # List of queries to find private keys
-PRIVATE_KEYS = ['BEGIN DSA PRIVATE',
+PRIVATE_KEYS_QUERIES = ['BEGIN DSA PRIVATE',
                 'BEGIN EC PRIVATE',
                 'BEGIN OPENSSH PRIVATE',
                 'BEGIN PGP PRIVATE',
