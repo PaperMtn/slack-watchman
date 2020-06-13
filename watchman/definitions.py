@@ -1,6 +1,6 @@
 ### SLACK SEARCH QUERIES ###
 # List of queries to find private keys
-PRIVATE_KEYS = ['BEGIN DSA PRIVATE',
+PRIVATE_KEYS_QUERIES = ['BEGIN DSA PRIVATE',
                 'BEGIN EC PRIVATE',
                 'BEGIN OPENSSH PRIVATE',
                 'BEGIN PGP PRIVATE',
@@ -43,7 +43,9 @@ CERTIFICATE_EXTENSIONS = ['.key',
                           '.p12',
                           '.pem',
                           '.pfx',
-                          '.pkcs12']
+                          '.pkcs12',
+                          '.crt',
+                          '.cert']
 
 # List of queries to find GCP credential files
 GCP_CREDENTIAL_EXTENSIONS = ['.json']
@@ -95,6 +97,10 @@ FACEBOOK_QUERIES = ['graph.facebook.com',
                     'eaaced',
                     'client_secret']
 
+GITHUB_QUERIES = ['api.github.com',
+                  'github.com/login/oauth/',
+                  'github access_token']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -142,6 +148,8 @@ FACEBOOK_ACCESS_TOKEN_REGEX = r'EAACEdEose0cBA[0-9A-Za-z]+'
 # Regex to detect Facebook secret keys
 FACEBOOK_SECRET_REGEX = r'[f|F][a|A][c|C][e|E][b|B][o|O][o|O][k|K].*[0-9a-f]{32}'
 
+# Regex to detect GitHub API keys
+GITHUB_REGEX = r'[0-9a-zA-Z]{20,40}'
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

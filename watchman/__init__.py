@@ -1,6 +1,7 @@
 import argparse
 import os
 import requests
+import time
 from colorama import init, deinit
 from termcolor import colored
 
@@ -25,6 +26,7 @@ def validate_conf(path):
 
 def validate_token():
     """Check that slack token is valid"""
+
     token = audit.get_token()
 
     r = requests.get('https://slack.com/api/users.list',
@@ -36,80 +38,72 @@ def validate_token():
         raise Exception('Invalid Slack API key')
 
 
+def import_custom_queries(custom_queries):
+    """Import a .txt file containing user defined searches"""
+
+    queries = []
+
+    with open(custom_queries) as infile:
+        for line in infile:
+            queries.append(line.strip())
+
+    return queries
+
+
 def main():
     try:
         init()
 
         parser = argparse.ArgumentParser(description=a.__summary__)
 
-        parser.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
+        required = parser.add_argument_group('required arguments')
+        required.add_argument('--timeframe', choices=['d', 'w', 'm', 'a'], dest='time',
                             help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
                             required=True)
         parser.add_argument('--version', action='version',
                             version='slack-watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
                             help='Find everything')
-        parser.add_argument('-U', '--users', dest='users', action='store_true',
+        parser.add_argument('--users', dest='users', action='store_true',
                             help='Find all users, including admins')
-        parser.add_argument('-C', '--channels', dest='channels', action='store_true',
+        parser.add_argument('--channels', dest='channels', action='store_true',
                             help='Find all channels, including external shared channels')
-        parser.add_argument('-a', dest='aws', action='store_true',
-                            help='Look for AWS keys')
-        parser.add_argument('-g', dest='gcp', action='store_true',
-                            help='Look for GCP keys')
-        parser.add_argument('-G', dest='google', action='store_true',
-                            help='Look for Google API keys')
-        parser.add_argument('-s', dest='slack', action='store_true',
-                            help='Look for Slack tokens')
-        parser.add_argument('-p', dest='priv', action='store_true',
-                            help='Look for private keys')
-        parser.add_argument('-c', dest='card', action='store_true',
-                            help='Look for card details')
-        parser.add_argument('-b', dest='paypal', action='store_true',
-                            help='Look for PayPal Braintree details')
-        parser.add_argument('-t', dest='cert', action='store_true',
-                            help='Look for certificate files')
-        parser.add_argument('-f', dest='files', action='store_true',
-                            help='Look for interesting files')
-        parser.add_argument('-P', dest='passwords', action='store_true',
-                            help='Look for passwords')
-        parser.add_argument('-d', dest='dob', action='store_true',
-                            help='Look for dates of birth')
-        parser.add_argument('-pn', dest='passport', action='store_true',
-                            help='Look for passport numbers')
-        parser.add_argument('-tw', dest='twitter', action='store_true',
-                            help='Look for Twitter keys')
-        parser.add_argument('-fb', dest='facebook', action='store_true',
-                            help='Look for Facebook secret keys and access tokens')
+        parser.add_argument('--pii', dest='pii', action='store_true',
+                            help='Find personal data: Passwords, DOB, passport details')
+        parser.add_argument('--financial', dest='financial', action='store_true',
+                            help='Find financial data: Card details, PayPal Braintree tokens')
+        parser.add_argument('--tokens', dest='tokens', action='store_true',
+                            help='Find tokens: Private keys, AWS, GCP, Google API, Slack, Slack webhooks,'
+                                 ' Facebook, Twitter, GitHub')
+        parser.add_argument('--files', dest='files', action='store_true',
+                            help='Find files: Certificates, interesting/malicious files')
+        parser.add_argument('--custom', dest='custom',
+                            help='Search for user defined custom search queries. Provide path '
+                                 'to .txt file containing one search per line')
 
         args = parser.parse_args()
-        time = args.time
+        tm = args.time
         everything = args.everything
         users = args.users
         channels = args.channels
-        aws = args.aws
-        gcp = args.gcp
-        google = args.google
-        slack = args.slack
-        priv = args.priv
-        card = args.card
-        paypal = args.paypal
-        cert = args.cert
+        pii = args.pii
+        financial = args.financial
+        tokens = args.tokens
         files = args.files
-        passwords = args.passwords
-        dob = args.dob
-        passport = args.passport
-        twitter = args.twitter
-        facebook = args.facebook
+        custom = args.custom
 
-        if time == 'd':
-            tf = d.DAY_TIMEFRAME
-        elif time == 'w':
-            tf = d.WEEK_TIMEFRAME
-        elif time == 'm':
-            tf = d.MONTH_TIMEFRAME
+        if tm == 'd':
+            now = int(time.time())
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.DAY_TIMEFRAME))
+        elif tm == 'w':
+            now = int(time.time())
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.WEEK_TIMEFRAME))
+        elif tm == 'm':
+            now = int(time.time())
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.MONTH_TIMEFRAME))
         else:
-            tf = d.ALL_TIME
+            now = int(time.time())
+            tf = time.strftime('%Y-%m-%d', time.localtime(now - d.ALL_TIME))
 
         print(colored('''
   #####                                                          
@@ -126,7 +120,7 @@ def main():
  #  #  # #     #    #    #       ####### #  #  # #     # #  #  # 
  #  #  # #######    #    #       #     # #     # ####### #   # # 
  #  #  # #     #    #    #     # #     # #     # #     # #    ## 
-  ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'blue'))
+  ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'yellow'))
         print('Version: {}\n'.format(a.__version__))
 
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
@@ -140,7 +134,7 @@ def main():
             validate_token()
 
         if everything:
-            print('You want everything? I like you...')
+            print('Getting everything...')
             print(colored('+++++++++++++++++++++', 'yellow'))
             print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
             user_list = audit.get_users()
@@ -155,37 +149,39 @@ def main():
             print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
             audit.get_external_shared(channel_list, tf)
             print(colored('Getting AWS credentials\n+++++++++++++++++++++', 'yellow'))
-            audit.find_aws_credentials(tf)
+            audit.find_messages(d.AWS_KEYS_QUERIES, d.AWS_KEYS_REGEX, 'aws_credentials', tf)
             print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
-            audit.find_gcp_credentials(tf)
+            audit.find_messages(d.GCP_CREDENTIAL_QUERIES, d.GCP_CREDENTIAL_REGEX, 'gcp_credentials', tf)
             print(colored('Getting Google API keys\n+++++++++++++++++++++', 'yellow'))
-            audit.find_google_credentials(tf)
+            audit.find_messages(d.GOOGLE_API_QUERIES, d.GOOGLE_API_REGEX, 'google_api_keys', tf)
             print(colored('Getting private keys\n+++++++++++++++++++++', 'yellow'))
-            audit.find_keys(tf)
+            audit.find_messages(d.PRIVATE_KEYS_QUERIES, d.PRIVATE_KEYS_REGEX, 'private_keys', tf)
             print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
-            audit.find_card_details(tf)
+            audit.find_messages(d.BANK_CARD_QUERIES, d.BANK_CARD_REGEX, 'leaked_bank_cards', tf)
             print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
-            audit.find_paypal_details(tf)
+            audit.find_messages(d.PAYPAL_QUERIES, d.PAYPAL_REGEX, 'leaked_paypal_details', tf)
             print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
             audit.find_certificates(tf)
             print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
-            audit.find_slack_tokens(tf)
+            audit.find_messages(d.SLACK_KEY_QUERIES, d.SLACK_API_REGEX, 'slack_token', tf)
             print(colored('Getting Slack webhooks\n+++++++++++++++++++++', 'yellow'))
-            audit.find_slack_webhooks(tf)
+            audit.find_messages(d.SLACK_WEBHOOK_QUERIES, d.SLACK_WEBHOOK_REGEX, 'slack_webhooks', tf)
             print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
-            audit.find_twitter_tokens(tf)
+            audit.find_messages(d.TWITTER_QUERIES, d.TWITTER_REGEX, 'twitter_tokens', tf)
             print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
-            audit.find_passwords(tf)
+            audit.find_messages(d.PASSWORD_QUERIES, d.PASSWORD_REGEX, 'leaked_passwords', tf)
             print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
-            audit.find_malicious_files(tf)
+            audit.find_files(d.FILE_EXTENSIONS, 'interesting_files', tf)
             print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
-            audit.find_dates_of_birth(tf)
+            audit.find_messages(d.DOB_QUERIES, d.DOB_REGEX, 'dates_of_birth', tf)
             print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
-            audit.find_passport_details(tf)
+            audit.find_messages(d.PASSPORT_QUERIES, d.PASSPORT_REGEX, 'passport_numbers', tf)
             print(colored('Getting Facebook access tokens\n+++++++++++++++++++++', 'yellow'))
-            audit.find_facebook_access_tokens(tf)
+            audit.find_messages(d.FACEBOOK_QUERIES, d.FACEBOOK_ACCESS_TOKEN_REGEX, 'facebook_tokens', tf)
             print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
-            audit.find_facebook_secret_keys(tf)
+            audit.find_messages(d.FACEBOOK_QUERIES, d.FACEBOOK_SECRET_REGEX, 'facebook_keys', tf)
+            print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.GITHUB_QUERIES, d.GITHUB_REGEX, 'github_tokens', tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -201,52 +197,51 @@ def main():
                 audit.output_all_channels(channel_list, tf)
                 print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
                 audit.get_external_shared(channel_list, tf)
-            if aws:
+            if tokens:
                 print(colored('Getting AWS credentials\n+++++++++++++++++++++', 'yellow'))
-                audit.find_aws_credentials(tf)
-            if gcp:
+                audit.find_messages(d.AWS_KEYS_QUERIES, d.AWS_KEYS_REGEX, 'aws_credentials', tf)
                 print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
-                audit.find_gcp_credentials(tf)
-            if google:
+                audit.find_messages(d.GCP_CREDENTIAL_QUERIES, d.GCP_CREDENTIAL_REGEX, 'gcp_credentials', tf)
                 print(colored('Getting Google API keys\n+++++++++++++++++++++', 'yellow'))
-                audit.find_google_credentials(tf)
-            if slack:
+                audit.find_messages(d.GOOGLE_API_QUERIES, d.GOOGLE_API_REGEX, 'google_api_keys', tf)
                 print(colored('Getting Slack tokens\n+++++++++++++++++++++', 'yellow'))
-                audit.find_slack_tokens(tf)
+                audit.find_messages(d.SLACK_KEY_QUERIES, d.SLACK_API_REGEX, 'slack_token', tf)
                 print(colored('Getting Slack webhooks\n+++++++++++++++++++++', 'yellow'))
-                audit.find_slack_webhooks(tf)
-            if priv:
+                audit.find_messages(d.SLACK_WEBHOOK_QUERIES, d.SLACK_WEBHOOK_REGEX, 'slack_webhooks', tf)
                 print(colored('Getting private keys\n+++++++++++++++++++++', 'yellow'))
-                audit.find_keys(tf)
-            if card:
+                audit.find_messages(d.PRIVATE_KEYS_QUERIES, d.PRIVATE_KEYS_REGEX, 'private_keys', tf)
+                print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.TWITTER_QUERIES, d.TWITTER_REGEX, 'twitter_tokens', tf)
+                print(colored('Getting Facebook access tokens\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.FACEBOOK_QUERIES, d.FACEBOOK_ACCESS_TOKEN_REGEX, 'facebook_tokens', tf)
+                print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.FACEBOOK_QUERIES, d.FACEBOOK_SECRET_REGEX, 'facebook_keys', tf)
+                print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.GITHUB_QUERIES, d.GITHUB_REGEX, 'github_tokens', tf)
+            if financial:
                 print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
-                audit.find_card_details(tf)
-            if paypal:
+                audit.find_messages(d.BANK_CARD_QUERIES, d.BANK_CARD_REGEX, 'leaked_bank_cards', tf)
                 print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
-                audit.find_paypal_details(tf)
-            if cert:
+                audit.find_messages(d.PAYPAL_QUERIES, d.PAYPAL_REGEX, 'leaked_paypal_details', tf)
+            if files:
                 print(colored('Getting certificate files\n+++++++++++++++++++++', 'yellow'))
                 audit.find_certificates(tf)
-            if files:
                 print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
-                audit.find_malicious_files(tf)
-            if passwords:
-                print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
-                audit.find_passwords(tf)
-            if dob:
+                audit.find_files(d.FILE_EXTENSIONS, 'interesting_files', tf)
+            if pii:
                 print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
-                audit.find_dates_of_birth(tf)
-            if passport:
+                audit.find_messages(d.DOB_QUERIES, d.DOB_REGEX, 'dates_of_birth', tf)
                 print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))
-                audit.find_passport_details(tf)
-            if twitter:
-                print(colored('Getting Twitter keys\n+++++++++++++++++++++', 'yellow'))
-                audit.find_twitter_tokens(tf)
-            if facebook:
-                print(colored('Getting Facebook access tokens\n+++++++++++++++++++++', 'yellow'))
-                audit.find_facebook_access_tokens(tf)
-                print(colored('Getting Facebook secret keys\n+++++++++++++++++++++', 'yellow'))
-                audit.find_facebook_secret_keys(tf)
+                audit.find_messages(d.PASSPORT_QUERIES, d.PASSPORT_REGEX, 'passport_numbers', tf)
+                print(colored('Finding passwords\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.PASSWORD_QUERIES, d.PASSWORD_REGEX, 'leaked_passwords', tf)
+        if custom:
+            if os.path.exists(custom):
+                queries = import_custom_queries(custom)
+                print(colored('Searching for user input strings\n+++++++++++++++++++++', 'yellow'))
+                audit.find_custom_queries(queries, tf)
+            else:
+                print(colored('Custom query file does not exist', 'red'))
 
         print(colored('++++++Audit completed++++++', 'green'))
 
