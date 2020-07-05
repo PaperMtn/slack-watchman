@@ -35,9 +35,15 @@ Slack Watchman looks for:
     - Potential leaked passwords
     - Passport numbers
     - Dates of birth
+    - Social security numbers
+    - National insurance numbers
+    - Drivers licence numbers (UK)
+    - Individual Taxpayer Identification Number
 - Financial data
     - Paypal Braintree tokens
     - Bank card details
+    - IBAN numbers
+    - CUSIP numbers
 
 It also gives the following, which can be used for general auditing:
 - User data
@@ -114,9 +120,10 @@ optional arguments:
   --all                 Find everything
   --users               Find all users, including admins
   --channels            Find all channels, including external shared channels
-  --pii                 Find personal data: Passwords, DOB, passport details
+  --pii                 Find personal data: Passwords, DOB, passport details,
+                        drivers licence, ITIN, SSN
   --financial           Find financial data: Card details, PayPal Braintree
-                        tokens
+                        tokens, IBAN numbers, CUSIP numbers
   --tokens              Find tokens: Private keys, AWS, GCP, Google API,
                         Slack, Slack webhooks, Facebook, Twitter, GitHub
   --files               Find files: Certificates, interesting/malicious files
