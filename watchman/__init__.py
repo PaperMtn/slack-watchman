@@ -69,9 +69,10 @@ def main():
         parser.add_argument('--channels', dest='channels', action='store_true',
                             help='Find all channels, including external shared channels')
         parser.add_argument('--pii', dest='pii', action='store_true',
-                            help='Find personal data: Passwords, DOB, passport details')
+                            help='Find personal data: Passwords, DOB, passport details, drivers licence, ITIN, SSN')
         parser.add_argument('--financial', dest='financial', action='store_true',
-                            help='Find financial data: Card details, PayPal Braintree tokens')
+                            help='Find financial data: Card details, PayPal Braintree tokens, IBAN numbers,'
+                                 ' CUSIP numbers')
         parser.add_argument('--tokens', dest='tokens', action='store_true',
                             help='Find tokens: Private keys, AWS, GCP, Google API, Slack, Slack webhooks,'
                                  ' Facebook, Twitter, GitHub')
@@ -182,6 +183,19 @@ def main():
             audit.find_messages(d.FACEBOOK_QUERIES, d.FACEBOOK_SECRET_REGEX, 'facebook_keys', tf)
             print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
             audit.find_messages(d.GITHUB_QUERIES, d.GITHUB_REGEX, 'github_tokens', tf)
+            print(colored('Finding national insurance numbers\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.NI_NUMBER_QUERIES, d.NI_NUMBER_REGEX, 'leaked_ni_numbers', tf)
+            print(colored('Finding US social security numbers\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.SSN_US_QUERIES, d.SSN_US_REGEX, 'leaked_us_ssn', tf)
+            print(colored('Getting IBAN numbers\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.IBAN_QUERIES, d.IBAN_REGEX, 'leaked_iban_numbers', tf)
+            print(colored('Getting CUSIP numbers\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.CUSIP_QUERIES, d.CUSIP_REGEX, 'leaked_cusip_numbers', tf)
+            print(colored('Finding UK drivers licence numbers\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.DRIVERS_LICENCE_UK_QUERIES, d.DRIVERS_LICENCE_UK_REGEX,
+                                'leaked_uk_drivers_licence_numbers', tf)
+            print(colored('Finding individual taxpayer identification number\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.ITIN_QUERIES, d.ITIN_REGEX, 'leaked_itin_numbers', tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -219,6 +233,10 @@ def main():
                 print(colored('Getting GitHub API keys\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.GITHUB_QUERIES, d.GITHUB_REGEX, 'github_tokens', tf)
             if financial:
+                print(colored('Getting CUSIP numbers\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.CUSIP_QUERIES, d.CUSIP_REGEX, 'leaked_cusip_numbers', tf)
+                print(colored('Getting IBAN numbers\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.IBAN_QUERIES, d.IBAN_REGEX, 'leaked_iban_numbers', tf)
                 print(colored('Getting bank card details\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.BANK_CARD_QUERIES, d.BANK_CARD_REGEX, 'leaked_bank_cards', tf)
                 print(colored('Getting PayPal Braintree details\n+++++++++++++++++++++', 'yellow'))
@@ -229,6 +247,15 @@ def main():
                 print(colored('Finding interesting files\n+++++++++++++++++++++', 'yellow'))
                 audit.find_files(d.FILE_EXTENSIONS, 'interesting_files', tf)
             if pii:
+                print(colored('Finding individual taxpayer identification number\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.ITIN_QUERIES, d.ITIN_REGEX, 'leaked_itin_numbers', tf)
+                print(colored('Finding UK drivers licence numbers\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.DRIVERS_LICENCE_UK_QUERIES, d.DRIVERS_LICENCE_UK_REGEX,
+                                    'leaked_uk_drivers_licence_numbers', tf)
+                print(colored('Finding national insurance numbers\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.NI_NUMBER_QUERIES, d.NI_NUMBER_REGEX, 'leaked_ni_numbers', tf)
+                print(colored('Finding US social security numbers\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.SSN_US_QUERIES, d.SSN_US_REGEX, 'leaked_us_ssn', tf)
                 print(colored('Finding dates of birth\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.DOB_QUERIES, d.DOB_REGEX, 'dates_of_birth', tf)
                 print(colored('Finding passport details\n+++++++++++++++++++++', 'yellow'))

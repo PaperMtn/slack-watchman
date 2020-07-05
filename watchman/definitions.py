@@ -101,6 +101,22 @@ GITHUB_QUERIES = ['api.github.com',
                   'github.com/login/oauth/',
                   'github access_token']
 
+IBAN_QUERIES = ['iban']
+
+SSN_US_QUERIES = ['ssn',
+                  'social security']
+
+NI_NUMBER_QUERIES = ['national insurance',
+                     'ni number']
+
+CUSIP_QUERIES = ['cusip']
+
+DRIVERS_LICENCE_UK_QUERIES = ['drivers licence']
+
+ITIN_QUERIES = ['itin',
+                'tin',
+                'Individual Taxpayer Identification Number']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -150,6 +166,24 @@ FACEBOOK_SECRET_REGEX = r'[f|F][a|A][c|C][e|E][b|B][o|O][o|O][k|K].*[0-9a-f]{32}
 
 # Regex to detect GitHub API keys
 GITHUB_REGEX = r'[0-9a-zA-Z]{20,40}'
+
+# Regex to detect IBAN numbers
+IBAN_REGEX = r"([A-Za-z]{2}[ \-]?[0-9]{2})(?=(?:[ \-]?[A-Za-z0-9]){9,30}$)((?:[ \-]?[A-Za-z0-9]{3,5}){2,7})([ \-]?[" \
+             r"A-Za-z0-9]{1,3})?$"
+
+# Regex to detect US Social Security Numbers
+SSN_US_REGEX = r'((?!000)(?!666)(?:[0-6]\d{2}|7[0-2][0-9]|73[0-3]|7[5-6][0-9]|77[0-2]))-((?!00)\d{2})-((?!0000)\d{4})'
+
+# Regex to detect National Insurance Numbers
+NI_NUMBER_REGEX = r'(?!BG|GB|NK|KN|TN|NT|ZZ)[A-Ca-cEeGgHhJ-Pj-pR-Tr-tW-Zw-z][A-Ca-cEeGgHhJ-Nj-nPpR-Tr-tW-Zw-z](' \
+                  r'?:\s*\d{2}){3}\s*[A-Da-d]'
+
+# Regex to detect CUSIP numbers
+CUSIP_REGEX = r'\s[0-9]{3}[a-zA-Z0-9]{6}\s'
+
+DRIVERS_LICENCE_UK_REGEX = r'[A-Za-z9]{5}\d{6}[A-Za-z9]{2}\d[A-Za-z]{2}'
+
+ITIN_REGEX = r'9\d{2}-?((5[0-9]|6[0-5])|(8[3-8])|(9[0-2])|(9[4-9]))-?\d{4}'
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours
