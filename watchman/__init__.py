@@ -123,6 +123,8 @@ def main():
  #  #  # #     #    #    #     # #     # #     # #     # #    ## 
   ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'yellow'))
         print('Version: {}\n'.format(a.__version__))
+        print('Searching workspace: {}'.format(audit.get_workspace_name()))
+        print('Searching workspace: {}\n'.format(audit.get_workspace_domain()))
 
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
 
