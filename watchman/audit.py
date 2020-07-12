@@ -69,6 +69,52 @@ def write_csv(headers, path, input_list):
     csv_file.close()
 
 
+def get_workspace_name():
+    """Returns the name of the workspace you are searching"""
+
+    result = ''
+    token = get_token()
+
+    try:
+        while True:
+            r = requests.get('https://slack.com/api/team.info',
+                             params={'token': token, 'pretty': 1}).json()
+            if not rate_limit_check(r):
+                break
+
+        if str(r['ok']) == 'False':
+            print('END: Unable to get the workspace name. Slack error: ' + str(r['error']))
+        else:
+            result = r['team']['name']
+    except requests.exceptions.RequestException as exception:
+        print(exception)
+
+    return result
+
+
+def get_workspace_domain():
+    """Returns the domain of the workspace you are searching"""
+
+    token = get_token()
+    result = ''
+
+    try:
+        while True:
+            r = requests.get('https://slack.com/api/team.info',
+                             params={'token': token, 'pretty': 1}).json()
+            if not rate_limit_check(r):
+                break
+
+        if str(r['ok']) == 'False':
+            print('END: Unable to get the workspace name. Slack error: ' + str(r['error']))
+        else:
+            result = 'https://{}.slack.com/'.format(r['team']['domain'])
+    except requests.exceptions.RequestException as exception:
+        print(exception)
+
+    return result
+
+
 def get_users():
     """Return a list of all active users in the instance"""
 
