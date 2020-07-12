@@ -1,4 +1,3 @@
-import calendar
 import os
 import re
 import requests
@@ -140,11 +139,14 @@ def output_all_channels(channel_list, timeframe=d.ALL_TIME):
 
     results = []
     headers = ['created', 'id', 'name', 'description']
-    now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
+    utc_time = time.strptime(timeframe, '%Y-%m-%d')
+    epoch_timeframe = time.mktime(utc_time)
+
     for channel in channel_list:
-        if channel['created'] > now - timeframe:
+        created = channel['created']
+        if int(created) > epoch_timeframe:
             results.append([convert_timestamp(channel['created']),
                             channel['id'],
                             channel['name'],
@@ -278,21 +280,27 @@ def get_external_shared(channel_list, timeframe=d.ALL_TIME):
 
     results = []
     headers = ['created', 'id', 'name', 'description']
-    now = calendar.timegm(time.gmtime())
     out_path = os.getcwd()
 
-    for channel in channel_list:
-        if 'is_ext_shared' in channel.keys() and channel['is_ext_shared'] and channel['created'] > now - timeframe:
-            results.append([convert_timestamp(channel['created']),
-                            channel['id'],
-                            channel['name'],
-                            channel['topic']['value']])
+    utc_time = time.strptime(timeframe, '%Y-%m-%d')
+    epoch_timeframe = time.mktime(utc_time)
+
+    if channel_list:
+        for channel in channel_list:
+            created = channel['created']
+            if 'is_ext_shared' in channel.keys() and channel['is_ext_shared'] and int(created) > epoch_timeframe:
+                results.append([convert_timestamp(channel['created']),
+                                channel['id'],
+                                channel['name'],
+                                channel['topic']['value']])
 
     if results:
         path = '{}/external_channels.csv'.format(out_path)
         write_csv(headers, path, results)
         print('{} external channels found'.format(len(results)))
         print('CSV written: {}'.format(path))
+    else:
+        print('No external channels')
 
 
 def find_certificates(timeframe=d.ALL_TIME):
