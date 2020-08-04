@@ -130,3 +130,4 @@ config/
 channels.txt
 results.txt
 custom.txt
+*.csv

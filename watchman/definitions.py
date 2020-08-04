@@ -91,7 +91,7 @@ TWITTER_QUERIES = ['api.twitter.com',
                    'twitter api',
                    '"oauth_token"_secret']
 
-# List of queries to find Facbook tokens
+# List of queries to find Facebook tokens
 FACEBOOK_QUERIES = ['graph.facebook.com',
                     'facebook.com/dialog/oauth',
                     'eaaced',
@@ -116,6 +116,8 @@ DRIVERS_LICENCE_UK_QUERIES = ['drivers licence']
 ITIN_QUERIES = ['itin',
                 'tin',
                 'Individual Taxpayer Identification Number']
+
+BEARER_TOKEN_QUERIES = ["'Authorization': 'Bearer"]
 
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
@@ -184,6 +186,8 @@ CUSIP_REGEX = r'\s[0-9]{3}[a-zA-Z0-9]{6}\s'
 DRIVERS_LICENCE_UK_REGEX = r'[A-Za-z9]{5}\d{6}[A-Za-z9]{2}\d[A-Za-z]{2}'
 
 ITIN_REGEX = r'9\d{2}-?((5[0-9]|6[0-5])|(8[3-8])|(9[0-2])|(9[4-9]))-?\d{4}'
+
+BEARER_TOKEN_REGEX = r'''('|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})('|"){0,2}'''
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

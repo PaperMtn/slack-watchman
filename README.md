@@ -27,8 +27,9 @@ Slack Watchman looks for:
   - Facebook API Keys
       - Access token
       - Secret keys
-  - Private keys
   - GitHub keys
+  - Private keys
+  - Bearer tokens
 - Files
     - Certificate files
     - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
