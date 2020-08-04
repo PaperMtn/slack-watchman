@@ -214,6 +214,8 @@ def main():
                 print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
                 audit.get_external_shared(channel_list, tf)
             if tokens:
+                print(colored('Getting bearer tokens\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.BEARER_TOKEN_QUERIES, d.BEARER_TOKEN_REGEX, 'bearer_tokens', tf)
                 print(colored('Getting AWS credentials\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.AWS_KEYS_QUERIES, d.AWS_KEYS_REGEX, 'aws_credentials', tf)
                 print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
