@@ -127,10 +127,4 @@ dmypy.json
 # package related
 config/
 *.txt
-<<<<<<< HEAD
-channels.txt
-results.txt
-custom.txt
-=======
->>>>>>> feature/azure-search
 *.csv
