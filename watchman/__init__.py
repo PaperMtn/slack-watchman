@@ -198,6 +198,12 @@ def main():
                                 'leaked_uk_drivers_licence_numbers', tf)
             print(colored('Finding individual taxpayer identification number\n+++++++++++++++++++++', 'yellow'))
             audit.find_messages(d.ITIN_QUERIES, d.ITIN_REGEX, 'leaked_itin_numbers', tf)
+            print(colored('Getting bearer tokens\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.BEARER_TOKEN_QUERIES, d.BEARER_TOKEN_REGEX, 'bearer_tokens', tf)
+            print(colored('Getting Azure credentials in plaintext\n+++++++++++++++++++++', 'yellow'))
+            audit.find_messages(d.AZURE_API_QUERIES, d.AZURE_REGEX, 'azure_credentials', tf)
+            print(colored('Getting Azure credential files\n+++++++++++++++++++++', 'yellow'))
+            audit.find_files(d.AZURE_SERVICE_ACCOUNT_FILES, 'azure_credential_files', tf)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
@@ -220,6 +226,8 @@ def main():
                 audit.find_files(d.AZURE_SERVICE_ACCOUNT_FILES, 'azure_credential_files', tf)
                 print(colored('Getting AWS credentials\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.AWS_KEYS_QUERIES, d.AWS_KEYS_REGEX, 'aws_credentials', tf)
+                print(colored('Getting bearer tokens\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.BEARER_TOKEN_QUERIES, d.BEARER_TOKEN_REGEX, 'bearer_tokens', tf)
                 print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.GCP_CREDENTIAL_QUERIES, d.GCP_CREDENTIAL_REGEX, 'gcp_credentials', tf)
                 print(colored('Getting Google API keys\n+++++++++++++++++++++', 'yellow'))
