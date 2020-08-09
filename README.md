@@ -18,6 +18,7 @@ Slack Watchman looks for:
 - Tokens
   - AWS keys
   - GCP keys
+  - Azure keys
   - Google API keys
   - Slack API keys & webhooks
   - Twitter API keys
