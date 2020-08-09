@@ -117,6 +117,18 @@ ITIN_QUERIES = ['itin',
                 'tin',
                 'Individual Taxpayer Identification Number']
 
+# These files are stored by the Azure CLI in the dir ~/.azure/
+# They should not be shared as they contain sensitive configuration data.
+AZURE_SERVICE_ACCOUNT_FILES = ['accessTokens.json',
+                               'azureProfile.json',
+                               'az.sess',
+                               'az.json',
+                               'clouds.configtelemetry.txt']
+
+AZURE_API_QUERIES = ['login.microsoftonline.com',
+                     'management.azure',
+                     'management.core']
+
 ### REGEX ###
 # Regex to detect private keys - Credit: emtunc - SlackPirate
 PRIVATE_KEYS_REGEX = r"([-]+BEGIN [^\s]+ PRIVATE KEY[-]+[\s]*[^-]*[-]+END [^\s]+ PRIVATE KEY[-]+)"
@@ -184,6 +196,8 @@ CUSIP_REGEX = r'\s[0-9]{3}[a-zA-Z0-9]{6}\s'
 DRIVERS_LICENCE_UK_REGEX = r'[A-Za-z9]{5}\d{6}[A-Za-z9]{2}\d[A-Za-z]{2}'
 
 ITIN_REGEX = r'9\d{2}-?((5[0-9]|6[0-5])|(8[3-8])|(9[0-2])|(9[4-9]))-?\d{4}'
+
+AZURE_REGEX = '''(?i)('|"){0,2}(refreshtoken|accesstoken|_clientId)('|"){0,2}:(\s*)('|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})('|"){0,2}'''
 
 ### TIMEFRAMES ###
 # Epoch time for 24 hours

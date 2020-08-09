@@ -214,6 +214,10 @@ def main():
                 print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
                 audit.get_external_shared(channel_list, tf)
             if tokens:
+                print(colored('Getting Azure credentials in plaintext\n+++++++++++++++++++++', 'yellow'))
+                audit.find_messages(d.AZURE_API_QUERIES, d.AZURE_REGEX, 'azure_credentials', tf)
+                print(colored('Getting Azure credential files\n+++++++++++++++++++++', 'yellow'))
+                audit.find_files(d.AZURE_SERVICE_ACCOUNT_FILES, 'azure_credential_files', tf)
                 print(colored('Getting AWS credentials\n+++++++++++++++++++++', 'yellow'))
                 audit.find_messages(d.AWS_KEYS_QUERIES, d.AWS_KEYS_REGEX, 'aws_credentials', tf)
                 print(colored('Getting GCP credentials\n+++++++++++++++++++++', 'yellow'))
