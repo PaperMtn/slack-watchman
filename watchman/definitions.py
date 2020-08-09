@@ -117,6 +117,21 @@ ITIN_QUERIES = ['itin',
                 'tin',
                 'Individual Taxpayer Identification Number']
 
+<<<<<<< HEAD
+=======
+# These files are stored by the Azure CLI in the dir ~/.azure/
+# They should not be shared as they contain sensitive configuration data.
+AZURE_SERVICE_ACCOUNT_FILES = ['accessTokens.json',
+                               'azureProfile.json',
+                               'az.sess',
+                               'az.json',
+                               'clouds.configtelemetry.txt']
+
+AZURE_API_QUERIES = ['login.microsoftonline.com',
+                     'management.azure',
+                     'management.core']
+
+>>>>>>> feature/azure-search
 BEARER_TOKEN_QUERIES = ["'Authorization': 'Bearer"]
 
 ### REGEX ###
@@ -189,6 +204,11 @@ ITIN_REGEX = r'9\d{2}-?((5[0-9]|6[0-5])|(8[3-8])|(9[0-2])|(9[4-9]))-?\d{4}'
 
 BEARER_TOKEN_REGEX = r'''('|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})('|"){0,2}'''
 
+<<<<<<< HEAD
+=======
+AZURE_REGEX = '''(?i)('|"){0,2}(refreshtoken|accesstoken|_clientId)('|"){0,2}:(\s*)('|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})('|"){0,2}'''
+
+>>>>>>> feature/azure-search
 ### TIMEFRAMES ###
 # Epoch time for 24 hours
 DAY_TIMEFRAME = 86400

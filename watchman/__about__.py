@@ -27,7 +27,11 @@ __all__ = [
 __title__ = 'Slack Watchman'
 __summary__ = 'Monitoring your Slack workspaces for sensitive information'
 __uri__ = 'https://github.com/PaperMtn/slack-watchman'
+<<<<<<< HEAD
 __version__ = '2.2.0'
+=======
+__version__ = '2.3.1'
+>>>>>>> feature/azure-search
 __author__ = 'PaperMtn'
 __email__ = 'papermtn@protonmail.com'
 __license__ = 'GPL-3.0'
