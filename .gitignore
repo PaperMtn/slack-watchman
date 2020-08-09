@@ -127,6 +127,4 @@ dmypy.json
 # package related
 config/
 *.txt
-channels.txt
-results.txt
-custom.txt
+*.csv
