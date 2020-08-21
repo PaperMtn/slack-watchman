@@ -1,3 +1,4 @@
+import itertools
 import os
 import re
 import requests
@@ -54,6 +55,13 @@ def format_query(query):
             query = query.replace(i, '_')
 
     return query
+
+
+def deduplicate(input_list):
+    """Removes duplicates where results are returned by multiple queries"""
+
+    input_list.sort()
+    return list(input_list for input_list, _ in itertools.groupby(input_list))
 
 
 def write_csv(headers, path, input_list):
@@ -239,7 +247,8 @@ def search_files(query, timeframe):
     try:
         while True:
             r = requests.get('https://slack.com/api/search.files',
-                             params={'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1, 'count': 100}).json()
+                             params={'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1,
+                                     'count': 100}).json()
             if not rate_limit_check(r):
                 break
 
@@ -249,7 +258,8 @@ def search_files(query, timeframe):
         for query, page_count in page_count_by_query.items():
             page = 1
             while page <= page_count:
-                params = {'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1, 'count': 100, 'page': str(page)}
+                params = {'token': token, 'query': 'after:{} \"{}\"'.format(timeframe, query), 'pretty': 1,
+                          'count': 100, 'page': str(page)}
                 r = requests.get('https://slack.com/api/search.files',
                                  params=params).json()
                 if rate_limit_check(r):
@@ -274,7 +284,8 @@ def search_messages(query, timeframe):
     try:
         while True:
             r = requests.get('https://slack.com/api/search.messages',
-                             params={'token': token, 'query': 'after:{} {}'.format(timeframe, query), 'pretty': 1, 'count': 100}).json()
+                             params={'token': token, 'query': 'after:{} {}'.format(timeframe, query), 'pretty': 1,
+                                     'count': 100}).json()
             if not rate_limit_check(r):
                 break
 
@@ -358,10 +369,9 @@ def find_certificates(timeframe=d.ALL_TIME):
 
     headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
     out_path = os.getcwd()
-
+    results = []
     for query in d.CERTIFICATE_EXTENSIONS:
         message_list = search_files(query, timeframe)
-        results = []
         for message in message_list:
             if 'text' in message['filetype'] and query in message['name']:
                 results.append([convert_timestamp(message['timestamp']),
@@ -369,11 +379,14 @@ def find_certificates(timeframe=d.ALL_TIME):
                                 message['username'],
                                 message['preview'],
                                 message['permalink']])
-        if results:
-            path = '{}/certificates_{}.csv'.format(out_path, format_query(query))
-            write_csv(headers, path, results)
-            print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format(path))
+    if results:
+        results = deduplicate(results)
+        path = '{}/certificates.csv'.format(out_path)
+        write_csv(headers, path, results)
+        print('{} total matches found after filtering'.format(len(results)))
+        print('CSV written: {}'.format(path))
+    else:
+        print('No matches found after filtering')
 
 
 def find_messages(query_list, regex, file_name, timeframe=d.ALL_TIME):
@@ -382,10 +395,9 @@ def find_messages(query_list, regex, file_name, timeframe=d.ALL_TIME):
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
     out_path = os.getcwd()
-
+    results = []
     for query in query_list:
         message_list = search_messages(query, timeframe)
-        results = []
         for message in message_list:
             r = re.compile(regex)
             if r.search(str(message['text'])):
@@ -394,11 +406,14 @@ def find_messages(query_list, regex, file_name, timeframe=d.ALL_TIME):
                                 message['username'],
                                 message['text'],
                                 message['permalink']])
-        if results:
-            path = '{}/potential_{}_{}.csv'.format(out_path, file_name, format_query(query))
-            write_csv(headers, path, results)
-            print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format(path))
+    if results:
+        results = deduplicate(results)
+        path = '{}/potential_{}.csv'.format(out_path, file_name)
+        write_csv(headers, path, results)
+        print('{} total matches found after filtering'.format(len(results)))
+        print('CSV written: {}'.format(path))
+    else:
+        print('No matches found after filtering')
 
 
 def find_files(query_list, file_name, timeframe=d.ALL_TIME):
@@ -407,21 +422,24 @@ def find_files(query_list, file_name, timeframe=d.ALL_TIME):
 
     headers = ['timestamp', 'file_name', 'posted_by', 'private_link']
     out_path = os.getcwd()
-
+    results = []
     for query in query_list:
         message_list = search_files(query, timeframe)
-        results = []
+
         for message in message_list:
             if query in message['name']:
                 results.append([convert_timestamp(message['timestamp']),
                                 message['name'],
                                 message['username'],
                                 message['permalink']])
-        if results:
-            path = '{}/{}_{}.csv'.format(out_path, file_name, format_query(query))
-            write_csv(headers, path, results)
-            print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format(path))
+    if results:
+        results = deduplicate(results)
+        path = '{}/{}.csv'.format(out_path, file_name)
+        write_csv(headers, path, results)
+        print('{} total matches found after filtering'.format(len(results)))
+        print('CSV written: {}'.format(path))
+    else:
+        print('No matches found after filtering')
 
 
 def find_custom_queries(query_list, timeframe=d.ALL_TIME):
@@ -430,18 +448,20 @@ def find_custom_queries(query_list, timeframe=d.ALL_TIME):
 
     headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
     out_path = os.getcwd()
-
+    results = []
     for query in query_list:
         message_list = search_messages(query, timeframe)
-        results = []
         for message in message_list:
             results.append([convert_timestamp(message['ts']),
                             message['channel']['name'],
                             message['username'],
                             message['text'],
                             message['permalink']])
-        if results:
-            path = '{}/custom_string_{}.csv'.format(out_path, format_query(query))
-            write_csv(headers, path, results)
-            print('{} matches found for {}'.format(len(results), query))
-            print('CSV written: {}'.format(path))
+    if results:
+        results = deduplicate(results)
+        path = '{}/custom_strings.csv'.format(out_path)
+        write_csv(headers, path, results)
+        print('{} total matches found after filtering'.format(len(results)))
+        print('CSV written: {}'.format(path))
+    else:
+        print('No matches found')
