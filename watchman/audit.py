@@ -77,6 +77,20 @@ def write_csv(headers, path, input_list):
     csv_file.close()
 
 
+def validate_token():
+    """Check that slack token is valid"""
+
+    token = get_token()
+
+    r = requests.get('https://slack.com/api/users.list',
+                     params={'token': token,
+                             'pretty': 1,
+                             'limit': 1,
+                             'cursor': ''}).json()
+    if not r['ok'] and r['error'] == 'invalid_auth':
+        raise Exception('Invalid Slack API key')
+
+
 def get_workspace_name():
     """Returns the name of the workspace you are searching"""
 

@@ -159,7 +159,7 @@ SLACK_API_REGEX = r"xox[baprs]([0-9a-zA-Z-]{10,72})"
 SLACK_WEBHOOK_REGEX = r"https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}"
 
 # Regex to detect Braintree tokens
-PAYPAL_REGEX = r"access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}"
+PAYPAL_REGEX = r"access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}"
 
 # Regex to detect dates of birth
 DOB_REGEX = r"(19|20)\d\d([- \/.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$|^([0-2][0-9]|(3)[0-1])([- \/.])(((0)[" \
