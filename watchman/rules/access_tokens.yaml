@@ -17,4 +17,4 @@ test_cases:
   - 'ACCESS_TOKEN: $ACCESS_TOKEN'
 strings:
 - '"access_token:"'
-pattern: (?i)('|"){0,2}access_token('|"){0,2}:(\s*)('|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})('|"){0,2}
+pattern: '(?i)(''|"){0,2}access_token(''|"){0,2}:(\s*)(''|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})(''|"){0,2}'

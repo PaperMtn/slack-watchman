@@ -18,4 +18,4 @@ test_cases:
   - http://hooks.slack.com/
 strings:
 - https://hooks.slack.com/
-pattern: https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}
+pattern: 'https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}'

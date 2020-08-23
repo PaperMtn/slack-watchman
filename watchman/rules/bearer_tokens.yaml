@@ -18,4 +18,4 @@ test_cases:
 strings:
 - Bearer
 - "'Authorization': 'Bearer"
-pattern: ('|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})('|"){0,2}
+pattern: '(''|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})(''|"){0,2}'

@@ -19,4 +19,4 @@ test_cases:
 strings:
 - national insurance
 - ni number
-pattern: (?!BG|GB|NK|KN|TN|NT|ZZ)[A-Ca-cEeGgHhJ-Pj-pR-Tr-tW-Zw-z][A-Ca-cEeGgHhJ-Nj-nPpR-Tr-tW-Zw-z](?:\s*\d{2}){3}\s*[A-Da-d]
+pattern: '(?!BG|GB|NK|KN|TN|NT|ZZ)[A-Ca-cEeGgHhJ-Pj-pR-Tr-tW-Zw-z][A-Ca-cEeGgHhJ-Nj-nPpR-Tr-tW-Zw-z](?:\s*\d{2}){3}\s*[A-Da-d]'

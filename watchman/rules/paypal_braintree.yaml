@@ -18,4 +18,4 @@ test_cases:
 strings:
 - paypal
 - braintree
-pattern: access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}
+pattern: 'access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}'

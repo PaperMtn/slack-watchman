@@ -18,4 +18,4 @@ test_cases:
 strings:
 - AIza
 - .apps.googleusercontent.com
-pattern: AIza[0-9A-Za-z\\-_]{35}|[0-9]+-[0-9A-Za-z_]{32}
+pattern: 'AIza[0-9A-Za-z\\-_]{35}|[0-9]+-[0-9A-Za-z_]{32}'

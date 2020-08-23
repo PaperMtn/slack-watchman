@@ -16,6 +16,6 @@ test_cases:
   fail_cases:
   - secret_key = $S3_SECRET_KEY
 strings:
-- '"s3cfg"'
-- '"s3cmd.ini"'
-pattern: (?i)('|"){0,2}secret_key('|"){0,2} = ('|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})('|"){0,2}
+- s3cfg
+- s3cmd.ini
+pattern: '(?i)(''|"){0,2}secret_key(''|"){0,2} = (''|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})(''|"){0,2}'

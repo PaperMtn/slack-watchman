@@ -16,7 +16,7 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- '".xls"'
-- '".xlsx"'
-- '".xlsm"'
+- .xls
+- .xlsx
+- .xlsm
 pattern: ''

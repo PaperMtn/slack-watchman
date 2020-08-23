@@ -21,4 +21,4 @@ strings:
 - xoxp*
 - xoxr*
 - xoxs*
-pattern: xox[baprs]([0-9a-zA-Z-]{10,72})
+pattern: 'xox[baprs]([0-9a-zA-Z-]{10,72})'

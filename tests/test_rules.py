@@ -1,7 +1,6 @@
 import yaml
 import os
 import unittest
-import re
 from pathlib import Path
 
 RULES_PATH = (Path(__file__).parents[1] / 'watchman/rules').resolve()
@@ -13,10 +12,8 @@ def load_rules():
         if file.name.endswith('.yaml'):
             with open(file) as yaml_file:
                 rule = yaml.safe_load(yaml_file)
-                if rule['enabled']:
+                if rule.get('enabled'):
                     rules.append(rule)
-    # for r in rules:
-    #     print(r['filename'], r['pattern'])
     return rules
 
 
@@ -41,18 +38,18 @@ class TestRules(unittest.TestCase):
 
         rules_list = load_rules()
         for rule in rules_list:
-            for test_case in rule['test_cases']['match_cases']:
+            for test_case in rule.get('test_cases').get('match_cases'):
                 if not test_case == 'blank':
-                    self.assertRegex(test_case, rule['pattern'], msg='Regex does not detect given match case')
+                    self.assertRegex(test_case, rule.get('pattern'), msg='Regex does not detect given match case')
 
     def test_rule_failing_cases(self):
         """Test that the fail case strings don't match the regex. Skip if the fail case is 'blank'"""
 
         rules_list = load_rules()
         for rule in rules_list:
-            for test_case in rule['test_cases']['fail_cases']:
+            for test_case in rule.get('test_cases').get('fail_cases'):
                 if not test_case == 'blank':
-                    self.assertNotRegex(test_case, rule['pattern'],
+                    self.assertNotRegex(test_case, rule.get('pattern'),
                                         msg='Regex detects given failure case, it should '
                                             'not')
 

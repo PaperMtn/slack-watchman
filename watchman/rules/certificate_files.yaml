@@ -16,11 +16,11 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- '".key"'
-- '".p12"'
-- '".pem"'
-- '".pfx"'
-- '".pkcs12"'
-- '".crt"'
-- '".cert"'
+- .key
+- .p12
+- .pem
+- .pfx
+- .pkcs12
+- .crt
+- .cert
 pattern: ''

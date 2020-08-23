@@ -2,7 +2,7 @@
 filename: executable_files.yaml
 enabled: true
 meta:
-  name: Archive Files
+  name: Executable Files
   author: PaperMtn
   date: '2020-08-14'
   description: Detects exposed executable files
@@ -16,8 +16,8 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- '".exe"'
-- '".dmg"'
-- '".iso"'
-- '".pkg"'
+- .exe
+- .dmg
+- .iso
+- .pkg
 pattern: ''

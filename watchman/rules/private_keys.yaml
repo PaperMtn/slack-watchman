@@ -23,4 +23,4 @@ strings:
 - '"BEGIN EC PRIVATE"'
 - '"BEGIN OPENSSH PRIVATE"'
 - '"BEGIN RSA PRIVATE"'
-pattern: (?s)(-----BEGIN .+?-----)\\S{0,}
+pattern: '(?s)(-----BEGIN .+?-----)\\S{0,}'
