@@ -53,19 +53,19 @@ You can enter your own queries to search for to find sensitive data being mentio
 
 Pass a .txt file with one search query per line using the `--custom` command line option. All posts containing custom queries will be returned. Generic terms may return a lot of results over a long timeframe.
 
-#### Rules
+### Rules
 Slack Watchman uses custom YAML rules to detect matches in Slack.
 
-They follow this format: 
+They follow this format:
 
 ```
 ---
-filename: 
+filename:
 enabled: true/false
 meta:
-  name: 
-  author: 
-  date: 
+  name:
+  author:
+  date:
   description: *what the search should find*
   severity: *rating out of 100*
 category: [files|tokens|financial|pii]
