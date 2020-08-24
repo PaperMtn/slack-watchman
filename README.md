@@ -15,45 +15,27 @@ More information about Slack Watchman can be found [on my blog](https://papermtn
 ### Features
 Slack Watchman looks for:
 
-- Tokens
-  - AWS keys
-  - GCP keys
-  - Google API keys
-  - Slack API keys & webhooks
-  - Twitter API keys
-      - Access token
-      - oauth_token
-      - oauth_token_secret
-  - Facebook API Keys
-      - Access token
-      - Secret keys
-  - GitHub keys
-  - Private keys
-  - Bearer tokens
+- API Keys, Tokens & Service Accounts
+  - AWS, Azure, GCP, Google API, Slack (keys & webhooks), Twitter, Facebook, GitHub
+  - Generic Private keys
+  - Access Tokens, Bearer Tokens, Client Secrets, Private Tokens
 - Files
     - Certificate files
-    - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
+    - Potentially interesting/malicious/sensitive files (.docm, .xlsm, .zip etc.)
+    - Executable files
+    - Keychain files
+    - Config files for popular services (Terraform, Jenkins, OpenVPN and more)
 - Personal Data
-    - Potential leaked passwords
-    - Passport numbers
-    - Dates of birth
-    - Social security numbers
-    - National insurance numbers
-    - Drivers licence numbers (UK)
-    - Individual Taxpayer Identification Number
+    - Leaked passwords
+    - Passport numbers, Dates of birth, Social security numbers, National insurance numbers, Drivers licence numbers (UK), Individual Taxpayer Identification Number
 - Financial data
-    - Paypal Braintree tokens
-    - Bank card details
-    - IBAN numbers
-    - CUSIP numbers
+    - Paypal Braintree tokens, Bank card details, IBAN numbers, CUSIP numbers
 
 It also gives the following, which can be used for general auditing:
 - User data
-    - All users
-    - All admins
+    - All users & all admins
 - Channel data
-    - Externally shared channels
-    - All channels
+    - All channels, including externally shared channels
 
 Any matches get returned in .csv files
 
@@ -70,6 +52,35 @@ This means after one deep scan, you can schedule Slack Watchman to run regularly
 You can enter your own queries to search for to find sensitive data being mentioned in your workspace (e.g. confidential project names).
 
 Pass a .txt file with one search query per line using the `--custom` command line option. All posts containing custom queries will be returned. Generic terms may return a lot of results over a long timeframe.
+
+#### Rules
+Slack Watchman uses custom YAML rules to detect matches in Slack.
+
+They follow this format: 
+
+```
+---
+filename: 
+enabled: true/false
+meta:
+  name: 
+  author: 
+  date: 
+  description: *what the search should find*
+  severity: *rating out of 100*
+category: [files|tokens|financial|pii]
+scope:
+- [files|messages]
+test_cases:
+  match_cases:
+  - *test case that should match the regex*
+  fail_cases:
+  - *test case that should not match the regex*
+strings:
+- *search query to use in Slack*
+pattern: *Regex pattern to filter out false positives*
+```
+There are Python tests to ensure rules are formatted properly and that the Regex patterns work in the `tests` dir
 
 ## Requirements
 ### Slack API token
