@@ -45,7 +45,7 @@ def load_rules():
         if file.name.endswith('.yaml'):
             with open(file) as yaml_file:
                 rule = yaml.safe_load(yaml_file)
-                if rule['enabled']:
+                if rule.get('enabled'):
                     rules.append(rule)
 
     return rules
@@ -53,15 +53,12 @@ def load_rules():
 
 def search(rule, tf, scope):
     if scope == 'messages':
-        print(colored('Searching for {} containing {}\n+++++++++++++++++++++'.format('posts', rule['meta']['name']),
+        print(colored('Searching for {} containing {}\n+++++++++++++++++++++'.format('posts', rule.get('meta').get('name')),
                       'yellow'))
-        audit.find_messages(rule['strings'], rule['pattern'], 'exposed_{}'.format(rule['filename'].split('.')[0]),
-                            tf)
+        audit.find_messages(rule.get('strings'), rule.get('pattern'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
     if scope == 'files':
-        print(colored('Searching for {}\n+++++++++++++++++++++'.format(rule['meta']['name']),
-                      'yellow'))
-        audit.find_messages(rule['strings'], rule['pattern'], 'exposed_{}'.format(rule['filename'].split('.')[0]),
-                            tf)
+        print(colored('Searching for {}\n+++++++++++++++++++++'.format(rule.get('meta').get('name')), 'yellow'))
+        audit.find_files(rule.get('strings'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
 
 
 def main():
@@ -170,26 +167,26 @@ def main():
             print(colored('Searching tokens', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
-                if 'tokens' in rule['category']:
-                    for scope in rule['scope']:
+                if 'tokens' in rule.get('category'):
+                    for scope in rule.get('scope'):
                         search(rule, tf, scope)
             print(colored('Searching financial data', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
-                if 'financial' in rule['category']:
-                    for scope in rule['scope']:
+                if 'financial' in rule.get('category'):
+                    for scope in rule.get('scope'):
                         search(rule, tf, scope)
             print(colored('Searching files', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
-                if 'files' in rule['category']:
-                    for scope in rule['scope']:
+                if 'files' in rule.get('category'):
+                    for scope in rule.get('scope'):
                         search(rule, tf, scope)
             print(colored('Searching PII/Personal Data', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
-                if 'pii' in rule['category']:
-                    for scope in rule['scope']:
+                if 'pii' in rule.get('category'):
+                    for scope in rule.get('scope'):
                         search(rule, tf, scope)
         else:
             if users:
@@ -210,29 +207,29 @@ def main():
                 print(colored('Searching tokens', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
-                    if 'tokens' in rule['category']:
-                        for scope in rule['scope']:
+                    if 'tokens' in rule.get('category'):
+                        for scope in rule.get('scope'):
                             search(rule, tf, scope)
             if financial:
                 print(colored('Searching financial data', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
-                    if 'financial' in rule['category']:
-                        for scope in rule['scope']:
+                    if 'financial' in rule.get('category'):
+                        for scope in rule.get('scope'):
                             search(rule, tf, scope)
             if files:
                 print(colored('Searching files', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
-                    if 'files' in rule['category']:
-                        for scope in rule['scope']:
+                    if 'files' in rule.get('category'):
+                        for scope in rule.get('scope'):
                             search(rule, tf, scope)
             if pii:
                 print(colored('Searching PII/Personal Data', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
-                    if 'pii' in rule['category']:
-                        for scope in rule['scope']:
+                    if 'pii' in rule.get('category'):
+                        for scope in rule.get('scope'):
                             search(rule, tf, scope)
         if custom:
             if os.path.exists(custom):

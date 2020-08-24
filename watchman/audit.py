@@ -27,7 +27,7 @@ def rate_limit_check(response):
     """Checks to see whether you have hit the Slack API rate limit.
     These limits are tiered, so are variable"""
 
-    if not response['ok'] and response['error'] == 'ratelimited':
+    if not response.get('ok') and response.get('error') == 'ratelimited':
         print('Slack API rate limit reached - cooling off')
         time.sleep(90)
         return True
@@ -44,6 +44,20 @@ def convert_timestamp(timestamp):
     output = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
 
     return output
+
+
+def validate_token():
+    """Check that slack token is valid"""
+
+    token = get_token()
+
+    r = requests.get('https://slack.com/api/users.list',
+                     params={'token': token,
+                             'pretty': 1,
+                             'limit': 1,
+                             'cursor': ''}).json()
+    if not r.get('ok') and r.get('error') == 'invalid_auth':
+        raise Exception('Invalid Slack API key')
 
 
 def format_query(query):
@@ -77,20 +91,6 @@ def write_csv(headers, path, input_list):
     csv_file.close()
 
 
-def validate_token():
-    """Check that slack token is valid"""
-
-    token = get_token()
-
-    r = requests.get('https://slack.com/api/users.list',
-                     params={'token': token,
-                             'pretty': 1,
-                             'limit': 1,
-                             'cursor': ''}).json()
-    if not r['ok'] and r['error'] == 'invalid_auth':
-        raise Exception('Invalid Slack API key')
-
-
 def get_workspace_name():
     """Returns the name of the workspace you are searching"""
 
@@ -104,10 +104,10 @@ def get_workspace_name():
             if not rate_limit_check(r):
                 break
 
-        if str(r['ok']) == 'False':
-            print('END: Unable to get the workspace name. Slack error: ' + str(r['error']))
+        if str(r.get('ok')) == 'False':
+            print('END: Unable to get the workspace name. Slack error: ' + str(r.get('error')))
         else:
-            result = r['team']['name']
+            result = r.get('team').get('name')
     except requests.exceptions.RequestException as exception:
         print(exception)
 
@@ -127,10 +127,10 @@ def get_workspace_domain():
             if not rate_limit_check(r):
                 break
 
-        if str(r['ok']) == 'False':
-            print('END: Unable to get the workspace name. Slack error: ' + str(r['error']))
+        if str(r.get('ok')) == 'False':
+            print('END: Unable to get the workspace name. Slack error: ' + str(r.get('error')))
         else:
-            result = 'https://{}.slack.com/'.format(r['team']['domain'])
+            result = 'https://{}.slack.com/'.format(r.get('team').get('domain'))
     except requests.exceptions.RequestException as exception:
         print(exception)
 
@@ -151,18 +151,18 @@ def get_users():
             if not rate_limit_check(r):
                 break
 
-        if str(r['ok']) == 'False':
-            print('END: Unable to dump the user list. Slack error: ' + str(r['error']))
+        if str(r.get('ok')) == 'False':
+            print('END: Unable to dump the user list. Slack error: ' + str(r.get('error')))
         else:
-            cursor = r['response_metadata']['next_cursor']
-            while str(r['ok']) == 'True' and cursor:
+            cursor = r.get('response_metadata').get('next_cursor')
+            while str(r.get('ok')) == 'True' and cursor:
                 request_url = 'https://slack.com/api/users.list'
                 params = {'token': token, 'pretty': 1, 'limit': 200, 'cursor': cursor}
                 r = requests.get(request_url, params=params).json()
                 rate_limit_check(r)
-                for value in r['members']:
-                    cursor = r['response_metadata']['next_cursor']
-                    if not value['deleted']:
+                for value in r.get('members'):
+                    cursor = r.get('response_metadata').get('next_cursor')
+                    if not value.get('deleted'):
                         results.append(value)
     except requests.exceptions.RequestException as exception:
         print(exception)
@@ -184,17 +184,17 @@ def get_channels():
             if not rate_limit_check(r):
                 break
 
-        if str(r['ok']) == 'False':
-            print('END: Unable to dump the channel list. Slack error: ' + str(r['error']))
+        if str(r.get('ok')) == 'False':
+            print('END: Unable to dump the channel list. Slack error: ' + str(r.get('error')))
         else:
-            cursor = r['response_metadata']['next_cursor']
-            while str(r['ok']) == 'True' and cursor:
+            cursor = r.get('response_metadata').get('next_cursor')
+            while str(r.get('ok')) == 'True' and cursor:
                 request_url = 'https://slack.com/api/conversations.list'
                 params = {'token': token, 'pretty': 1, 'limit': 1000, 'cursor': cursor}
                 r = requests.get(request_url, params=params).json()
                 rate_limit_check(r)
-                for value in r['channels']:
-                    cursor = r['response_metadata']['next_cursor']
+                for value in r.get('channels'):
+                    cursor = r.get('response_metadata').get('next_cursor')
                     results.append(value)
     except requests.exceptions.RequestException as exception:
         print(exception)
@@ -213,12 +213,12 @@ def output_all_channels(channel_list, timeframe=d.ALL_TIME):
     epoch_timeframe = time.mktime(utc_time)
 
     for channel in channel_list:
-        created = channel['created']
+        created = channel.get('created')
         if int(created) > epoch_timeframe:
-            results.append([convert_timestamp(channel['created']),
-                            channel['id'],
-                            channel['name'],
-                            channel['topic']['value']])
+            results.append([convert_timestamp(created),
+                            channel.get('id'),
+                            channel.get('name'),
+                            channel.get('topic').get('value')])
 
     if results:
         path = '{}/all_channels.csv'.format(out_path)
@@ -235,14 +235,14 @@ def output_all_users(user_list):
     out_path = os.getcwd()
 
     for user in user_list:
-        if 'email' in user['profile']:
-            results.append([user['id'],
-                            user['name'],
-                            user['profile']['email']])
-        else:
-            results.append([user['id'],
-                            user['name'],
-                            'NO EMAIL'])
+        if 'email' in user.get('profile'):
+            results.append([user.get('id'),
+                            user.get('name'),
+                            user.get('profile').get('email', 'NO EMAIL')])
+        # else:
+        #     results.append([user['id'],
+        #                     user['name'],
+        #                     'NO EMAIL'])
 
     if results:
         path = '{}/all_users.csv'.format(out_path)
@@ -266,7 +266,7 @@ def search_files(query, timeframe):
             if not rate_limit_check(r):
                 break
 
-        page_count_by_query[query] = (r['files']['pagination']['page_count'])
+        page_count_by_query[query] = (r.get('files').get('pagination').get('page_count'))
         print('{} page(s) found for query: {}'.format(page_count_by_query.get(query), query))
 
         for query, page_count in page_count_by_query.items():
@@ -278,7 +278,7 @@ def search_files(query, timeframe):
                                  params=params).json()
                 if rate_limit_check(r):
                     break
-                for value in r['files']['matches']:
+                for value in r.get('files').get('matches'):
                     results.append(value)
                 page += 1
 
@@ -303,7 +303,7 @@ def search_messages(query, timeframe):
             if not rate_limit_check(r):
                 break
 
-        page_count_by_query[query] = (r['messages']['pagination']['page_count'])
+        page_count_by_query[query] = (r.get('messages').get('pagination').get('page_count'))
         print('{} page(s) found for query: {}'.format(page_count_by_query.get(query), query))
 
         for query, page_count in page_count_by_query.items():
@@ -316,7 +316,7 @@ def search_messages(query, timeframe):
                 if rate_limit_check(r):
                     break
 
-                for value in r['messages']['matches']:
+                for value in r.get('messages').get('matches'):
                     results.append(value)
                 page += 1
 
@@ -334,10 +334,10 @@ def get_admins(user_list):
     out_path = os.getcwd()
 
     for user in user_list:
-        if 'is_admin' in user.keys() and user['is_admin']:
-            results.append([user['id'],
-                            user['name'],
-                            user['profile']['email']])
+        if 'is_admin' in user.keys() and user.get('is_admin'):
+            results.append([user.get('id'),
+                            user.get('name'),
+                            user.get('profile').get('email')])
 
     if results:
         path = '{}/admins.csv'.format(out_path)
@@ -358,12 +358,12 @@ def get_external_shared(channel_list, timeframe=d.ALL_TIME):
 
     if channel_list:
         for channel in channel_list:
-            created = channel['created']
-            if 'is_ext_shared' in channel.keys() and channel['is_ext_shared'] and int(created) > epoch_timeframe:
-                results.append([convert_timestamp(channel['created']),
-                                channel['id'],
-                                channel['name'],
-                                channel['topic']['value']])
+            created = channel.get('created')
+            if 'is_ext_shared' in channel.keys() and channel.get('is_ext_shared') and int(created) > epoch_timeframe:
+                results.append([convert_timestamp(created),
+                                channel.get('id'),
+                                channel.get('name'),
+                                channel.get('topic').get('value')])
 
     if results:
         path = '{}/external_channels.csv'.format(out_path)
@@ -377,7 +377,6 @@ def get_external_shared(channel_list, timeframe=d.ALL_TIME):
 def find_certificates(timeframe=d.ALL_TIME):
     """Look for certificate files in public channels by first searching for certificate file extensions
     these are then filtered down further to include only true certificate files
-
     Difference in logic means a specific function is required rather than using the generic find_files function
     """
 
@@ -387,12 +386,12 @@ def find_certificates(timeframe=d.ALL_TIME):
     for query in d.CERTIFICATE_EXTENSIONS:
         message_list = search_files(query, timeframe)
         for message in message_list:
-            if 'text' in message['filetype'] and query in message['name']:
-                results.append([convert_timestamp(message['timestamp']),
-                                message['name'],
-                                message['username'],
-                                message['preview'],
-                                message['permalink']])
+            if 'text' in message.get('filetype') and query in message.get('name'):
+                results.append([convert_timestamp(message.get('timestamp')),
+                                message.get('name'),
+                                message.get('username'),
+                                message.get('preview'),
+                                message.get('permalink')])
     if results:
         results = deduplicate(results)
         path = '{}/certificates.csv'.format(out_path)
@@ -414,12 +413,12 @@ def find_messages(query_list, regex, file_name, timeframe=d.ALL_TIME):
         message_list = search_messages(query, timeframe)
         for message in message_list:
             r = re.compile(regex)
-            if r.search(str(message['text'])):
-                results.append([convert_timestamp(message['ts']),
-                                message['channel']['name'],
-                                message['username'],
-                                message['text'],
-                                message['permalink']])
+            if r.search(str(message.get('text'))):
+                results.append([convert_timestamp(message.get('ts')),
+                                message.get('channel').get('name'),
+                                message.get('username'),
+                                message.get('text'),
+                                message.get('permalink')])
     if results:
         results = deduplicate(results)
         path = '{}/potential_{}.csv'.format(out_path, file_name)
@@ -441,11 +440,11 @@ def find_files(query_list, file_name, timeframe=d.ALL_TIME):
         message_list = search_files(query, timeframe)
 
         for message in message_list:
-            if query in message['name']:
-                results.append([convert_timestamp(message['timestamp']),
-                                message['name'],
-                                message['username'],
-                                message['permalink']])
+            if query in message.get('name'):
+                results.append([convert_timestamp(message.get('timestamp')),
+                                message.get('name'),
+                                message.get('username'),
+                                message.get('permalink')])
     if results:
         results = deduplicate(results)
         path = '{}/{}.csv'.format(out_path, file_name)
@@ -466,11 +465,11 @@ def find_custom_queries(query_list, timeframe=d.ALL_TIME):
     for query in query_list:
         message_list = search_messages(query, timeframe)
         for message in message_list:
-            results.append([convert_timestamp(message['ts']),
-                            message['channel']['name'],
-                            message['username'],
-                            message['text'],
-                            message['permalink']])
+            results.append([convert_timestamp(message.get('ts')),
+                            message.get('channel').get('name'),
+                            message.get('username'),
+                            message.get('text'),
+                            message.get('permalink')])
     if results:
         results = deduplicate(results)
         path = '{}/custom_strings.csv'.format(out_path)
