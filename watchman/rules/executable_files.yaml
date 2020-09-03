@@ -16,8 +16,8 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- .exe
-- .dmg
-- .iso
-- .pkg
+- '".exe"'
+- '".dmg"'
+- '".iso"'
+- '".pkg"'
 pattern: ''

@@ -16,7 +16,7 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- .key
+- '".key"'
 - .p12
 - .pem
 - .pfx

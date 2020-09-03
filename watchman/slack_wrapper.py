@@ -349,7 +349,7 @@ def find_files(slack: SlackAPI, query_list, file_name, timeframe=d.ALL_TIME):
     for query in query_list:
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
         for message in message_list:
-            if query in message.get('name'):
+            if query.replace('\"', '') in message.get('name'):
                 results.append([convert_timestamp(message.get('timestamp')),
                                 message.get('name'),
                                 message.get('username'),
