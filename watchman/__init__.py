@@ -6,9 +6,10 @@ from colorama import init, deinit
 from termcolor import colored
 from pathlib import Path
 
-from watchman import audit
+# from watchman import audit
 from watchman import definitions as d
 from watchman import __about__ as a
+from watchman import slack_wrapper as slack
 
 RULES_PATH = (Path(__file__).parent / 'rules').resolve()
 
@@ -51,14 +52,14 @@ def load_rules():
     return rules
 
 
-def search(rule, tf, scope):
+def search(slack_conn, rule, tf, scope):
     if scope == 'messages':
         print(colored('Searching for {} containing {}\n+++++++++++++++++++++'.format('posts', rule.get('meta').get('name')),
                       'yellow'))
-        audit.find_messages(rule.get('strings'), rule.get('pattern'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
+        slack.find_messages(slack_conn, rule.get('strings'), rule.get('pattern'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
     if scope == 'files':
         print(colored('Searching for {}\n+++++++++++++++++++++'.format(rule.get('meta').get('name')), 'yellow'))
-        audit.find_files(rule.get('strings'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
+        slack.find_files(slack_conn, rule.get('strings'), 'exposed_{}'.format(rule.get('filename').split('.')[0]), tf)
 
 
 def main():
@@ -134,108 +135,109 @@ def main():
  #  #  # #     #    #    #     # #     # #     # #     # #    ##
   ## ##  #     #    #     #####  #     # #     # #     # #     #''', 'yellow'))
         print('Version: {}\n'.format(a.__version__))
-        print('Searching workspace: {}'.format(audit.get_workspace_name()))
-        print('Workspace URL: {}\n'.format(audit.get_workspace_domain()))
-        print('Importing rules...')
-        rules_list = load_rules()
-        print('{} rules loaded'.format(len(rules_list)))
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
-
         if not validate_conf(conf_path):
             raise Exception(colored('SLACK_WATCHMAN_TOKEN environment variable or watchman.conf file not detected. '
                                     '\nEnsure environment variable is set or a valid file is located in your home '
                                     'directory: {} ', 'red')
                             .format(os.path.expanduser('~')))
         else:
-            audit.validate_token()
+            slack_con = slack.initiate_slack_connection()
+            slack_con.validate_token()
+        print('Searching workspace: {}'.format(slack_con.get_workspace_name()))
+        print('Workspace URL: {}\n'.format(slack_con.get_workspace_domain()))
+        print('Importing rules...')
+        rules_list = load_rules()
+        print('{} rules loaded'.format(len(rules_list)))
+
 
         if everything:
             print('Getting everything...')
             print(colored('+++++++++++++++++++++', 'yellow'))
             print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
-            user_list = audit.get_users()
+            user_list = slack.get_users(slack.initiate_slack_connection())
             print(colored('Getting channels\n+++++++++++++++++++++', 'yellow'))
-            channel_list = audit.get_channels()
+            channel_list = slack.get_channels(slack.initiate_slack_connection())
             print(colored('Getting admin users\n+++++++++++++++++++++', 'yellow'))
-            audit.get_admins(user_list)
+            slack.get_admins(user_list)
             print(colored('Outputting all channels\n+++++++++++++++++++++', 'yellow'))
-            audit.output_all_channels(channel_list, tf)
+            slack.output_all_channels(channel_list, tf)
             print(colored('Outputting all users\n+++++++++++++++++++++', 'yellow'))
-            audit.output_all_users(user_list)
+            slack.output_all_users(user_list)
             print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
-            audit.get_external_shared(channel_list, tf)
+            slack.get_external_shared(channel_list, tf)
             print(colored('Searching tokens', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
                 if 'tokens' in rule.get('category'):
                     for scope in rule.get('scope'):
-                        search(rule, tf, scope)
+                        search(slack.initiate_slack_connection(), rule, tf, scope)
             print(colored('Searching financial data', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
                 if 'financial' in rule.get('category'):
                     for scope in rule.get('scope'):
-                        search(rule, tf, scope)
+                        search(slack.initiate_slack_connection(), rule, tf, scope)
             print(colored('Searching files', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
                 if 'files' in rule.get('category'):
                     for scope in rule.get('scope'):
-                        search(rule, tf, scope)
+                        search(slack_con, rule, tf, scope)
             print(colored('Searching PII/Personal Data', 'yellow'))
             print(colored('+++++++++++++++++++++', 'yellow'))
             for rule in rules_list:
                 if 'pii' in rule.get('category'):
                     for scope in rule.get('scope'):
-                        search(rule, tf, scope)
+                        search(slack_con, rule, tf, scope)
         else:
             if users:
                 print(colored('Getting users\n+++++++++++++++++++++', 'yellow'))
-                user_list = audit.get_users()
+                user_list = slack.get_users(slack_con)
                 print(colored('Getting admin users\n+++++++++++++++++++++', 'yellow'))
-                audit.get_admins(user_list)
+                slack.get_admins(user_list)
                 print(colored('Outputting all users\n+++++++++++++++++++++', 'yellow'))
-                audit.output_all_users(user_list)
+                slack.output_all_users(user_list)
             if channels:
                 print(colored('Getting channels\n+++++++++++++++++++++', 'yellow'))
-                channel_list = audit.get_channels()
+                channel_list = slack.get_channels(slack_con)
                 print(colored('Outputting all channels\n+++++++++++++++++++++', 'yellow'))
-                audit.output_all_channels(channel_list, tf)
+                slack.output_all_channels(channel_list, tf)
                 print(colored('Outputting all externally shared channels\n+++++++++++++++++++++', 'yellow'))
-                audit.get_external_shared(channel_list, tf)
+                slack.get_external_shared(channel_list, tf)
             if tokens:
                 print(colored('Searching tokens', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
                     if 'tokens' in rule.get('category'):
                         for scope in rule.get('scope'):
-                            search(rule, tf, scope)
+                            search(slack_con, rule, tf, scope)
             if financial:
                 print(colored('Searching financial data', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
                     if 'financial' in rule.get('category'):
                         for scope in rule.get('scope'):
-                            search(rule, tf, scope)
+                            search(slack_con, rule, tf, scope)
             if files:
                 print(colored('Searching files', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
                     if 'files' in rule.get('category'):
                         for scope in rule.get('scope'):
-                            search(rule, tf, scope)
+                            search(slack_con, rule, tf, scope)
             if pii:
                 print(colored('Searching PII/Personal Data', 'yellow'))
                 print(colored('+++++++++++++++++++++', 'yellow'))
                 for rule in rules_list:
                     if 'pii' in rule.get('category'):
                         for scope in rule.get('scope'):
-                            search(rule, tf, scope)
+                            search(slack_con, rule, tf, scope)
         if custom:
             if os.path.exists(custom):
                 queries = import_custom_queries(custom)
                 print(colored('Searching for user input strings\n+++++++++++++++++++++', 'yellow'))
-                audit.find_custom_queries(queries, tf)
+                slack.find_custom_queries(slack_con, queries, tf)
             else:
                 print(colored('Custom query file does not exist', 'red'))
 

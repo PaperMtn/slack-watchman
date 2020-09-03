@@ -203,6 +203,18 @@ BEARER_TOKEN_REGEX = r'''('|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})('
 
 AZURE_REGEX = '''(?i)('|"){0,2}(refreshtoken|accesstoken|_clientId)('|"){0,2}:(\s*)('|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})('|"){0,2}'''
 
+USER_AGENTS = ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 '
+               'Safari/537.36',
+               'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:24.0) Gecko/20100101 Firefox/24.0',
+               'Apache/2.4.34 (Ubuntu) OpenSSL/1.1.1 (internal dummy connection)',
+               'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9a1) Gecko/20070308 Minefield/3.0a1',
+               'Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Thunderbird/45.8.0',
+               'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0',
+               'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36',
+               'Mozilla/5.0 (X11; Fedora;Linux x86; rv:60.0) Gecko/20100101 Firefox/60.0',
+               'Mozilla/5.0 CK={} (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko',
+               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36']
+
 ### TIMEFRAMES ###
 # Epoch time for 24 hours
 DAY_TIMEFRAME = 86400
