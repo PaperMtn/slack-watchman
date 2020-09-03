@@ -16,6 +16,6 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- .conf
-- .ini
+- '".conf"'
+- '".ini"'
 pattern: ''

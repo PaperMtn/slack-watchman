@@ -16,7 +16,7 @@ test_cases:
   fail_cases:
   - blank
 strings:
-- .pptx
-- .pptm
-- .ppt
+- '".pptx"'
+- '".pptm"'
+- '".ppt"'
 pattern: ''
