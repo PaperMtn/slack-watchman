@@ -1,13 +1,14 @@
-import itertools
+import builtins
+import json
 import os
 import re
 import requests
 import time
-import configparser
-import csv
+import yaml
 from requests.exceptions import HTTPError
 
-import watchman.definitions as d
+from watchman import config as cfg
+from watchman import logger
 
 
 class SlackAPI(object):
@@ -89,7 +90,6 @@ class SlackAPI(object):
             results.append(value)
 
         page_count_by_query[query] = (r.get(scope).get('pagination').get('page_count'))
-        print('{} page(s) found for query: {}'.format(page_count_by_query.get(query), query))
 
         for query, page_count in page_count_by_query.items():
             page = 1
@@ -134,10 +134,10 @@ def initiate_slack_connection():
     try:
         token = os.environ['SLACK_WATCHMAN_TOKEN']
     except KeyError:
-        conf = configparser.ConfigParser()
-        path = '{}/watchman.conf'.format(os.path.expanduser('~'))
-        conf.read(path)
-        token = conf.get('auth', 'slack_token')
+        with open('{}/watchman.conf'.format(os.path.expanduser('~'))) as yaml_file:
+            config = yaml.safe_load(yaml_file)
+
+        token = config.get('slack_watchman').get('token')
 
     return SlackAPI(token)
 
@@ -156,21 +156,9 @@ def convert_timestamp(timestamp):
 def deduplicate(input_list):
     """Removes duplicates where results are returned by multiple queries"""
 
-    input_list.sort()
-    return list(input_list for input_list, _ in itertools.groupby(input_list))
-
-
-def write_csv(headers, path, input_list):
-    """Writes input list to .csv. The headers are and output path are passed as variables"""
-
-    with open('{}'.format(path), mode='w+', encoding='utf-8') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-        writer.writerow(headers)
-        for line in input_list:
-            writer.writerow(line)
-
-    csv_file.close()
+    list_of_strings = [json.dumps(d, sort_keys=True) for d in input_list]
+    list_of_strings = set(list_of_strings)
+    return [json.loads(s) for s in list_of_strings]
 
 
 def get_users(slack: SlackAPI):
@@ -188,202 +176,176 @@ def get_users(slack: SlackAPI):
 def get_channels(slack: SlackAPI):
     """Return a list of all channels in the instance"""
 
-    return slack.cursor_api_search('channels.list', 'channels')
+    return slack.cursor_api_search('conversations.list', 'channels')
 
 
-def output_all_channels(channel_list, timeframe=d.ALL_TIME):
+def get_all_channels(log_handler, channel_list, timeframe=cfg.ALL_TIME):
     """Write all channels to .csv"""
 
     results = []
-    headers = ['created', 'id', 'name', 'description']
-    out_path = os.getcwd()
-
     utc_time = time.strptime(timeframe, '%Y-%m-%d')
     epoch_timeframe = time.mktime(utc_time)
+
+    if isinstance(log_handler, logger.StdoutLogger):
+        print = log_handler.log_info
+    else:
+        print = builtins.print
 
     for channel in channel_list:
         created = channel.get('created')
         if int(created) > epoch_timeframe:
-            results.append([convert_timestamp(created),
-                            channel.get('id'),
-                            channel.get('name'),
-                            channel.get('topic').get('value')])
+            results_dict = {
+                'channel_id': channel.get('id'),
+                'channel_name': channel.get('name'),
+                'topic': channel.get('topic').get('value'),
+                'creator': channel.get('creator'),
+                'created': convert_timestamp(created),
+                'is_archived': channel.get('is_archived'),
+                'number_of_members': channel.get('num_members'),
+                'is_ext_shared': channel.get('is_ext_shared')
+            }
+
+            results.append(results_dict)
 
     if results:
-        path = '{}/all_channels.csv'.format(out_path)
-        write_csv(headers, path, results)
+        results = deduplicate(results)
         print('{} channels found'.format(len(results)))
-        print('CSV written: {}'.format(path))
+        return results
+    else:
+        print('No matches found after filtering')
 
 
-def output_all_users(user_list):
+def get_all_users(log_handler, user_list):
     """Write all users to .csv"""
 
     results = []
-    headers = ['id', 'name', 'email']
-    out_path = os.getcwd()
 
-    for user in user_list:
-        if 'email' in user.get('profile'):
-            results.append([user.get('id'),
-                            user.get('name'),
-                            user.get('profile').get('email', 'NO EMAIL')])
-
-    if results:
-        path = '{}/all_users.csv'.format(out_path)
-        write_csv(headers, path, results)
-        print('{} users found'.format(len(results)))
-        print('CSV written: {}'.format(path))
-
-
-def get_admins(user_list):
-    """Return all admin users from the input userlist"""
-
-    results = []
-    headers = ['id', 'name', 'email']
-    out_path = os.getcwd()
-
-    for user in user_list:
-        if 'is_admin' in user.keys() and user.get('is_admin'):
-            results.append([user.get('id'),
-                            user.get('name'),
-                            user.get('profile').get('email')])
-
-    if results:
-        path = '{}/admins.csv'.format(out_path)
-        write_csv(headers, path, results)
-        print('{} admin users found'.format(len(results)))
-        print('CSV written: {}'.format(path))
-
-
-def get_external_shared(channel_list, timeframe=d.ALL_TIME):
-    """Return all external shared channels from the input channel list"""
-
-    results = []
-    headers = ['created', 'id', 'name', 'description']
-    out_path = os.getcwd()
-
-    utc_time = time.strptime(timeframe, '%Y-%m-%d')
-    epoch_timeframe = time.mktime(utc_time)
-
-    if channel_list:
-        for channel in channel_list:
-            created = channel.get('created')
-            if 'is_ext_shared' in channel.keys() and channel.get('is_ext_shared') and int(created) > epoch_timeframe:
-                results.append([convert_timestamp(created),
-                                channel.get('id'),
-                                channel.get('name'),
-                                channel.get('topic').get('value')])
-
-    if results:
-        path = '{}/external_channels.csv'.format(out_path)
-        write_csv(headers, path, results)
-        print('{} external channels found'.format(len(results)))
-        print('CSV written: {}'.format(path))
+    if isinstance(log_handler, logger.StdoutLogger):
+        print = log_handler.log_info
     else:
-        print('No external channels')
+        print = builtins.print
 
+    for user in user_list:
+        results_dict = {
+            'user_id': user.get('id'),
+            'user_name': user.get('name'),
+            'email': user.get('profile').get('email', ''),
+            'team_id': user.get('team_id'),
+            'updated': user.get('updated'),
+            'deleted': user.get('deleted'),
+            'has_2fa': user.get('has_2fa'),
+            'is_admin': user.get('is_admin')
+        }
 
-def find_certificates(slack: SlackAPI, timeframe=d.ALL_TIME):
-    """Look for certificate files in public channels by first searching for certificate file extensions
-    these are then filtered down further to include only true certificate files
-    Difference in logic means a specific function is required rather than using the generic find_files function
-    """
+        results.append(results_dict)
 
-    headers = ['timestamp', 'file_name', 'posted_by', 'preview', 'private_link']
-    out_path = os.getcwd()
-    results = []
-    for query in d.CERTIFICATE_EXTENSIONS:
-        message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
-        for message in message_list:
-            if 'text' in message.get('filetype') and query in message.get('name'):
-                results.append([convert_timestamp(message.get('timestamp')),
-                                message.get('name'),
-                                message.get('username'),
-                                message.get('preview'),
-                                message.get('permalink')])
     if results:
         results = deduplicate(results)
-        path = '{}/certificates.csv'.format(out_path)
-        write_csv(headers, path, results)
-        print('{} total matches found after filtering'.format(len(results)))
-        print('CSV written: {}'.format(path))
+        print('{} users found'.format(len(results)))
+        return results
     else:
         print('No matches found after filtering')
 
 
-def find_messages(slack: SlackAPI, query_list, regex, file_name, timeframe=d.ALL_TIME):
+def find_messages(slack: SlackAPI, log_handler, query_list, regex, timeframe=cfg.ALL_TIME):
     """Look in public channels by first searching for common terms in query list
         then trimming this list down using a regex search"""
 
-    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
-    out_path = os.getcwd()
     results = []
+
+    if isinstance(log_handler, logger.StdoutLogger):
+        print = log_handler.log_info
+    else:
+        print = builtins.print
+
     for query in query_list:
         message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
+        print('{} messages found matching: {}'.format(len(message_list), query))
         for message in message_list:
             r = re.compile(regex)
             if r.search(str(message.get('text'))):
-                results.append([convert_timestamp(message.get('ts')),
-                                message.get('channel').get('name'),
-                                message.get('username'),
-                                message.get('text'),
-                                message.get('permalink')])
+                results_dict = {
+                    'message_id': message.get('iid'),
+                    'timestamp': convert_timestamp(message.get('ts')),
+                    'channel_name': message.get('channel').get('name'),
+                    'posted_by': message.get('username'),
+                    'text': message.get('text'),
+                    'permalink': message.get('permalink')
+                }
+
+                results.append(results_dict)
     if results:
         results = deduplicate(results)
-        path = '{}/potential_{}.csv'.format(out_path, file_name)
-        write_csv(headers, path, results)
         print('{} total matches found after filtering'.format(len(results)))
-        print('CSV written: {}'.format(path))
+        return results
     else:
         print('No matches found after filtering')
 
 
-def find_files(slack: SlackAPI, query_list, file_name, timeframe=d.ALL_TIME):
+def find_files(slack: SlackAPI, log_handler, query_list, timeframe=cfg.ALL_TIME):
     """Look for files in public channels by first searching for common terms for the file
     these are then filtered down further to include only files of those extensions"""
 
-    headers = ['timestamp', 'file_name', 'posted_by', 'private_link']
-    out_path = os.getcwd()
     results = []
+
+    if isinstance(log_handler, logger.StdoutLogger):
+        print = log_handler.log_info
+    else:
+        print = builtins.print
+
     for query in query_list:
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
-        for message in message_list:
-            if query.replace('\"', '') in message.get('name'):
-                results.append([convert_timestamp(message.get('timestamp')),
-                                message.get('name'),
-                                message.get('username'),
-                                message.get('permalink')])
-    if results:
-        results = deduplicate(results)
-        path = '{}/{}.csv'.format(out_path, file_name)
-        write_csv(headers, path, results)
-        print('{} total matches found after filtering'.format(len(results)))
-        print('CSV written: {}'.format(path))
-    else:
-        print('No matches found after filtering')
+        print('{} files found matching: {}'.format(len(message_list), query))
+        for fl in message_list:
+            if query.replace('\"', '') in fl.get('name'):
+                results_dict = {
+                    'file_id': fl.get('id'),
+                    'timestamp': convert_timestamp(fl.get('timestamp')),
+                    'name': fl.get('name'),
+                    'mimetype': fl.get('mimetype'),
+                    'posted_by': fl.get('username'),
+                    'created': fl.get('created'),
+                    'preview': fl.get('preview'),
+                    'permalink': fl.get('permalink')
+                }
+
+                results.append(results_dict)
+            if results:
+                results = deduplicate(results)
+                print('{} total matches found after filtering'.format(len(results)))
+                return results
+            else:
+                print('No matches found after filtering')
 
 
-def find_custom_queries(slack: SlackAPI, query_list, timeframe=d.ALL_TIME):
+def find_custom_queries(slack: SlackAPI, log_handler, query_list, timeframe=cfg.ALL_TIME):
     """Look in public channels by first searching for common terms in query list
         then trimming this list down using a regex search"""
 
-    headers = ['timestamp', 'channel_name', 'posted_by', 'content', 'link']
-    out_path = os.getcwd()
     results = []
+
+    if isinstance(log_handler, logger.StdoutLogger):
+        print = log_handler.log_info
+    else:
+        print = builtins.print
+
     for query in query_list:
         message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
+        print('{} messages found matching: {}'.format(len(message_list), query))
         for message in message_list:
-            results.append([convert_timestamp(message.get('ts')),
-                            message.get('channel').get('name'),
-                            message.get('username'),
-                            message.get('text'),
-                            message.get('permalink')])
-    if results:
-        results = deduplicate(results)
-        path = '{}/custom_strings.csv'.format(out_path)
-        write_csv(headers, path, results)
-        print('{} total matches found after filtering'.format(len(results)))
-        print('CSV written: {}'.format(path))
-    else:
-        print('No matches found')
+            results_dict = {
+                'message_id': message.get('iid'),
+                'timestamp': convert_timestamp(message.get('ts')),
+                'channel_name': message.get('channel').get('name'),
+                'posted_by': message.get('username'),
+                'text': message.get('text'),
+                'permalink': message.get('permalink')
+            }
+
+            results.append(results_dict)
+        if results:
+            results = deduplicate(results)
+            print('{} total matches found after filtering'.format(len(results)))
+            return results
+        else:
+            print('No matches found after filtering')
