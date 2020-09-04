@@ -138,9 +138,8 @@ def main():
                                  ' Facebook, Twitter, GitHub')
         parser.add_argument('--files', dest='files', action='store_true',
                             help='Find files: Certificates, interesting/malicious files')
-        parser.add_argument('--custom', dest='custom',
-                            help='Search for user defined custom search queries. Provide path '
-                                 'to .txt file containing one search per line')
+        parser.add_argument('--custom', dest='custom', action='store_true',
+                            help='Search for user defined custom search queries that you have created rules for')
 
         args = parser.parse_args()
         tm = args.time
@@ -276,6 +275,11 @@ def main():
                 if 'pii' in rule.get('category'):
                     for scope in rule.get('scope'):
                         search(slack_con, rule, tf, scope)
+            print(colored('Searching custom strings', 'yellow'))
+            for rule in rules_list:
+                if 'custom' in rule.get('category'):
+                    for scope in rule.get('scope'):
+                        search(slack_con, rule, tf, scope)
         else:
             if users:
                 print(colored('Getting users', 'yellow'))
@@ -315,13 +319,12 @@ def main():
                     if 'pii' in rule.get('category'):
                         for scope in rule.get('scope'):
                             search(slack_con, rule, tf, scope)
-        if custom:
-            if os.path.exists(custom):
-                queries = import_custom_queries(custom)
-                print(colored('Searching for user input strings', 'yellow'))
-                slack.find_custom_queries(slack_con, OUTPUT_LOGGER, queries, tf)
-            else:
-                print(colored('Custom query file does not exist', 'red'))
+            if custom:
+                print(colored('Searching custom strings', 'yellow'))
+                for rule in rules_list:
+                    if 'custom' in rule.get('category'):
+                        for scope in rule.get('scope'):
+                            search(slack_con, rule, tf, scope)
 
         print(colored('++++++Audit completed++++++', 'green'))
 
