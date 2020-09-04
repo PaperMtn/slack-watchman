@@ -10,6 +10,7 @@ meta:
 category: financial
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - 'access_token$production$0000000000000000$00000000000000000000000000000000'

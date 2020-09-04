@@ -64,6 +64,7 @@ meta:
 category: [files|tokens|financial|pii]
 scope:
 - [files|messages]
+file_types: *optional list for use with file searching*
 test_cases:
   match_cases:
   - *test case that should match the regex*
@@ -169,13 +170,12 @@ required arguments:
   --timeframe {d,w,m,a}
                         How far back to search: d = 24 hours w = 7 days, m =
                         30 days, a = all time
-
   ```
 
-You can run Slack Watchman to look for everything:
+You can run Slack Watchman to look for everything, and output to default CSV:
 
 `slack-watchman --timeframe a --all`
 
-Or arguments can be grouped together to search more granularly. This will look for tokens and files for the last 30 days, and output the results to a tcp stream:
+Or arguments can be grouped together to search more granularly. This will look for tokens and files for the last 30 days, and output the results to a TCP stream:
 
 `slack-watchman --timeframe m --tokens --files --output stream`

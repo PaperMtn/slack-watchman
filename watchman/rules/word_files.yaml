@@ -10,6 +10,11 @@ meta:
 category: files
 scope:
 - files
+file_types:
+- doc
+- docx
+- dotx
+- docm
 test_cases:
   match_cases:
   - blank
@@ -19,4 +24,5 @@ strings:
 - '".docx"'
 - '".docm"'
 - '".doc"'
+- '".dotx"'
 pattern: ''

@@ -97,12 +97,12 @@ def search(slack_conn, rule, tf, scope):
         print(colored(
             'Searching for {} containing {}'.format('posts', rule.get('meta').get('name')),
             'yellow'))
-        messages = slack.find_messages(slack_conn, OUTPUT_LOGGER, rule.get('strings'), rule.get('pattern'), tf)
+        messages = slack.find_messages(slack_conn, OUTPUT_LOGGER, rule, tf)
         if messages:
             log(messages, scope, rule=rule)
     if scope == 'files':
         print(colored('Searching for {}'.format(rule.get('meta').get('name')), 'yellow'))
-        files = slack.find_files(slack_conn, OUTPUT_LOGGER, rule.get('strings'), tf)
+        files = slack.find_files(slack_conn, OUTPUT_LOGGER, rule, tf)
         if files:
             log(files, scope, rule=rule)
 

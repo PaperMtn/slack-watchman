@@ -10,6 +10,7 @@ meta:
 category: pii
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - 'Passport cb676767677'

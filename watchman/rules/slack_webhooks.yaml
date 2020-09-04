@@ -10,6 +10,7 @@ meta:
 category: tokens
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - https://hooks.slack.com/services/T01010101/Babababab/aabab1212abab1212abababa

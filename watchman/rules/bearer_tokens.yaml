@@ -10,6 +10,7 @@ meta:
 category: tokens
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - 'Authorization: ''Bearer ABABAB1111111ABABAB++__..--..abcdefg'''

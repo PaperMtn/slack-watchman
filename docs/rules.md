@@ -15,6 +15,7 @@ meta:
 category: [files|tokens|financial|pii|custom]
 scope:
 - [files|messages]
+file_types: *optional list for use with file searching*
 test_cases:
   match_cases:
   - *test case that should match the regex*
@@ -32,6 +33,13 @@ The category the rule comes under, to be used with granular searching command li
 
 **Scope**
 This is what Slack should look for: messages or files. You can also use both, with each on its own line
+
+**File Type**
+This is an optional field. Can be used to search for files and only match certain types. E.g. looking for the search term `CV` in the name of files of the type `docx`
+
+[This page from Slack](https://api.slack.com/types/file) details the available filetypes.
+
+If you are not searching files, or aren't bothered about file type, leave this blank.
 
 **Test cases**
 These test cases are used to check that the regex pattern works. Each rule should have at least one match (pass) and one fail case.
