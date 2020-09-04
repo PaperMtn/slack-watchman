@@ -10,6 +10,7 @@ meta:
 category: tokens
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - 'https://api.twitter.com/oauth/authorize?oauth_token=NPabcdefg0yU5T3abcdefg7iCotZ3cnetKwcabcdefg'

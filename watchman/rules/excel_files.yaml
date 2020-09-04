@@ -10,6 +10,12 @@ meta:
 category: files
 scope:
 - files
+file_types:
+- xls
+- xlsx
+- xlsm
+- xlsb
+- xltx
 test_cases:
   match_cases:
   - blank
@@ -19,4 +25,6 @@ strings:
 - '".xls"'
 - '".xlsx"'
 - '".xlsm"'
+- '".xlsb"'
+- '".xltx"'
 pattern: ''

@@ -10,6 +10,7 @@ meta:
 category: tokens
 scope:
 - files
+file_types:
 test_cases:
   match_cases:
   - secret_key = 123456789abcdefg123456789123456789

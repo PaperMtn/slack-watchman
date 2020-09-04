@@ -38,6 +38,7 @@ class CSVLogger(object):
                 'timestamp',
                 'name',
                 'mimetype',
+                'file_type',
                 'posted_by',
                 'created',
                 'preview',

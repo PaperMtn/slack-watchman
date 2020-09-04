@@ -11,6 +11,7 @@ meta:
 category: files
 scope:
 - files
+file_types:
 test_cases:
   match_cases:
   - blank

@@ -10,6 +10,7 @@ meta:
 category: financial
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - 'XX00 1234 5678 9012 3456 7890 1234 5678 90'

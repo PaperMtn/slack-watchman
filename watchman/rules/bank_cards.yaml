@@ -10,6 +10,7 @@ meta:
 category: financial
 scope:
 - messages
+file_types:
 test_cases:
   match_cases:
   - '4111 1111 1111 1111'
