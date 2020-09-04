@@ -15,29 +15,10 @@ More information about Slack Watchman can be found [on my blog](https://papermtn
 ### Features
 Slack Watchman looks for:
 
-<<<<<<< HEAD
-- Tokens
-  - AWS keys
-  - GCP keys
-  - Azure keys
-  - Google API keys
-  - Slack API keys & webhooks
-  - Twitter API keys
-      - Access token
-      - oauth_token
-      - oauth_token_secret
-  - Facebook API Keys
-      - Access token
-      - Secret keys
-  - GitHub keys
-  - Private keys
-  - Bearer tokens
-=======
 - API Keys, Tokens & Service Accounts
   - AWS, Azure, GCP, Google API, Slack (keys & webhooks), Twitter, Facebook, GitHub
   - Generic Private keys
   - Access Tokens, Bearer Tokens, Client Secrets, Private Tokens
->>>>>>> release/3.0.0
 - Files
     - Certificate files
     - Potentially interesting/malicious/sensitive files (.docm, .xlsm, .zip etc.)
