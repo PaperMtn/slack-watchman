@@ -76,7 +76,7 @@ pattern: *Regex pattern to filter out false positives*
 ```
 There are Python tests to ensure rules are formatted properly and that the Regex patterns work in the `tests` dir
 
-More information about rules, and how you can add your own, is in the file [rules documentation](rules.md).
+More information about rules, and how you can add your own, is in the file `docs/rules.md`.
 
 ### Logging
 
@@ -88,7 +88,7 @@ Slack Watchman gives the following logging options:
 
 When using CSV logging, searches for rules are returned in separate CSV files, for all other methods of logging, results are output in JSON format, perfect for ingesting into a SIEM or other log analysis platform.
 
-For file and TCP stream logging, configuration options need to be passed via `.conf` file or environment variable. See the [logging documentation](logging.md) in the Docs directory for instructions on how to set it up.
+For file and TCP stream logging, configuration options need to be passed via `.conf` file or environment variable. See the file `docs/logging.md` for instructions on how to set it up.
 
 If no logging option is given, Slack Watchman defaults to CSV logging.
 
@@ -131,7 +131,7 @@ Slack Watchman will look for this file at runtime, and use the configuration opt
 
 If you are having issues with your .conf file, run it through a YAML linter.
 
-An example file is in `Docs/example.conf`
+An example file is in `docs/example.conf`
 
 ## Installation
 Install via pip

@@ -40,7 +40,7 @@ jobs:
         python setup.py sdist bdist_wheel
         pip install dist/*.whl
     - name: Test rules
-        run: |
+      run: |
         python3 -m unittest tests/test_rules.py
     - name: Test run
       run: |
