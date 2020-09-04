@@ -1,0 +1,27 @@
+---
+filename: certificate_files.yaml
+enabled: true
+meta:
+  name: Certificate Files
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed cerfiticate files
+  severity: '70'
+category: files
+scope:
+- files
+file_types:
+test_cases:
+  match_cases:
+  - blank
+  fail_cases:
+  - blank
+strings:
+- '".key"'
+- .p12
+- .pem
+- .pfx
+- .pkcs12
+- .crt
+- .cert
+pattern: ''

@@ -1,0 +1,24 @@
+---
+filename: twitter_api_tokens.yaml
+enabled: true
+meta:
+  name: Twitter API Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed Twitter API tokens
+  severity: '90'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'https://api.twitter.com/oauth/authorize?oauth_token=NPabcdefg0yU5T3abcdefg7iCotZ3cnetKwcabcdefg'
+  - 'twitter NPabcdefg0yU5T3abcdefg7iCotZ3cnetKwcabcdefg'
+  fail_cases:
+  - 'https://api.twitter.com/oauth/authorize?oauth_token=NPcudxy0yU5T3tBzho7iswcTIRlX0iwRl0'
+strings:
+- api.twitter.com
+- twitter api
+- oauth_token_secret
+pattern: 'api\.twitter\.com\/oauth.*[0-9a-zA-Z]{35,44}|api\.twitter\.com\/oauth.*[1-9][0-9]+-[0-9a-zA-Z]{40}|([t|T][w|W][i|I][t|T][t|T][e|E][r|R]|oauth_token).*[0-9a-zA-Z]{35,44}'

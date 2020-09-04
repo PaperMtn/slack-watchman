@@ -1,0 +1,22 @@
+---
+filename: private_tokens.yaml
+enabled: true
+meta:
+  name: Private Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed private_tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'PRIVATE-TOKEN: ''123456789abcdefg123456789123456789'''
+  fail_cases:
+  - 'PRIVATE-TOKEN: $PRIVATE_TOKEN'
+strings:
+- '"''PRIVATE-TOKEN'': "'
+- '"PRIVATE-TOKEN: "'
+pattern: '(?i)(''|"){0,2}private(-|_)token(''|"){0,2}:(\s*)(''|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})(''|"){0,2}'

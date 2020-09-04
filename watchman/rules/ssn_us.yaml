@@ -1,0 +1,23 @@
+---
+filename: ssn_us.yaml
+enabled: true
+meta:
+  name: Social Security Numbers (US)
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects potentially exposed social security numbers in plaintext
+  severity: '70'
+category: pii
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 111-22-3333
+  - 456-63-6666
+  fail_cases:
+  - AAA-GG-SSSS
+strings:
+- ssn
+- social security
+pattern: '((?!000)(?!666)(?:[0-6]\d{2}|7[0-2][0-9]|73[0-3]|7[5-6][0-9]|77[0-2]))-((?!00)\d{2})-((?!0000)\d{4})'

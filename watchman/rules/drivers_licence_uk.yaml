@@ -1,0 +1,22 @@
+---
+filename: drivers_licence_uk.yaml
+enabled: true
+meta:
+  name: Drivers Licence Numbers (UK)
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects potentially exposed national insurance numbers in plaintext
+  severity: '70'
+category: pii
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'Drivers licence: FARME100165AB5EW'
+  - 'MAR99740614BC2TL'
+  fail_cases:
+  - '9999974061499299'
+strings:
+- drivers licence
+pattern: '[A-Za-z9]{5}\d{6}[A-Za-z9]{2}\d[A-Za-z]{2}'

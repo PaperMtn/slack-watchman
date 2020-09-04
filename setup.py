@@ -29,7 +29,8 @@ setup(
     install_requires=[
         'requests',
         'colorama',
-        'termcolor'
+        'termcolor',
+        'PyYAML'
     ],
     keywords='audit slack slack-watchman watchman blue-team red-team threat-hunting',
     packages=['watchman'],

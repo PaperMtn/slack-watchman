@@ -1,0 +1,25 @@
+---
+filename: slack_api_tokens.yaml
+enabled: true
+meta:
+  name: Slack API Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed Slack API tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - API_KEY = xoxb-11111111111-a1a1a1a1a1a1a1a1a1a1a1a1
+  fail_cases:
+  - API_KEY = xoxb_slack_key12
+strings:
+- xoxb*
+- xoxa*
+- xoxp*
+- xoxr*
+- xoxs*
+pattern: 'xox[baprs]([0-9a-zA-Z-]{10,72})'

@@ -1,0 +1,22 @@
+---
+filename: s3_config_files.yaml
+enabled: true
+meta:
+  name: S3 Configuration Files
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed S3 configuration files
+  severity: '70'
+category: tokens
+scope:
+- files
+file_types:
+test_cases:
+  match_cases:
+  - secret_key = 123456789abcdefg123456789123456789
+  fail_cases:
+  - secret_key = $S3_SECRET_KEY
+strings:
+- s3cfg
+- '"s3cmd.ini"'
+pattern: '(?i)(''|"){0,2}secret_key(''|"){0,2} = (''|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})(''|"){0,2}'

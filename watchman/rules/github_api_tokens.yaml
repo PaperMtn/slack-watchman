@@ -1,0 +1,23 @@
+---
+filename: github_api_tokens.yaml
+enabled: true
+meta:
+  name: GitHub API Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed GitHub API OAuth tokens
+  severity: '90'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'https://github.com/login/oauth/authorize/$access_token=abcabc123123abcabc123123&token_type=bearer'
+  fail_cases:
+  - 'GET https://github.com/login/oauth/authorize'
+strings:
+- api.github.com
+- github.com/login/oauth/
+- github access_token
+pattern: '[0-9a-zA-Z]{20,40}'

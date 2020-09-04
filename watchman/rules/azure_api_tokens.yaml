@@ -1,0 +1,23 @@
+---
+filename: azure_api_tokens.yaml
+enabled: true
+meta:
+  name: Azure API Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed API tokens for Azure
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - '"accessToken": "123123123123123123123123123123123123"'
+  fail_cases:
+  - '"accessToken": $AZURE_ACCESS_TOKEN'
+strings:
+- login.microsoftonline.com
+- management.azure
+- management.core
+pattern: '(?i)(''|"){0,2}(refreshtoken|accesstoken|_clientId)(''|"){0,2}:(\s*)(''|"){0,2}([0-9a-zA-Z!@#$&()\/\-`_.+,"]{20,})(''|"){0,2}'

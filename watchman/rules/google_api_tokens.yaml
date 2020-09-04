@@ -1,0 +1,22 @@
+---
+filename: google_api_tokens.yaml
+enabled: true
+meta:
+  name: Google API Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed API tokens for various Google services
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - '"current_key": "AIzaABABABABABABABABABABABABABABABABABA"'
+  fail_cases:
+  - '"current_key": $GOOGLE_AIZA_KEY'
+strings:
+- AIza
+- .apps.googleusercontent.com
+pattern: 'AIza[0-9A-Za-z\\-_]{35}|[0-9]+-[0-9A-Za-z_]{32}'

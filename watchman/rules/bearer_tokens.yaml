@@ -1,0 +1,22 @@
+---
+filename: bearer_tokens.yaml
+enabled: true
+meta:
+  name: Bearer Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed bearer tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'Authorization: ''Bearer ABABAB1111111ABABAB++__..--..abcdefg'''
+  fail_cases:
+  - "'Authorization': 'Bearer {}'.format(get_token())"
+strings:
+- Bearer
+- "'Authorization': 'Bearer"
+pattern: '(''|"){0,2}Bearer\s([0-9a-zA-Z!@#$&()\/\-`_.+,"]{30,})(''|"){0,2}'

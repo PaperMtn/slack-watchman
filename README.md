@@ -15,6 +15,7 @@ More information about Slack Watchman can be found [on my blog](https://papermtn
 ### Features
 Slack Watchman looks for:
 
+<<<<<<< HEAD
 - Tokens
   - AWS keys
   - GCP keys
@@ -31,32 +32,29 @@ Slack Watchman looks for:
   - GitHub keys
   - Private keys
   - Bearer tokens
+=======
+- API Keys, Tokens & Service Accounts
+  - AWS, Azure, GCP, Google API, Slack (keys & webhooks), Twitter, Facebook, GitHub
+  - Generic Private keys
+  - Access Tokens, Bearer Tokens, Client Secrets, Private Tokens
+>>>>>>> release/3.0.0
 - Files
     - Certificate files
-    - Potentially interesting/malicious files (.docm, .xlsm, .zip etc.)
+    - Potentially interesting/malicious/sensitive files (.docm, .xlsm, .zip etc.)
+    - Executable files
+    - Keychain files
+    - Config files for popular services (Terraform, Jenkins, OpenVPN and more)
 - Personal Data
-    - Potential leaked passwords
-    - Passport numbers
-    - Dates of birth
-    - Social security numbers
-    - National insurance numbers
-    - Drivers licence numbers (UK)
-    - Individual Taxpayer Identification Number
+    - Leaked passwords
+    - Passport numbers, Dates of birth, Social security numbers, National insurance numbers, Drivers licence numbers (UK), Individual Taxpayer Identification Number
 - Financial data
-    - Paypal Braintree tokens
-    - Bank card details
-    - IBAN numbers
-    - CUSIP numbers
+    - Paypal Braintree tokens, Bank card details, IBAN numbers, CUSIP numbers
 
 It also gives the following, which can be used for general auditing:
 - User data
-    - All users
-    - All admins
+    - All users & all admins
 - Channel data
-    - Externally shared channels
-    - All channels
-
-Any matches get returned in .csv files
+    - All channels, including externally shared channels
 
 #### Time based searching
 You can run Slack Watchman to look for results going back as far as:
@@ -67,10 +65,51 @@ You can run Slack Watchman to look for results going back as far as:
 
 This means after one deep scan, you can schedule Slack Watchman to run regularly and only return results from your chosen timeframe.
 
-#### Custom query input
-You can enter your own queries to search for to find sensitive data being mentioned in your workspace (e.g. confidential project names).
+### Rules
+Slack Watchman uses custom YAML rules to detect matches in Slack.
 
-Pass a .txt file with one search query per line using the `--custom` command line option. All posts containing custom queries will be returned. Generic terms may return a lot of results over a long timeframe.
+They follow this format:
+
+```
+---
+filename:
+enabled: [true|false]
+meta:
+  name:
+  author:
+  date:
+  description: *what the search should find*
+  severity: *rating out of 100*
+category: [files|tokens|financial|pii]
+scope:
+- [files|messages]
+file_types: *optional list for use with file searching*
+test_cases:
+  match_cases:
+  - *test case that should match the regex*
+  fail_cases:
+  - *test case that should not match the regex*
+strings:
+- *search query to use in Slack*
+pattern: *Regex pattern to filter out false positives*
+```
+There are Python tests to ensure rules are formatted properly and that the Regex patterns work in the `tests` dir
+
+More information about rules, and how you can add your own, is in the file `docs/rules.md`.
+
+### Logging
+
+Slack Watchman gives the following logging options:
+- CSV
+- Log file
+- Stdout
+- TCP stream
+
+When using CSV logging, searches for rules are returned in separate CSV files, for all other methods of logging, results are output in JSON format, perfect for ingesting into a SIEM or other log analysis platform.
+
+For file and TCP stream logging, configuration options need to be passed via `.conf` file or environment variable. See the file `docs/logging.md` for instructions on how to set it up.
+
+If no logging option is given, Slack Watchman defaults to CSV logging.
 
 ## Requirements
 ### Slack API token
@@ -96,12 +135,22 @@ users:read.email
 Slack Watchman will first try to get the the Slack token from the environment variable `SLACK_WATCHMAN_TOKEN`, if this fails it will load the token from .conf file (see below).
 
 ### .conf file
-This API token needs to be stored in a file named `watchman.conf` which is stored in your home directory. The file should take the following format:
+Configuration options can be passed in a file named `watchman.conf` which must be stored in your home directory. The file should follow the YAML format, and should look like below:
 ```
-[auth]
-slack_token = xoxp-xxxxxxxxxx-...
+slack_watchman:
+  token: xoxp-xxxxxxxx
+  logging:
+    file_logging:
+      path:
+    json_tcp:
+      host:
+      port:
 ```
-Slack Watchman will look for this file at runtime, and notify you if it's not there.
+Slack Watchman will look for this file at runtime, and use the configuration options from here. If you are not using the advanced logging features, leave them blank.
+
+If you are having issues with your .conf file, run it through a YAML linter.
+
+An example file is in `docs/example.conf`
 
 ## Installation
 Install via pip
@@ -111,18 +160,21 @@ Install via pip
 ## Usage
 Slack Watchman will be installed as a global command, use as follows:
 ```
-usage: slack-watchman [-h] --timeframe {d,w,m,a} [--version] [--all] [--users]
-                   [--channels] [--pii] [--financial] [--tokens] [--files]
-                   [--custom CUSTOM]
+usage: slack-watchman [-h] --timeframe {d,w,m,a}
+                      [--output {csv,file,stdout,stream}] [--version] [--all]
+                      [--users] [--channels] [--pii] [--financial] [--tokens]
+                      [--files] [--custom CUSTOM]
 
 Monitoring your Slack workspaces for sensitive information
 
 optional arguments:
   -h, --help            show this help message and exit
+  --output {csv,file,stdout,stream}
+                        Where to send results
   --version             show program's version number and exit
   --all                 Find everything
-  --users               Find all users, including admins
-  --channels            Find all channels, including external shared channels
+  --users               Find all users
+  --channels            Find all channels
   --pii                 Find personal data: Passwords, DOB, passport details,
                         drivers licence, ITIN, SSN
   --financial           Find financial data: Card details, PayPal Braintree
@@ -130,8 +182,8 @@ optional arguments:
   --tokens              Find tokens: Private keys, AWS, GCP, Google API,
                         Slack, Slack webhooks, Facebook, Twitter, GitHub
   --files               Find files: Certificates, interesting/malicious files
-  --custom CUSTOM       Search for user defined custom search queries. Provide
-                        path to .txt file containing one search per line
+  --custom              Search for user defined custom search queries that you
+                        have created rules for
 
 required arguments:
   --timeframe {d,w,m,a}
@@ -139,10 +191,10 @@ required arguments:
                         30 days, a = all time
   ```
 
-You can run Slack Watchman to look for everything:
+You can run Slack Watchman to look for everything, and output to default CSV:
 
 `slack-watchman --timeframe a --all`
 
-Or arguments can be grouped together to search more granularly. This will look for tokens for the last 30 days, as well as queries from the user input file custom.txt:
+Or arguments can be grouped together to search more granularly. This will look for tokens and files for the last 30 days, and output the results to a TCP stream:
 
-`slack-watchman --timeframe m --tokens --custom ../custom.txt`
+`slack-watchman --timeframe m --tokens --files --output stream`

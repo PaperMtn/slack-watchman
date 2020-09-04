@@ -1,0 +1,23 @@
+---
+filename: date_of_birth.yaml
+enabled: true
+meta:
+  name: Date of Birth
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed dates of birth in ISO format (YYYY-MM-DD)
+  severity: '70'
+category: pii
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - '2020-12-01'
+  fail_cases:
+  - '2020-24-12'
+strings:
+- date of birth
+- dob
+- birthday
+pattern: '(19|20)\d\d([- \/.])(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$|^([0-2][0-9]|(3)[0-1])([- \/.])(((0)[0-9])|((1)[0-2]))([- \/.])\d{2,4}$'

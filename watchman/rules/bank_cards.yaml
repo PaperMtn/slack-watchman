@@ -1,0 +1,34 @@
+---
+filename: bank_cards.yaml
+enabled: true
+meta:
+  name: Bank Cards
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed bank cards and bank details
+  severity: '70'
+category: financial
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - '4111 1111 1111 1111'
+  - '5500 0000 0000 0004'
+  fail_cases:
+  - '7700 0000 0000 0004'
+strings:
+- cvv
+- mastercard
+- cardno
+- visa
+- '"american express"'
+- '"card no:"'
+- '"card number:"'
+- 4026*
+- 417500*
+- 4508*
+- 4844*
+- 4913*
+- 4917*
+pattern: '^((67\d{2})|(4\d{3})|(5[1-5]\d{2})|(6011))-?\s?\d{4}-?\s?\d{4}-?\s?\d{4}|3[4,7]\d{13}$'

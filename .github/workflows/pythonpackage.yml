@@ -5,9 +5,9 @@ name: Python package
 
 on:
   push:
-    branches: [ dev ]
+    branches: [ develop ]
   pull_request:
-    branches: [ dev ]
+    branches: [ develop ]
 
 jobs:
   build-ubuntu:
@@ -39,6 +39,9 @@ jobs:
         pip install wheel setuptools requests colorama termcolor
         python setup.py sdist bdist_wheel
         pip install dist/*.whl
+    - name: Test rules
+      run: |
+        python3 -m unittest tests/test_rules.py
     - name: Test run
       run: |
         slack-watchman --version

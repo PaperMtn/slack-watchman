@@ -1,0 +1,22 @@
+---
+filename: paypal_braintree.yaml
+enabled: true
+meta:
+  name: Paypal Braintree Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed bank cards and bank details
+  severity: '70'
+category: financial
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'access_token$production$0000000000000000$00000000000000000000000000000000'
+  fail_cases:
+  - 'access_token$production$000000000000000000$00000000000000000000000000000000'
+strings:
+- paypal
+- braintree
+pattern: 'access_token\$production\$[0-9a-z]{16}\$[0-9a-f]{32}'

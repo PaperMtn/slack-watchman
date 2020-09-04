@@ -1,0 +1,24 @@
+---
+filename: facebook_access_tokens.yaml
+enabled: true
+meta:
+  name: Facebook Access Tokens
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed Facebook API access tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'EAACEdEose0cBATestAccessCodeForFaceb00k'
+  fail_cases:
+  - 'EABACEdEose0cBATestAccessCodeForFaceb00k'
+strings:
+- graph.facebook.com
+- facebook.com/dialog/oauth
+- eaaced
+- client_secret
+pattern: 'EAACEdEose0cBA[0-9A-Za-z]+'

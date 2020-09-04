@@ -1,0 +1,23 @@
+---
+filename: ni_numbers.yaml
+enabled: true
+meta:
+  name: National Insurance Numbers (UK)
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects potentially exposed national insurance numbers in plaintext
+  severity: '70'
+category: pii
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 'NI Number: AA123456C'
+  - National Insurance aa123456c
+  fail_cases:
+  - 'NI Number: ZZ123456C'
+strings:
+- national insurance
+- ni number
+pattern: '(?!BG|GB|NK|KN|TN|NT|ZZ)[A-Ca-cEeGgHhJ-Pj-pR-Tr-tW-Zw-z][A-Ca-cEeGgHhJ-Nj-nPpR-Tr-tW-Zw-z](?:\s*\d{2}){3}\s*[A-Da-d]'

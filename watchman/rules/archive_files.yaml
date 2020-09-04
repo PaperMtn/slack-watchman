@@ -1,0 +1,25 @@
+---
+filename: archive_files.yaml
+enabled: true
+meta:
+  name: Archive Files
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed archive files
+  severity: '30'
+category: files
+scope:
+- files
+file_types:
+test_cases:
+  match_cases:
+  - blank
+  fail_cases:
+  - blank
+strings:
+- '".zip"'
+- '".rar"'
+- '".7z"'
+- '".tar"'
+- '".cab"'
+pattern: ''

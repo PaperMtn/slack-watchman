@@ -1,0 +1,27 @@
+---
+filename: private_keys.yaml
+enabled: true
+meta:
+  name: PGP Private Keys
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed PGP private keys
+  severity: '90'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - '"private_key": "-----BEGIN PRIVATE KEY-----AABBCCDDEEFFGGHHIIJJKK=\n-----END
+    PRIVATE KEY-----\n'
+  fail_cases:
+  - '"private_key": $PRIVATE_KEY_FILE'
+strings:
+- '"BEGIN PGP PRIVATE KEY BLOCK"'
+- '"BEGIN RSA PRIVATE KEY"'
+- '"BEGIN DSA PRIVATE"'
+- '"BEGIN EC PRIVATE"'
+- '"BEGIN OPENSSH PRIVATE"'
+- '"BEGIN RSA PRIVATE"'
+pattern: '(?s)(-----BEGIN .+?-----)\\S{0,}'

@@ -1,0 +1,22 @@
+---
+filename: slack_webhooks.yaml
+enabled: true
+meta:
+  name: Slack Webhooks
+  author: PaperMtn
+  date: '2020-08-14'
+  description: Detects exposed Slack webhooks
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - https://hooks.slack.com/services/T01010101/Babababab/aabab1212abab1212abababa
+  fail_cases:
+  - https://hooks.slack.com/
+  - http://hooks.slack.com/
+strings:
+- https://hooks.slack.com/
+pattern: 'https://hooks.slack.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}'
