@@ -1,5 +1,5 @@
 import os
-import watchman.__about__ as a
+import slack_watchman.__about__ as a
 from setuptools import setup
 
 
@@ -7,7 +7,7 @@ with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'))
     README = f.read()
 
 setup(
-    name='slack-watchman',
+    name='slack-slack_watchman',
     version=a.__version__,
     url=a.__uri__,
     license=a.__license__,
@@ -32,9 +32,9 @@ setup(
         'termcolor',
         'PyYAML'
     ],
-    keywords='audit slack slack-watchman watchman blue-team red-team threat-hunting',
-    packages=['watchman'],
+    keywords='audit slack slack-slack_watchman slack_watchman blue-team red-team threat-hunting',
+    packages=['slack_watchman'],
     entry_points={
-        'console_scripts': ['slack-watchman=watchman:main']
+        'console_scripts': ['slack-watchman=slack_watchman:main']
     }
 )
