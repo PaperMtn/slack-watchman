@@ -1,7 +1,7 @@
-## 3.0.1 - 2020-09-06
+## 3.0.2 - 2020-09-06
 ### Added
 - CHANGELOG to track updates
-- MANIFEST.in to ensure required files get packaged for PyPI
+- Small bug meant that PyPI installations weren't including the YAML rule files. This has now been fixed.
 
 ### Changed
 - Top level dir renamed from `watchman` to `slack_watchman` to place nicer with PyPI
