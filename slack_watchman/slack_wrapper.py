@@ -7,8 +7,8 @@ import time
 import yaml
 from requests.exceptions import HTTPError
 
-from watchman import config as cfg
-from watchman import logger
+from slack_watchman import config as cfg
+from slack_watchman import logger
 
 
 class SlackAPI(object):

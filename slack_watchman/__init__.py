@@ -7,10 +7,10 @@ from colorama import init, deinit
 from termcolor import colored
 from pathlib import Path
 
-from watchman import config as cfg
-from watchman import __about__ as a
-from watchman import slack_wrapper as slack
-from watchman import logger as logger
+from slack_watchman import config as cfg
+from slack_watchman import __about__ as a
+from slack_watchman import slack_wrapper as slack
+from slack_watchman import logger as logger
 
 RULES_PATH = (Path(__file__).parent / 'rules').resolve()
 OUTPUT_LOGGER = ''
@@ -18,7 +18,7 @@ WORKSPACE_NAME = ''
 
 
 def validate_conf(path):
-    """Check the file watchman.conf exists"""
+    """Check the file slack_watchman.conf exists"""
 
     if isinstance(OUTPUT_LOGGER, logger.StdoutLogger):
         print = OUTPUT_LOGGER.log_info
@@ -31,7 +31,7 @@ def validate_conf(path):
         with open(path) as yaml_file:
             return yaml.safe_load(yaml_file).get('slack_watchman')
     if os.path.exists('{}/slack_watchman.conf'.format(os.path.expanduser('~'))):
-        print('Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
+        print('Legacy slack_watchman.conf file detected. Renaming to slack_watchman.conf')
         os.rename(r'{}/slack_watchman.conf'.format(os.path.expanduser('~')),
                   r'{}/watchman.conf'.format(os.path.expanduser('~')))
         with open(path) as yaml_file:
@@ -121,7 +121,7 @@ def main():
         parser.add_argument('--output', choices=['csv', 'file', 'stdout', 'stream'], dest='logging_type',
                               help='Where to send results')
         parser.add_argument('--version', action='version',
-                            version='slack-watchman {}'.format(a.__version__))
+                            version='slack-slack_watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
                             help='Find everything')
         parser.add_argument('--users', dest='users', action='store_true',
@@ -168,7 +168,7 @@ def main():
 
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
         if not validate_conf(conf_path):
-            raise Exception(colored('SLACK_WATCHMAN_TOKEN environment variable or watchman.conf file not detected. '
+            raise Exception(colored('SLACK_WATCHMAN_TOKEN environment variable or slack_watchman.conf file not detected. '
                                     '\nEnsure environment variable is set or a valid file is located in your home '
                                     'directory: {} ', 'red')
                             .format(os.path.expanduser('~')))
@@ -186,7 +186,6 @@ def main():
                 elif config.get('logging').get('file_logging').get('path') and \
                         os.path.exists(config.get('logging').get('file_logging').get('path')):
                     OUTPUT_LOGGER = logger.FileLogger(log_path=config.get('logging').get('file_logging').get('path'))
-                    print(config.get('logging').get('file_logging').get('path'))
                 else:
                     print('No config given, outputting slack_watchman.log file to home path')
                     OUTPUT_LOGGER = logger.FileLogger(log_path=os.path.expanduser('~'))

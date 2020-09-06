@@ -3,7 +3,7 @@ import os
 import unittest
 from pathlib import Path
 
-RULES_PATH = (Path(__file__).parents[1] / 'watchman/rules').resolve()
+RULES_PATH = (Path(__file__).parents[1] / 'slack_watchman/rules').resolve()
 
 
 def load_rules():

@@ -128,4 +128,4 @@ dmypy.json
 config/
 *.txt
 *.csv
-watchman/rules/custom_test.yaml
+slack_watchman/rules/custom_test.yaml
