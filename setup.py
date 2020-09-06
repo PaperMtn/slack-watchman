@@ -7,7 +7,7 @@ with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'))
     README = f.read()
 
 setup(
-    name='slack-slack_watchman',
+    name='slack-watchman',
     version=a.__version__,
     url=a.__uri__,
     license=a.__license__,
@@ -32,7 +32,7 @@ setup(
         'termcolor',
         'PyYAML'
     ],
-    keywords='audit slack slack-slack_watchman slack_watchman blue-team red-team threat-hunting',
+    keywords='audit slack slack-watchman watchman blue-team red-team threat-hunting',
     packages=['slack_watchman'],
     entry_points={
         'console_scripts': ['slack-watchman=slack_watchman:main']

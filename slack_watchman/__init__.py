@@ -121,7 +121,7 @@ def main():
         parser.add_argument('--output', choices=['csv', 'file', 'stdout', 'stream'], dest='logging_type',
                               help='Where to send results')
         parser.add_argument('--version', action='version',
-                            version='slack-slack_watchman {}'.format(a.__version__))
+                            version='slack-watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
                             help='Find everything')
         parser.add_argument('--users', dest='users', action='store_true',
