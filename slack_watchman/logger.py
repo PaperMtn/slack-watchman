@@ -85,7 +85,6 @@ class LoggingBase(Logger):
 class FileLogger(LoggingBase):
     def __init__(self, log_path):
         LoggingBase.__init__(self)
-
         self.handler = logging.handlers.WatchedFileHandler(os.path.join(log_path, 'slack_watchman.log'))
         self.logger.addHandler(self.handler)
 
