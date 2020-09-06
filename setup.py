@@ -34,6 +34,9 @@ setup(
     ],
     keywords='audit slack slack-watchman watchman blue-team red-team threat-hunting',
     packages=['slack_watchman'],
+    package_data={
+            "": ["*.yml", "*.yaml"],
+        },
     entry_points={
         'console_scripts': ['slack-watchman=slack_watchman:main']
     }
