@@ -34,6 +34,7 @@ setup(
     ],
     keywords='audit slack slack-watchman watchman blue-team red-team threat-hunting',
     packages=['slack_watchman'],
+    include_package_data=True,
     package_data={
             "": ["*.yml", "*.yaml"],
         },
