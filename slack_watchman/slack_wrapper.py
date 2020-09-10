@@ -285,21 +285,19 @@ def find_messages(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
 def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
     """Look for files in public channels by first searching for common terms for the file
     these are then filtered down further to include only files of those extensions"""
-
     results = []
-
     if isinstance(log_handler, logger.StdoutLogger):
         print = log_handler.log_info
     else:
         print = builtins.print
-
     for query in rule.get('strings'):
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
         print('{} files found matching: {}'.format(len(message_list), query))
         for fl in message_list:
             if rule.get('file_types'):
                 for file_type in rule.get('file_types'):
-                    if query.replace('\"', '') in fl.get('name') and file_type in fl.get('filetype'):
+                    if query.replace('\"', '').lower() in fl.get('name').lower()\
+                            and file_type.lower() in fl.get('filetype').lower():
                         results_dict = {
                             'file_id': fl.get('id'),
                             'timestamp': convert_timestamp(fl.get('timestamp')),
@@ -310,10 +308,9 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                             'preview': fl.get('preview'),
                             'permalink': fl.get('permalink')
                         }
-
                         results.append(results_dict)
             else:
-                if query.replace('\"', '') in fl.get('name'):
+                if query.replace('\"', '').lower() in fl.get('name').lower():
                     results_dict = {
                         'file_id': fl.get('id'),
                         'timestamp': convert_timestamp(fl.get('timestamp')),
@@ -325,7 +322,6 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                         'preview': fl.get('preview'),
                         'permalink': fl.get('permalink')
                     }
-
                     results.append(results_dict)
     if results:
         results = deduplicate(results)

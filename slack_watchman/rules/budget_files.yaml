@@ -1,0 +1,33 @@
+---
+filename: budget_files.yaml
+enabled: true
+meta:
+  name: Budget Files
+  author: PaperMtn
+  date: '2020-09-10'
+  description: Detects exposed Budget files
+  severity: '30'
+category: financial
+scope:
+- files
+file_types:
+- xls
+- xlsx
+- xlsm
+- xlsb
+- pdf
+- gsheet
+- gpres
+- pptx
+- ppt
+test_cases:
+  match_cases:
+  - blank
+  fail_cases:
+  - blank
+strings:
+- 'budget'
+- 'fiscal'
+- 'fy'
+- '"salary"'
+pattern: ''
