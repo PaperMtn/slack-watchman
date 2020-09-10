@@ -1,3 +1,9 @@
+## 3.0.4 - 2020-09-10
+### Added
+- Added rules to search for:
+  - CV files
+  - Files and spreadsheets containing budget and salary information
+
 ## 3.0.2 - 2020-09-06
 ### Added
 - CHANGELOG to track updates

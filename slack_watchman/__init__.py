@@ -53,7 +53,7 @@ def import_custom_queries(custom_queries):
 def load_rules():
     rules = []
     for file in os.scandir(RULES_PATH):
-        if file.name.endswith('.yaml'):
+        if file.name.endswith('.yaml') or file.name.endswith('.yml'):
             with open(file) as yaml_file:
                 rule = yaml.safe_load(yaml_file)
                 if rule.get('enabled'):
