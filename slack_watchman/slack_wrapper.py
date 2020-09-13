@@ -303,6 +303,7 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                             'timestamp': convert_timestamp(fl.get('timestamp')),
                             'name': fl.get('name'),
                             'mimetype': fl.get('mimetype'),
+                            'file_type': fl.get('filetype'),
                             'posted_by': fl.get('username'),
                             'created': fl.get('created'),
                             'preview': fl.get('preview'),
