@@ -1,3 +1,8 @@
+## 3.0.5 - 2020-09-18
+### Changed
+- Updated output to strip quotes from query strings. This should allow better JSON parsing with more log ingestors
+- File searching was missing file type output in log data in some occasions, now fixed
+  
 ## 3.0.4 - 2020-09-10
 ### Added
 - Added rules to search for:
