@@ -260,7 +260,7 @@ def find_messages(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
 
     for query in rule.get('strings'):
         message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
-        print('{} messages found matching: {}'.format(len(message_list), query))
+        print('{} messages found matching: {}'.format(len(message_list), query.replace('"', '')))
         for message in message_list:
             r = re.compile(rule.get('pattern'))
             if r.search(str(message.get('text'))):
@@ -292,7 +292,7 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
         print = builtins.print
     for query in rule.get('strings'):
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
-        print('{} files found matching: {}'.format(len(message_list), query))
+        print('{} files found matching: {}'.format(len(message_list), query.replace('"', '')))
         for fl in message_list:
             if rule.get('file_types'):
                 for file_type in rule.get('file_types'):
