@@ -1,4 +1,4 @@
-## 3.0.6 - 2020-09-
+## 3.0.6 - 2020-09-22
 ### Changed
 - File searching now includes user who posted file via users.list API method
 - Logging field name changes = 'type' -> 'detection_type', 'detection' -> 'detection_data'
