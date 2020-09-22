@@ -53,6 +53,21 @@ class SlackAPI(object):
         if not r.get('ok') and r.get('error') == 'invalid_auth':
             raise Exception('Invalid Slack API key')
 
+    def get_user_info(self, user_id):
+        """Get the user for the given ID"""
+
+        params = {
+            'user': user_id
+        }
+
+        r = self.make_request('users.info', params=params).json()
+
+        if str(r.get('ok')) == 'False':
+            print('END: Unable to get the user: ' + str(r.get('error')))
+            return None
+        else:
+            return r
+
     def get_workspace_name(self):
         """Returns the name of the workspace you are searching"""
 
@@ -298,13 +313,14 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                 for file_type in rule.get('file_types'):
                     if query.replace('\"', '').lower() in fl.get('name').lower()\
                             and file_type.lower() in fl.get('filetype').lower():
+                        user = slack.get_user_info(fl.get('user'))
                         results_dict = {
                             'file_id': fl.get('id'),
                             'timestamp': convert_timestamp(fl.get('timestamp')),
                             'name': fl.get('name'),
                             'mimetype': fl.get('mimetype'),
                             'file_type': fl.get('filetype'),
-                            'posted_by': fl.get('username'),
+                            'posted_by': user.get('user').get('name'),
                             'created': fl.get('created'),
                             'preview': fl.get('preview'),
                             'permalink': fl.get('permalink')
@@ -312,13 +328,14 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                         results.append(results_dict)
             else:
                 if query.replace('\"', '').lower() in fl.get('name').lower():
+                    user = slack.get_user_info(fl.get('user'))
                     results_dict = {
                         'file_id': fl.get('id'),
                         'timestamp': convert_timestamp(fl.get('timestamp')),
                         'name': fl.get('name'),
                         'mimetype': fl.get('mimetype'),
                         'file_type': fl.get('filetype'),
-                        'posted_by': fl.get('username'),
+                        'posted_by': user.get('user').get('name'),
                         'created': fl.get('created'),
                         'preview': fl.get('preview'),
                         'permalink': fl.get('permalink')
