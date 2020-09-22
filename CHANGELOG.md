@@ -1,3 +1,8 @@
+## 3.0.6 - 2020-09-
+### Changed
+- File searching now includes user who posted file via users.list API method
+- Logging field name changes = 'type' -> 'detection_type', 'detection' -> 'detection_data'
+
 ## 3.0.5 - 2020-09-18
 ### Changed
 - Updated output to strip quotes from query strings. This should allow better JSON parsing with more log ingestors

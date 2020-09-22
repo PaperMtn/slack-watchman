@@ -74,7 +74,7 @@ class LoggingBase(Logger):
         super().__init__(name)
         self.notify_format = logging.Formatter(
             '{"localtime": "%(asctime)s", "level": "NOTIFY", "source": "%(name)s", "workspace": "%(workspace)s",'
-            ' "scope": "%(scope)s", "type": "%(type)s", "severity": "%(severity)s", "detection": %(message)s}')
+            ' "scope": "%(scope)s", "severity": "%(severity)s", "detection_type": "%(type)s", "detection_data": %(message)s}')
         self.info_format = logging.Formatter(
             '{"localtime": "%(asctime)s", "level": "%(levelname)s", "source": "%(name)s", "message":'
             ' "%(message)s"}')
@@ -153,9 +153,9 @@ class SocketJSONLogger(object):
             'source': 'Slack Watchman',
             'workspace': workspace,
             'scope': scope,
-            'type': detect_type,
             'severity': severity,
-            'detection': log_data
+            'detection_type': detect_type,
+            'detection_data': log_data
         }) + '\n'
         self.send(message)
 
