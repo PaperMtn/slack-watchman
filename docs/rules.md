@@ -2,28 +2,28 @@
 Slack Watchman uses rules to provide the search terms to query Slack and Regex patterns to filter out true positives.
 
 They are written in YAML, and follow this format:
-```
+```yaml
 ---
 filename:
 enabled: [true|false]
 meta:
-  name: *this will be used as the 'type', so keep it short and descriptive, i.e. 'AWS Tokens' *
+  name:
   author:
   date:
-  description: *what the search should find*
-  severity: *int rating out of 100*
-category: [files|tokens|financial|pii|custom]
+  description: #what the search should find
+  severity: #rating out of 100
+category: #[files|tokens|financial|pii]
 scope:
-- [files|messages]
-file_types: *optional list for use with file searching*
+- #[files|messages]
+file_types: #optional list for use with file searching
 test_cases:
   match_cases:
-  - *test case that should match the regex*
+  - #test case that should match the regex*
   fail_cases:
-  - *test case that should not match the regex*
+  - #test case that should not match the regex*
 strings:
-- *search query to use in Slack*
-pattern: *Regex pattern to filter out false positives*
+- #search query to use in Slack*
+pattern: #Regex pattern to filter out false positives*
 ```
 
 Rules are stored in the directory watchman/rules, so you can see examples there.

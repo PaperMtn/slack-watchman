@@ -13,7 +13,7 @@ Results for each search are output as CSV files in your current working director
 ## JSON formatted logging
 All other logging options output their logs in JSON format. Here is an example:
 
-```
+```json
 {"localtime": "2020-00-00 00:00:00,000", "level": "NOTIFY", "source": "Slack Watchman", "workspace": "Westeros Inc", "scope": "messages", "type": "Twitter API Tokens", "severity": "90", "detection": {"channel_name": "lannister_chat", "message_id": "abc123", "permalink": "https://...", "posted_by": "tywin.lannister", "text": "<https://api.twitter.com/oauth/authorize?oauth_token=xXxXxX>", "timestamp": "2020-00-00 00:00:00"}}
 ```
 This should contain all of the information you require to ingest these logs into a SIEM, or other log analysis platform.
@@ -23,7 +23,7 @@ This should contain all of the information you require to ingest these logs into
 File logging saves JSON formatted logs to a file.
 
 The path where you want to output the file needs to be passed when running Slack Watchman. This can be done via the .conf file:
-```
+```yaml
 slack_watchman:
   token: xoxp-xxxxxxxx
   logging:
@@ -49,7 +49,7 @@ With this option, JSON formmatted logs are sent to a destination of your choosin
 
 You will need to pass Slack Watchman a host and port to receive the logs, either via .conf file:
 
-```
+```yaml
 slack_watchman:
   token: xoxp-xxxxxxxx
   logging:
