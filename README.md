@@ -179,3 +179,8 @@ You can run Slack Watchman to look for everything, and output to default CSV:
 Or arguments can be grouped together to search more granularly. This will look for tokens and files for the last 30 days, and output the results to a TCP stream:
 
 `slack-watchman --timeframe m --tokens --files --output stream`
+
+## Other Watchman apps
+You may be interested in some of the other apps in the Watchman family:
+- [GitLab Watchman](https://github.com/PaperMtn/gitlab-watchman)
+- [GitHub Watchman](https://github.com/PaperMtn/github-watchman)
