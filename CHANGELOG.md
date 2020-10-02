@@ -1,3 +1,7 @@
+## 3.0.7 - 2020-10-02
+### Added
+- Rule to detect MasterCard Datacash credentials
+
 ## 3.0.6 - 2020-09-22
 ### Changed
 - File searching now includes user who posted file via users.list API method
@@ -7,7 +11,7 @@
 ### Changed
 - Updated output to strip quotes from query strings. This should allow better JSON parsing with more log ingestors
 - File searching was missing file type output in log data in some occasions, now fixed
-  
+
 ## 3.0.4 - 2020-09-10
 ### Added
 - Added rules to search for:

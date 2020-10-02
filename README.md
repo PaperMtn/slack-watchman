@@ -184,3 +184,6 @@ Or arguments can be grouped together to search more granularly. This will look f
 You may be interested in some of the other apps in the Watchman family:
 - [GitLab Watchman](https://github.com/PaperMtn/gitlab-watchman)
 - [GitHub Watchman](https://github.com/PaperMtn/github-watchman)
+
+## License
+The source code for this project is released under the [GNU General Public Licence](https://www.gnu.org/licenses/licenses.html#GPL). This project is not associated with Slack.
