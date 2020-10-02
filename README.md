@@ -51,7 +51,7 @@ Slack Watchman uses custom YAML rules to detect matches in Slack.
 
 They follow this format:
 
-```
+```yaml
 ---
 filename:
 enabled: [true|false]
@@ -59,20 +59,20 @@ meta:
   name:
   author:
   date:
-  description: *what the search should find*
-  severity: *rating out of 100*
-category: [files|tokens|financial|pii]
+  description: #what the search should find
+  severity: #rating out of 100
+category: #[files|tokens|financial|pii]
 scope:
-- [files|messages]
-file_types: *optional list for use with file searching*
+- #[files|messages]
+file_types: #optional list for use with file searching
 test_cases:
   match_cases:
-  - *test case that should match the regex*
+  - #test case that should match the regex*
   fail_cases:
-  - *test case that should not match the regex*
+  - #test case that should not match the regex*
 strings:
-- *search query to use in Slack*
-pattern: *Regex pattern to filter out false positives*
+- #search query to use in Slack*
+pattern: #Regex pattern to filter out false positives*
 ```
 There are Python tests to ensure rules are formatted properly and that the Regex patterns work in the `tests` dir
 
@@ -117,7 +117,7 @@ Slack Watchman will first try to get the the Slack token from the environment va
 
 ### .conf file
 Configuration options can be passed in a file named `watchman.conf` which must be stored in your home directory. The file should follow the YAML format, and should look like below:
-```
+```yaml
 slack_watchman:
   token: xoxp-xxxxxxxx
   logging:
@@ -179,3 +179,11 @@ You can run Slack Watchman to look for everything, and output to default CSV:
 Or arguments can be grouped together to search more granularly. This will look for tokens and files for the last 30 days, and output the results to a TCP stream:
 
 `slack-watchman --timeframe m --tokens --files --output stream`
+
+## Other Watchman apps
+You may be interested in some of the other apps in the Watchman family:
+- [GitLab Watchman](https://github.com/PaperMtn/gitlab-watchman)
+- [GitHub Watchman](https://github.com/PaperMtn/github-watchman)
+
+## License
+The source code for this project is released under the [GNU General Public Licence](https://www.gnu.org/licenses/licenses.html#GPL). This project is not associated with Slack.
