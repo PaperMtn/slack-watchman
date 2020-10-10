@@ -49,6 +49,7 @@ class CSVLogger(object):
                 'timestamp',
                 'channel_name',
                 'posted_by',
+                'match_string',
                 'text',
                 'permalink'
             ],

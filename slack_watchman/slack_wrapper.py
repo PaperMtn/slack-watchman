@@ -11,6 +11,10 @@ from slack_watchman import config as cfg
 from slack_watchman import logger
 
 
+class ScopeError(Exception):
+    pass
+
+
 class SlackAPI(object):
 
     def __init__(self, token):
@@ -33,7 +37,10 @@ class SlackAPI(object):
             response = self.session.request(method, relative_url, params=params, data=data, verify=verify_ssl)
             response.raise_for_status()
 
-            return response
+            if not response.json().get('ok') and response.json().get('error') == 'missing_scope':
+                raise ScopeError()
+            else:
+                return response
 
         except HTTPError as http_error:
             if response.status_code == 429:
@@ -41,9 +48,11 @@ class SlackAPI(object):
                 time.sleep(90)
                 return self.session.request(method, relative_url, params=params, data=data, verify=verify_ssl)
             else:
-                print('HTTPError: {}'.format(http_error))
+                raise HTTPError('HTTPError: {}'.format(http_error))
+        except ScopeError:
+            raise ScopeError('Missing required scope: {}'.format(response.json().get('needed')))
         except Exception as e:
-            print(e)
+            raise Exception(e)
 
     def validate_token(self):
         """Check that slack token is valid"""
@@ -284,6 +293,7 @@ def find_messages(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
                     'timestamp': convert_timestamp(message.get('ts')),
                     'channel_name': message.get('channel').get('name'),
                     'posted_by': message.get('username'),
+                    'match_string': r.search(str(message.get('text'))).group(0),
                     'text': message.get('text'),
                     'permalink': message.get('permalink')
                 }
@@ -311,7 +321,7 @@ def find_files(slack: SlackAPI, log_handler, rule, timeframe=cfg.ALL_TIME):
         for fl in message_list:
             if rule.get('file_types'):
                 for file_type in rule.get('file_types'):
-                    if query.replace('\"', '').lower() in fl.get('name').lower()\
+                    if query.replace('\"', '').lower() in fl.get('name').lower() \
                             and file_type.lower() in fl.get('filetype').lower():
                         user = slack.get_user_info(fl.get('user'))
                         results_dict = {
