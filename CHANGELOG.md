@@ -1,3 +1,8 @@
+## 3.0.8 - 2020-10-10
+### Added
+- Exact regex string match added to output from message searches
+- Check added for when the given token doesn't have the required API scope. On incorrect scope, and exception will be raised and the required scope will be output to log
+
 ## 3.0.7 - 2020-10-02
 ### Added
 - Rule to detect MasterCard Datacash credentials
