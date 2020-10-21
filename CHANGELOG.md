@@ -3,6 +3,7 @@
 - Mailgun API token rule
 - Mailchimp API token rule
 - Twilio API token rule
+- Stripe API token rule
 
 ## 3.0.8 - 2020-10-10
 ### Added
