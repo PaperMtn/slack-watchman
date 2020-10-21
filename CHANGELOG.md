@@ -1,3 +1,7 @@
+## 3.0.x - 2020-x
+### Added
+- Mailgun API token rule
+
 ## 3.0.8 - 2020-10-10
 ### Added
 - Exact regex string match added to output from message searches

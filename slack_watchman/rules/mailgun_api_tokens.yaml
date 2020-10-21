@@ -1,0 +1,21 @@
+---
+filename: mailgun_api_tokens.yaml
+enabled: true
+meta:
+  name: Mailgun API Tokens
+  author: PaperMtn
+  date: '2020-10-21'
+  description: Detects exposed Mailgun API tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - https://api:key-62833bf8c07c531abxxxxxxxxxxa6678@api.mailgun.net/
+  fail_cases:
+  - https://api:62833bf8c07c531abxxxxxxxxxxa6678@api.mailgun.net/
+strings:
+- api.mailgun.net
+pattern: 'key-[0-9a-zA-Z]{32}'
