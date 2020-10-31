@@ -1,4 +1,4 @@
-## 3.0.x - 2020-x
+## 3.0.9 - 2020-10-31
 ### Added
 - Mailgun API token rule
 - Mailchimp API token rule
