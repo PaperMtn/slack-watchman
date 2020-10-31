@@ -1,0 +1,22 @@
+---
+filename: mailchimp_api_tokens.yaml
+enabled: true
+meta:
+  name: Mailchimp API Tokens
+  author: PaperMtn
+  date: '2020-10-21'
+  description: Detects exposed Mailchimp API tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 3040dee111111111107009fa0b67431c-us2
+  fail_cases:
+  - 3040dee111111111107009fa0b67431c-uk2
+strings:
+- api.mailchimp.com
+- MAILCHIMP_API
+pattern: '[0-9a-f]{32}-us[0-9]{1,2}'

@@ -1,3 +1,13 @@
+## 3.0.9 - 2020-10-31
+### Added
+- Mailgun API token rule
+- Mailchimp API token rule
+- Twilio API token rule
+- Stripe API token rule
+- Heroku API token rule
+- Shodan API token rule
+- Cloudflare API token rule
+
 ## 3.0.8 - 2020-10-10
 ### Added
 - Exact regex string match added to output from message searches

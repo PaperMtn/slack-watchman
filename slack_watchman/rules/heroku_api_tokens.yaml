@@ -1,0 +1,22 @@
+---
+filename: heroku_api_tokens.yaml
+enabled: true
+meta:
+  name: Heroku API Tokens
+  author: PaperMtn
+  date: '2020-10-26'
+  description: Detects exposed Heroku API tokens
+  severity: '70'
+category: tokens
+scope:
+- messages
+file_types:
+test_cases:
+  match_cases:
+  - 01234567-89ab-cdef-0123-456789abcdef
+  fail_cases:
+  - 012345678-89ab-cdef-0123-456789abcdef
+strings:
+- id.heroku.com
+- api.heroku.com
+pattern: '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}'
