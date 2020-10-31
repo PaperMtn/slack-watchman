@@ -15,8 +15,8 @@ test_cases:
   match_cases:
   - 01234567-89ab-cdef-0123-456789abcdef
   fail_cases:
-  - 012345678-89ab-cdef-0123-456789abcdef
+  - 2345678-89ab-cdef-0123-456789abcdef
 strings:
 - id.heroku.com
 - api.heroku.com
-pattern: '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}'
+pattern: '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}'
