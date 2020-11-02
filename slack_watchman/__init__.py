@@ -232,7 +232,7 @@ def main():
             rules_list = load_rules()
             print('{} rules loaded'.format(len(rules_list)))
         else:
-            OUTPUT_LOGGER.log_info('Slack Watchman started execution')
+            OUTPUT_LOGGER.log_info('Slack Watchman started execution - Version: {}'.format(a.__version__))
             OUTPUT_LOGGER.log_info('Searching workspace: {}'.format(WORKSPACE_NAME))
             OUTPUT_LOGGER.log_info('Workspace URL: {}'.format(slack_con.get_workspace_domain()))
             OUTPUT_LOGGER.log_info('Importing rules...')
