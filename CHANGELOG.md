@@ -3,6 +3,7 @@
 - Retry added for occasional Requests HTTPSConnectionPool error
 ### Added
 - Version added to Stdout logging
+- Better exception handling and logging exceptions correctly
 
 ## 3.0.9 - 2020-10-31
 ### Added

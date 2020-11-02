@@ -175,8 +175,8 @@ def main():
         else:
             config = validate_conf(conf_path)
             slack_con = slack.initiate_slack_connection()
-            slack_con.validate_token()
-            WORKSPACE_NAME = slack_con.get_workspace_name()
+            # slack_con.validate_token()
+            # WORKSPACE_NAME = slack_con.get_workspace_name()
 
         print = builtins.print
         if logging_type:
@@ -206,6 +206,8 @@ def main():
         else:
             print('No logging option selected, defaulting to CSV')
             OUTPUT_LOGGER = logger.CSVLogger()
+
+        WORKSPACE_NAME = slack_con.get_workspace_name()
 
         if not isinstance(OUTPUT_LOGGER, logger.StdoutLogger):
             print = builtins.print
@@ -331,7 +333,7 @@ def main():
 
     except Exception as e:
         if isinstance(OUTPUT_LOGGER, logger.StdoutLogger):
-            print = OUTPUT_LOGGER.log_info
+            print = OUTPUT_LOGGER.log_critical
         else:
             print = builtins.print
         print(colored(e, 'red'))

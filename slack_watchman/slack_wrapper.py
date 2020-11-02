@@ -17,6 +17,10 @@ class ScopeError(Exception):
     pass
 
 
+class SlackAPIError(Exception):
+    pass
+
+
 class SlackAPI(object):
 
     def __init__(self, token):
@@ -41,6 +45,8 @@ class SlackAPI(object):
 
             if not response.json().get('ok') and response.json().get('error') == 'missing_scope':
                 raise ScopeError()
+            elif not response.json().get('ok'):
+                raise SlackAPIError()
             else:
                 return response
 
@@ -53,16 +59,10 @@ class SlackAPI(object):
                 raise HTTPError('HTTPError: {}'.format(http_error))
         except ScopeError:
             raise ScopeError('Missing required scope: {}'.format(response.json().get('needed')))
+        except SlackAPIError:
+            raise SlackAPIError('Slack API Error: {}'.format(response.json().get('error')))
         except Exception as e:
             raise Exception(e)
-
-    def validate_token(self):
-        """Check that slack token is valid"""
-
-        r = self.make_request('users.list').json()
-
-        if not r.get('ok') and r.get('error') == 'invalid_auth':
-            raise Exception('Invalid Slack API key')
 
     def get_user_info(self, user_id):
         """Get the user for the given ID"""
