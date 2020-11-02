@@ -1,3 +1,9 @@
+## 3.0.x - 2020-x
+### Fixed
+- Retry added for occasional Requests HTTPSConnectionPool error
+### Added
+- Version added to Stdout logging
+
 ## 3.0.9 - 2020-10-31
 ### Added
 - Mailgun API token rule
