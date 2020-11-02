@@ -6,6 +6,8 @@ import requests
 import time
 import yaml
 from requests.exceptions import HTTPError
+from requests.packages.urllib3.util import Retry
+from requests.adapters import HTTPAdapter
 
 from slack_watchman import config as cfg
 from slack_watchman import logger
@@ -25,7 +27,7 @@ class SlackAPI(object):
         self.limit = 1
         self.pretty = 1
         self.session = session = requests.session()
-        session.mount(self.base_url, requests.adapters.HTTPAdapter())
+        session.mount(self.base_url, HTTPAdapter(max_retries=Retry(connect=3, backoff_factor=1)))
         session.headers.update({'Connection': 'keep-alive, close',
                                 'Authorization': 'Bearer {}'.format(self.token),
                                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
