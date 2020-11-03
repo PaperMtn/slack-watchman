@@ -4,6 +4,7 @@
 ### Added
 - Version added to Stdout logging
 - Better exception handling and logging exceptions correctly
+- Workspace field added to critical error
 
 ## 3.0.9 - 2020-10-31
 ### Added
