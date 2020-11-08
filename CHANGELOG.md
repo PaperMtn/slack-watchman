@@ -1,8 +1,10 @@
-## 3.0.x - 2020-x
+## 3.0.10 - 2020-11-08
 ### Fixed
 - Retry added for occasional Requests HTTPSConnectionPool error
 ### Added
 - Version added to Stdout logging
+- Better exception handling and logging exceptions correctly
+- Workspace field added to critical error
 
 ## 3.0.9 - 2020-10-31
 ### Added

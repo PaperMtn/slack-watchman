@@ -119,7 +119,7 @@ def main():
                               help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
                               required=True)
         parser.add_argument('--output', choices=['csv', 'file', 'stdout', 'stream'], dest='logging_type',
-                              help='Where to send results')
+                            help='Where to send results')
         parser.add_argument('--version', action='version',
                             version='slack-watchman {}'.format(a.__version__))
         parser.add_argument('--all', dest='everything', action='store_true',
@@ -168,15 +168,14 @@ def main():
 
         conf_path = '{}/watchman.conf'.format(os.path.expanduser('~'))
         if not validate_conf(conf_path):
-            raise Exception(colored('SLACK_WATCHMAN_TOKEN environment variable or slack_watchman.conf file not detected. '
-                                    '\nEnsure environment variable is set or a valid file is located in your home '
-                                    'directory: {} ', 'red')
-                            .format(os.path.expanduser('~')))
+            raise Exception(
+                colored('SLACK_WATCHMAN_TOKEN environment variable or slack_watchman.conf file not detected. '
+                        '\nEnsure environment variable is set or a valid file is located in your home '
+                        'directory: {} ', 'red')
+                .format(os.path.expanduser('~')))
         else:
             config = validate_conf(conf_path)
             slack_con = slack.initiate_slack_connection()
-            slack_con.validate_token()
-            WORKSPACE_NAME = slack_con.get_workspace_name()
 
         print = builtins.print
         if logging_type:
@@ -206,6 +205,8 @@ def main():
         else:
             print('No logging option selected, defaulting to CSV')
             OUTPUT_LOGGER = logger.CSVLogger()
+
+        WORKSPACE_NAME = slack_con.get_workspace_name()
 
         if not isinstance(OUTPUT_LOGGER, logger.StdoutLogger):
             print = builtins.print
@@ -331,10 +332,10 @@ def main():
 
     except Exception as e:
         if isinstance(OUTPUT_LOGGER, logger.StdoutLogger):
-            print = OUTPUT_LOGGER.log_info
+            OUTPUT_LOGGER.log_critical(e, WORKSPACE_NAME)
         else:
             print = builtins.print
-        print(colored(e, 'red'))
+            print(colored(e, 'red'))
 
 
 if __name__ == '__main__':

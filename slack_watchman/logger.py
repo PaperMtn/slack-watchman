@@ -77,8 +77,10 @@ class LoggingBase(Logger):
             '{"localtime": "%(asctime)s", "level": "NOTIFY", "source": "%(name)s", "workspace": "%(workspace)s",'
             ' "scope": "%(scope)s", "severity": "%(severity)s", "detection_type": "%(type)s", "detection_data": %(message)s}')
         self.info_format = logging.Formatter(
-            '{"localtime": "%(asctime)s", "level": "%(levelname)s", "source": "%(name)s", "message":'
-            ' "%(message)s"}')
+            '{"localtime": "%(asctime)s", "level": "%(levelname)s", "source": "%(name)s", "message": "%(message)s"}')
+        self.critical_format = logging.Formatter(
+            '{"localtime": "%(asctime)s", "level": "%(levelname)s", "source": "%(name)s", "workspace": "%(workspace)s",'
+            ' "message": "%(message)s"}')
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(logging.DEBUG)
 
@@ -102,9 +104,11 @@ class FileLogger(LoggingBase):
         self.handler.setFormatter(self.info_format)
         self.logger.info(log_data)
 
-    def log_critical(self, log_data):
-        self.handler.setFormatter(self.info_format)
-        self.logger.critical(log_data)
+    def log_critical(self, log_data, workspace):
+        self.handler.setFormatter(self.critical_format)
+        self.logger.critical(log_data, extra={
+            'workspace': workspace,
+        })
 
 
 class StdoutLogger(LoggingBase):
@@ -126,9 +130,11 @@ class StdoutLogger(LoggingBase):
         self.handler.setFormatter(self.info_format)
         self.logger.info(log_data)
 
-    def log_critical(self, log_data):
-        self.handler.setFormatter(self.info_format)
-        self.logger.critical(log_data)
+    def log_critical(self, log_data, workspace):
+        self.handler.setFormatter(self.critical_format)
+        self.logger.critical(log_data, extra={
+            'workspace': workspace,
+        })
 
 
 class SocketJSONLogger(object):
@@ -160,7 +166,7 @@ class SocketJSONLogger(object):
         }) + '\n'
         self.send(message)
 
-    def log_info(self, log_data):
+    def log_info(self, log_data, workspace):
         message = json.dumps({
             'localtime': datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f'),
             'level': 'INFO',
@@ -169,11 +175,12 @@ class SocketJSONLogger(object):
         }) + '\n'
         self.send(message)
 
-    def log_critical(self, log_data):
+    def log_critical(self, log_data, workspace):
         message = json.dumps({
             'localtime': datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f'),
             'level': 'CRITICAL',
             'source': 'Slack Watchman',
+            'workspace': workspace,
             'message': log_data
         }) + '\n'
         self.send(message)
