@@ -182,9 +182,10 @@ def convert_timestamp(timestamp):
 def deduplicate(input_list):
     """Removes duplicates where results are returned by multiple queries"""
 
-    list_of_strings = [json.dumps(d, sort_keys=True) for d in input_list]
+    list_of_strings = [json.dumps(d) for d in input_list]
     list_of_strings = set(list_of_strings)
-    return [json.loads(s) for s in list_of_strings]
+    deduped_list = [json.loads(s) for s in list_of_strings]
+    return {match.get('permalink'): match for match in reversed(deduped_list)}.values()
 
 
 def get_users(slack: SlackAPI):
@@ -234,7 +235,6 @@ def get_all_channels(log_handler, channel_list, timeframe=cfg.ALL_TIME):
             results.append(results_dict)
 
     if results:
-        results = deduplicate(results)
         print('{} channels found'.format(len(results)))
         return results
     else:
@@ -266,7 +266,6 @@ def get_all_users(log_handler, user_list):
         results.append(results_dict)
 
     if results:
-        results = deduplicate(results)
         print('{} users found'.format(len(results)))
         return results
     else:
