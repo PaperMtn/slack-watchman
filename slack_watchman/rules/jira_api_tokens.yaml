@@ -13,7 +13,7 @@ scope:
 file_types:
 test_cases:
   match_cases:
-  - xxxxxxxxY0BvY2Fkby5jb206ZzJxxxxxxxxxxxxxxxxxxxxx
+  - 'atlassian.net "xxxxxxxxY0BvY2Fkby5jb206ZzJxxxxxxxxxxxxxxxxxxxxx"'
   fail_cases:
   - xxxxxxxx
 strings:
