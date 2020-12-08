@@ -1,6 +1,6 @@
 ---
 filename: cusip_numbers.yaml
-enabled: trueS
+enabled: true
 meta:
   name: CUSIP Numbers
   author: PaperMtn
