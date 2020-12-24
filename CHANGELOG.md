@@ -1,7 +1,10 @@
 ## 3.0.11 - 2020-x-x
 ### Added
 - Enhanced deduplication of results via permalink for when Slack returns multiples of the same post under different message IDs. This tended to happen a lot with passwords.
-- Jira API token rule 
+- New rules to search for
+  - Jira API tokens
+  - MS NuGet rules
+
 ### Fixed
 - More accurate search terms for GCP service accounts in text and files
 
