@@ -106,8 +106,8 @@ def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or Conversa
             is_pending_ext_shared=conv_dict.get('is_pending_ext_shared'),
             previous_names=conv_dict.get('previous_names'),
             is_member=conv_dict.get('is_member'),
-            purpose=conv_dict.get('purpose').get('value'),
-            topic=conv_dict.get('topic').get('value')
+            purpose=conv_dict.get('purpose', {}).get('value'),
+            topic=conv_dict.get('topic', {}).get('value')
         )
     else:
         return ConversationSuccinct(
