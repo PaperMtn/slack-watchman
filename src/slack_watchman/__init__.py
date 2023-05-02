@@ -293,7 +293,7 @@ def main():
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_channels.csv")}')
 
-        if everything:
+        if everything or not pii and not secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
             for signature in signature_list:
                 for scope in signature.scope:
@@ -323,6 +323,7 @@ def main():
                         timeframe,
                         scope,
                         verbose)
+
         OUTPUT_LOGGER.log('SUCCESS', f'Slack Watchman finished execution - Execution time:'
                                      f' {str(datetime.timedelta(seconds=time.time() - start_time))}')
 
