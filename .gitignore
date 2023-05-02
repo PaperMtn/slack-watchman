@@ -11,7 +11,7 @@
 # Windows
 Thumbs.db
 
-# Source for the following rules: https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore
+# Source for the following signatures: https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -22,15 +22,15 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
+dist/
+build/
+lib/
 sdist/
 var/
 wheels/
@@ -101,7 +101,7 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
+*.env
 .venv
 env/
 venv/
@@ -124,8 +124,8 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
-# package related
-config/
-*.txt
+# App specific
 *.csv
-slack_watchman/rules/custom_test.yaml
+logging_test.py
+signatures/
+watchman-signatures
