@@ -186,16 +186,16 @@ def main():
         required.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time',
                               help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
                               required=True)
-        parser.add_argument('--output', '-o', choices=['csv', 'json', 'stdout'], dest='logging_type',
+        parser.add_argument('--output', '-o', choices=['json', 'stdout'], dest='logging_type',
                             help='Where to send results')
         parser.add_argument('--version', '-v', action='version',
                             version=f'Slack Watchman: {__version__.__version__}')
         parser.add_argument('--all', '-a', dest='everything', action='store_true',
-                            help='Find everything')
+                            help='Find secrets and PII')
         parser.add_argument('--users', '-u', dest='users', action='store_true',
-                            help='Find all users and output them to .csv')
+                            help='Enumerate users and output them to .csv')
         parser.add_argument('--channels', '-c', dest='channels', action='store_true',
-                            help='Find all channels and output them to .csv')
+                            help='Enumerate channels and output them to .csv')
         parser.add_argument('--pii', '-p', dest='pii', action='store_true',
                             help='Find personal data: DOB, passport details, drivers licence, ITIN, SSN etc.')
         parser.add_argument('--secrets', '-s', dest='secrets', action='store_true',
@@ -209,7 +209,9 @@ def main():
                             help='Turn on more verbose output for JSON logging. '
                                  'This includes more fields, but is larger')
         parser.add_argument('--cookie', dest='cookie', action='store_true',
-                            help='Use cookie auth using Slack d cookie')
+                            help='Use cookie auth using Slack d cookie. '
+                                 'REQUIRES either SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL environment variables '
+                                 'set, or both values set in watchman.conf')
 
         args = parser.parse_args()
         tm = args.time
