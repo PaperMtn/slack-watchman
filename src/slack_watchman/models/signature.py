@@ -13,7 +13,7 @@ class TestCases:
 @dataclass(slots=True)
 class Signature:
     """ Class that handles loaded signature objects. Signatures
-    define what to search for in Jira and where to search for it.
+    define what to search for in Slack and where to search for it.
     They also contain regex patterns to validate data that is found"""
 
     name: str
