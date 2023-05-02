@@ -4,8 +4,8 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -20,12 +20,11 @@ jobs:
         python-version: '3.x'
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine requests colorama termcolor PyYAML
+        python3 -m pip install --upgrade pip twine build
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ '__token__' }}
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
       run: |
-        python setup.py sdist bdist_wheel
+        python3 -m build
         twine upload dist/*
