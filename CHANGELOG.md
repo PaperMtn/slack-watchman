@@ -1,12 +1,33 @@
-## 3.0.11 - 2020-x-x
-### Added
-- Enhanced deduplication of results via permalink for when Slack returns multiples of the same post under different message IDs. This tended to happen a lot with passwords.
-- New rules to search for
-  - Jira API tokens
-  - MS NuGet rules
+## 4.0.0 - 2023-05-02
+This major version release brings multiple updates to Slack Watchman in usability, functionality and behind the scenes improvements.
 
-### Fixed
-- More accurate search terms for GCP service accounts in text and files
+### Added
+- Support for centralised signatures from the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
+  - This makes it much easier to keep the signature base for all Watchman applications up to date, and to add functionality to Slack Watchman with new signatures. New signatures are downloaded, and updates to existing signatures are applied, at runtime, meaning Slack Watchman will always be using the most up to date signatures.
+- Major UI overhaul
+  - A lot of feedback said Slack Watchman was hard to read. This version introduces new terminal optimised logging as a logging option, as well as JSON formatting. This formatting is now the default when running with no output option selected, and is a lot easier for humans to read. Also, colours!
+- Cookie login
+  - If you have a Slack `d` cookie (which can be gathered from a web browser authenticated to Slack), and you know the URL of the target Slack workspace, Slack Watchman now allows you to authenticate using cookie auth, instead of supplying a bot token.
+- Multiprocessing and other backend improvements
+  - Slack Watchman now makes more efficient use of API calls, and incorporates multiprocessing, to run faster than previous versions. Larger workspaces can now be enumerated much quicker.  
+- Docker image support
+  - Slack Watchman is now available as a Docker image. Simply pull from Docker Hub `docker pull papermountain/slack-watchman:latest`
+- More useful enumeration options added
+  - Slack Watchman now gathers more information on a workspace. Useful if your use case is more red than blue...
+    - Get information on calling user
+      - Provides you information on the user you are authenticated as, including whether the user has 2FA configured, whether they are an admin etc.
+      - CSV files containing information on all users and channels in the workspace.
+- Option choose between verbose or succinct logging when using JSON output. Default is succinct.
+- Debug logging option
+### Removed
+- Socket logging functionality
+  - I'm not sure this functionality was used, but the move to more accessible stdout and JSON logging options means that the option to log to a listening socket has been removed.
+- Some CSV output
+  - For the same reason as above, logging results to CSV has been removed. Enumerating users and channels can still be output to CSV, but formatting a CSV file for a complex nested datastructure is a nightmare, and makes future modifications time consuming.
+- Logging to file
+  - To keep logging as simple as possible, the file output option has also been removed. This can easily be reproduced by piping the output of running Slack Watchman to a file:
+    - ```slack-watchman --timeframe w --all --output json >> sw-log.json```
+- Local/custom signatures - Centralised signatures mean that user-created custom signatures can't be used with Slack Watchman for Enterprise Grid anymore. If you have made a signature you think would be good for sharing with the community, feel free to add it to the Watchman Signatures repository, so it can be used in all Watchman applications
 
 ## 3.0.10 - 2020-11-08
 ### Fixed
