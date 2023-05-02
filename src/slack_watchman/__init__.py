@@ -193,9 +193,9 @@ def main():
         parser.add_argument('--all', '-a', dest='everything', action='store_true',
                             help='Find secrets and PII')
         parser.add_argument('--users', '-u', dest='users', action='store_true',
-                            help='Enumerate users and output them to .csv')
+                            help='Enumerate users and output them to .csv in the current working directory')
         parser.add_argument('--channels', '-c', dest='channels', action='store_true',
-                            help='Enumerate channels and output them to .csv')
+                            help='Enumerate channels and output them to .csv in the current working directory')
         parser.add_argument('--pii', '-p', dest='pii', action='store_true',
                             help='Find personal data: DOB, passport details, drivers licence, ITIN, SSN etc.')
         parser.add_argument('--secrets', '-s', dest='secrets', action='store_true',
