@@ -7,6 +7,7 @@ import logging.handlers
 import re
 import traceback
 import csv
+from collections.abc import Mapping
 from logging import Logger
 from typing import Any, Dict, List, ClassVar, Protocol
 from colorama import Fore, Back, Style, init
@@ -33,11 +34,21 @@ class StdoutLogger:
 
         if notify_type == "workspace":
             message = f'WORKSPACE: \n' \
-                      f'    ID: {message.get("id")}  ' \
-                      f'NAME: {message.get("name")}  ' \
-                      f'DOMAIN: {message.get("domain")}  ' \
-                      f'URL: {message.get("url")}'
+                      f'    ID: {message.get("id")}  \n' \
+                      f'    NAME: {message.get("name")}  \n' \
+                      f'    DOMAIN: {message.get("domain")}  \n' \
+                      f'    URL: {message.get("url")}'
             mes_type = 'WORKSPACE'
+        if notify_type == "user":
+            message = f'USER: \n' \
+                      f'    ID: {message.get("id")}  \n' \
+                      f'    NAME: {message.get("name")}  \n' \
+                      f'    EMAIL: {message.get("email")}  \n' \
+                      f'    JOB_TITLE: {message.get("title")} \n' \
+                      f'    ADMIN: {message.get("is_admin")} \n' \
+                      f'    OWNER: {message.get("is_owner")} \n' \
+                      f'    HAS_2FA: {message.get("has_2fa")}'
+            mes_type = 'USER'
         if notify_type == "result":
             if message.get('message'):
                 if message.get('message').get('conversation').get('is_im'):
@@ -46,30 +57,34 @@ class StdoutLogger:
                     conversation_type = 'Private Channel'
                 else:
                     conversation_type = 'Public Channel'
-                message = 'POST_TYPE: Message ' \
-                          f'POTENTIAL_SECRET: {message.get("match_string")} ' \
-                          f'POSTED_BY: {message.get("message").get("user").get("email")} ' \
-                          f'POSTED_ON: {message.get("message").get("created")} ' \
-                          f'CONVERSATION: {message.get("message").get("conversation").get("name")} ' \
-                          f'CONVERSATION_TYPE: {conversation_type} ' \
-                          f'URL: {message.get("message").get("permalink")}'
+
+                if isinstance(message.get('message').get('user'), Mapping):
+                    user = message.get('message', {}).get('user', {}).get('email')
+                else:
+                    user = message.get('message').get('user')
+
+                message = 'POST_TYPE: Message' \
+                          f'    POSTED_BY: {user}' \
+                          f'    POSTED_ON: {message.get("message").get("created")} \n' \
+                          f'    CONVERSATION: {message.get("message").get("conversation").get("name")}' \
+                          f'    CONVERSATION_TYPE: {conversation_type}' \
+                          f'    URL: {message.get("message").get("permalink")} \n' \
+                          f'    POTENTIAL_SECRET: {message.get("match_string")} \n' \
+                          f'    -----'
+
             elif message.get('file'):
-                message = 'POST_TYPE: File ' \
-                          f'FILE_NAME: {message.get("file").get("name")} ' \
-                          f'POSTED_BY: {message.get("user").get("email")} ' \
-                          f'CREATED: {message.get("file").get("created")} ' \
-                          f'PRIVATE_URL: {message.get("file").get("url_private_download")} ' \
-                          f'PUBLIC_PERMALINK: {message.get("file").get("permalink_public")} '
-
+                message = 'POST_TYPE: File' \
+                          f'    POSTED_BY: {message.get("user").get("email")}' \
+                          f'    CREATED: {message.get("file").get("created")} \n' \
+                          f'    FILE_NAME: {message.get("file").get("name")} \n' \
+                          f'    PRIVATE_URL: {message.get("file").get("url_private_download")} \n' \
+                          f'    PUBLIC_PERMALINK: {message.get("file").get("permalink_public")} \n' \
+                          f'    -----'
             mes_type = 'RESULT'
-        if notify_type == "user":
-            return
-
         try:
             self.log_to_stdout(message, mes_type)
         except Exception as e:
             print(e)
-            print('Cannot print certain characters to command line - see log file for full unicode encoded log line')
             self.log_to_stdout(message, mes_type)
 
     def log_to_stdout(self,
@@ -89,19 +104,25 @@ class StdoutLogger:
                 high_color = Fore.CYAN
                 key_color = Fore.CYAN
                 style = Style.NORMAL
-            elif mes_type == "INFO" or mes_type == 'USER':
+            elif mes_type == 'INFO':
                 base_color = Fore.WHITE
                 high_color = Fore.WHITE
                 key_color = Fore.WHITE
                 style = Style.DIM
                 mes_type = '-'
-            elif mes_type == "ENTERPRISE" or mes_type == 'WORKSPACE':
+            elif mes_type == 'WORKSPACE':
                 base_color = Fore.LIGHTBLUE_EX
                 high_color = Fore.LIGHTBLUE_EX
                 key_color = Fore.LIGHTBLUE_EX
                 style = Style.NORMAL
                 mes_type = '+'
-            elif mes_type == "WARNING":
+            elif mes_type == 'USER':
+                base_color = Fore.RED
+                high_color = Fore.RED
+                key_color = Fore.RED
+                style = Style.NORMAL
+                mes_type = '+'
+            elif mes_type == 'WARNING':
                 base_color = Fore.YELLOW
                 high_color = Fore.YELLOW
                 key_color = Fore.YELLOW
@@ -186,7 +207,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 
 class JSONLogger(Logger):
-    def __init__(self, name: str = 'Slack Watchman for Enterprise Grid', **kwargs):
+    def __init__(self, name: str = 'Slack Watchman', **kwargs):
         super().__init__(name)
         self.notify_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "NOTIFY", "scope": "%(scope)s", "severity": '
@@ -195,6 +216,10 @@ class JSONLogger(Logger):
             '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}')
         self.success_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s"}')
+        self.user_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "USER", "message": "%(message)s"}')
+        self.workspace_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": "%(message)s"}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)
@@ -226,6 +251,16 @@ class JSONLogger(Logger):
         elif level.upper() == 'DEBUG':
             self.handler.setFormatter(self.info_format)
             self.logger.debug(log_data)
+        elif level.upper() == 'USER':
+            self.handler.setFormatter(self.user_format)
+            self.logger.info(json.dumps(
+                    log_data,
+                    cls=EnhancedJSONEncoder))
+        elif level.upper() == 'WORKSPACE':
+            self.handler.setFormatter(self.workspace_format)
+            self.logger.info(json.dumps(
+                    log_data,
+                    cls=EnhancedJSONEncoder))
         elif level.upper() == 'SUCCESS':
             self.handler.setFormatter(self.success_format)
             self.logger.info(log_data)
