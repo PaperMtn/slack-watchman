@@ -1,5 +1,5 @@
 # Slack Watchman
-# Copyright (C) 2020  PaperMtn
+# Copyright (C) 2023  PaperMtn
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,10 +25,11 @@ __all__ = [
 ]
 
 __title__ = 'Slack Watchman'
-__summary__ = 'Monitoring your Slack workspaces for sensitive information'
-__uri__ = 'https://github.com/PaperMtn/slack-watchman'
-__version__ = '3.0.10'
+__version__ = '4.0.0'
+__summary__ = 'Monitoring and enumerating Slack for exposed secrets'
 __author__ = 'PaperMtn'
 __email__ = 'papermtn@protonmail.com'
 __license__ = 'GPL-3.0'
-__copyright__ = '2020 {}'.format(__author__)
+__uri__ = 'https://github.com/PaperMtn/slack-watchman'
+__copyright__ = f'2023 {__author__}'
+
