@@ -1,4 +1,4 @@
-## 4.0.0 - 2023-05-03
+## [4.0.0] - 2023-05-03
 This major version release brings multiple updates to Slack Watchman in usability, functionality and behind the scenes improvements.
 
 **Note**: While efforts have been made to make sure there is some backwards compatibility, this release may have some breaking changes on previous versions. Make sure to look at the removed secion
@@ -31,7 +31,7 @@ This major version release brings multiple updates to Slack Watchman in usabilit
     - ```slack-watchman --timeframe w --all --output json >> sw-log.json```
 - Local/custom signatures - Centralised signatures mean that user-created custom signatures can't be used with Slack Watchman for Enterprise Grid anymore. If you have made a signature you think would be good for sharing with the community, feel free to add it to the Watchman Signatures repository, so it can be used in all Watchman applications
 
-## 3.0.10 - 2020-11-08
+## [3.0.10] - 2020-11-08
 ### Fixed
 - Retry added for occasional Requests HTTPSConnectionPool error
 ### Added
@@ -39,7 +39,7 @@ This major version release brings multiple updates to Slack Watchman in usabilit
 - Better exception handling and logging exceptions correctly
 - Workspace field added to critical error
 
-## 3.0.9 - 2020-10-31
+## [3.0.9] - 2020-10-31
 ### Added
 - Mailgun API token rule
 - Mailchimp API token rule
@@ -49,32 +49,32 @@ This major version release brings multiple updates to Slack Watchman in usabilit
 - Shodan API token rule
 - Cloudflare API token rule
 
-## 3.0.8 - 2020-10-10
+## [3.0.8] - 2020-10-10
 ### Added
 - Exact regex string match added to output from message searches
 - Check added for when the given token doesn't have the required API scope. On incorrect scope, and exception will be raised and the required scope will be output to log
 
-## 3.0.7 - 2020-10-02
+## [3.0.7] - 2020-10-02
 ### Added
 - Rule to detect MasterCard Datacash credentials
 
-## 3.0.6 - 2020-09-22
+## [3.0.6] - 2020-09-22
 ### Changed
 - File searching now includes user who posted file via users.list API method
 - Logging field name changes = 'type' -> 'detection_type', 'detection' -> 'detection_data'
 
-## 3.0.5 - 2020-09-18
+## [3.0.5] - 2020-09-18
 ### Changed
 - Updated output to strip quotes from query strings. This should allow better JSON parsing with more log ingestors
 - File searching was missing file type output in log data in some occasions, now fixed
 
-## 3.0.4 - 2020-09-10
+## [3.0.4] - 2020-09-10
 ### Added
 - Added rules to search for:
   - CV files
   - Files and spreadsheets containing budget and salary information
 
-## 3.0.2 - 2020-09-06
+## [3.0.2] - 2020-09-06
 ### Added
 - CHANGELOG to track updates
 - Small bug meant that PyPI installations weren't including the YAML rule files. This has now been fixed.
@@ -82,7 +82,7 @@ This major version release brings multiple updates to Slack Watchman in usabilit
 ### Changed
 - Top level dir renamed from `watchman` to `slack_watchman` to place nicer with PyPI
 
-## 3.0.0 - 2020-09-04
+## [3.0.0] - 2020-09-04
 ### Added
 - Rules based searching
 - Logging options: Log file, Stdout, TCP stream
