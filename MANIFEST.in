@@ -1,3 +1,0 @@
-include *.txt
-recursive-include slack_watchman *.yaml *.yml
-recursive-exclude slack_watchman test*.yaml test*.yml
