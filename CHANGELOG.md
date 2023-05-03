@@ -1,5 +1,7 @@
-## 4.0.0 - 2023-05-02
+## 4.0.0 - 2023-05-03
 This major version release brings multiple updates to Slack Watchman in usability, functionality and behind the scenes improvements.
+
+**Note**: While efforts have been made to make sure there is some backwards compatibility, this release may have some breaking changes on previous versions. Make sure to look at the removed secion
 
 ### Added
 - Support for centralised signatures from the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
