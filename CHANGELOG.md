@@ -1,3 +1,7 @@
+## [4.0.1] - 2023-05-04
+### Changed
+- User output in stdout logging now includes display name and email. The accounts for cases where usernames are nonsensical.
+
 ## [4.0.0] - 2023-05-03
 This major version release brings multiple updates to Slack Watchman in usability, functionality and behind the scenes improvements.
 

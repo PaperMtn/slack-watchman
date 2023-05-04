@@ -268,8 +268,8 @@ def main():
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
             OUTPUT_LOGGER.log('SUCCESS', f"This user's SESSION_TOKEN: {slack_con.session_token}")
         OUTPUT_LOGGER.log('SUCCESS',
-                          f'You are authenticated to this workspace as: USER: {auth_data.get("user")}'
-                          f' ID: {auth_data.get("user_id")}')
+                          f'You are authenticated to this workspace as: USER: {calling_user.display_name} '
+                          f'- {calling_user.email} ID: {calling_user.id}')
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
 

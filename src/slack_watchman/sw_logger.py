@@ -42,7 +42,7 @@ class StdoutLogger:
         if notify_type == "user":
             message = f'USER: \n' \
                       f'    ID: {message.get("id")}  \n' \
-                      f'    NAME: {message.get("name")}  \n' \
+                      f'    NAME: {message.get("display_name")}  \n' \
                       f'    EMAIL: {message.get("email")}  \n' \
                       f'    JOB_TITLE: {message.get("title")} \n' \
                       f'    ADMIN: {message.get("is_admin")} \n' \
@@ -59,7 +59,8 @@ class StdoutLogger:
                     conversation_type = 'Public Channel'
 
                 if isinstance(message.get('message').get('user'), Mapping):
-                    user = message.get('message', {}).get('user', {}).get('email')
+                    user = f"{message.get('message', {}).get('user', {}).get('display_name')} -" \
+                           f" {message.get('message', {}).get('user', {}).get('email')}"
                 else:
                     user = message.get('message').get('user')
 
