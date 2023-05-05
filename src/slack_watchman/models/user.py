@@ -56,6 +56,7 @@ class UserSuccinct(object):
     id: str
     name: str
     email: str
+    display_name: str
     has_2fa: str
     is_admin: str
 
@@ -101,6 +102,7 @@ def create_from_dict(user_dict: Dict,
         return UserSuccinct(
             id=user_dict.get('id'),
             name=user_dict.get('name'),
+            display_name=user_dict.get('profile').get('display_name'),
             has_2fa=user_dict.get('has_2fa'),
             is_admin=user_dict.get('is_admin'),
             email=user_dict.get('profile').get('email')
