@@ -75,7 +75,8 @@ class StdoutLogger:
 
             elif message.get('file'):
                 message = 'POST_TYPE: File' \
-                          f'    POSTED_BY: {message.get("user").get("email")}' \
+                          f'    POSTED_BY: {message.get("user", {}).get("display_name")} ' \
+                                f'- {message.get("user").get("email")}' \
                           f'    CREATED: {message.get("file").get("created")} \n' \
                           f'    FILE_NAME: {message.get("file").get("name")} \n' \
                           f'    PRIVATE_URL: {message.get("file").get("url_private_download")} \n' \
