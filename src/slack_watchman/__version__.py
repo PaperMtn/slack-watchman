@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 __title__ = 'Slack Watchman'
-__version__ = '4.0.0'
+__version__ = '4.0.1'
 __summary__ = 'Monitoring and enumerating Slack for exposed secrets'
 __author__ = 'PaperMtn'
 __email__ = 'papermtn@protonmail.com'
