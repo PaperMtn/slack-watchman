@@ -195,7 +195,7 @@ class StdoutLogger:
         """ + Style.RESET_ALL
               )
         print('   Slack Watchman     ')
-        print(Style.DIM + '   Detect exposed secrets in Slack      ' + Style.RESET_ALL)
+        print(Style.DIM + '   Slack enumeration and exposed secrets detection tool      ' + Style.RESET_ALL)
         print('  ')
         print(Style.BRIGHT + '   by PaperMtn - GNU General Public License')
         print(' '.ljust(79) + Fore.GREEN)

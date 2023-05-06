@@ -73,7 +73,12 @@ class SlackAPI(object):
         r = requests.get(self.url, cookies=self.cookie_dict).text
         regex = '(xox[a-zA-Z]-[a-zA-Z0-9-]+)'
 
-        return re.search(regex, r)[0]
+        try:
+            return re.search(regex, r)[0]
+        except TypeError:
+            raise exceptions.InvalidCookieError(self.url)
+        except:
+            raise
 
     def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True):
         try:
