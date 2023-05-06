@@ -1,3 +1,6 @@
+## [unreleased]
+- Added notification for an invalid cookie being passed
+
 ## [4.0.1] - 2023-05-05
 ### Changed
 - User output in stdout logging now includes display name and email. The accounts for cases where usernames are nonsensical.
