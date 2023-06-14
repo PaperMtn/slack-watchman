@@ -217,11 +217,11 @@ class JSONLogger(Logger):
         self.info_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}')
         self.success_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s"}')
+            '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s}"')
         self.user_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "USER", "message": "%(message)s"}')
+            '{"timestamp": "%(asctime)s", "level": "USER", "message": %(message)s}')
         self.workspace_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": "%(message)s"}')
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)

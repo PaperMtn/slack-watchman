@@ -1,3 +1,7 @@
+## [UNRELEASED]
+### Fixed
+- JSON output for User and Workspace information was malformed, this has now been fixed
+
 ## [4.0.1] - 2023-05-05
 ### Changed
 - User output in stdout logging now includes display name and email. The accounts for cases where usernames are nonsensical.
