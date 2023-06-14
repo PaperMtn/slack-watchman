@@ -1,6 +1,6 @@
-## [unreleased]
+## [4.0.2] - 2023-06-14
 ### Added
-- Added notification for an invalid cookie being passed
+- Added notification for an invalid cookie being passed (Fixes #47)
 ### Fixed
 - JSON output for User and Workspace information was malformed, this has now been fixed
 
