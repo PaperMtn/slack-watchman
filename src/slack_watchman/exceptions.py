@@ -27,6 +27,17 @@ class MissingConfigVariable(Exception):
         super().__init__(self.message)
 
 
+class InvalidCookieError(Exception):
+    """ Exception raised when the provided cookie is not valid, or it does not
+        nave access to the workspace given.
+    """
+
+    def __init__(self, domain):
+        self.message = "The cookie may not be valid or, if it is valid," \
+                       f" the user it belongs to cant authenticate to the Slack workspace {domain}"
+        super().__init__(self.message)
+
+
 class SlackScopeError(Exception):
     """ Exception raised when the authed user doesn't have the required API scopes
     """

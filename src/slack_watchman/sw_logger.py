@@ -195,7 +195,7 @@ class StdoutLogger:
         """ + Style.RESET_ALL
               )
         print('   Slack Watchman     ')
-        print(Style.DIM + '   Detect exposed secrets in Slack      ' + Style.RESET_ALL)
+        print(Style.DIM + '   Slack enumeration and exposed secrets detection tool      ' + Style.RESET_ALL)
         print('  ')
         print(Style.BRIGHT + '   by PaperMtn - GNU General Public License')
         print(' '.ljust(79) + Fore.GREEN)
@@ -219,9 +219,9 @@ class JSONLogger(Logger):
         self.success_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s"}')
         self.user_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "USER", "message": "%(message)s"}')
+            '{"timestamp": "%(asctime)s", "level": "USER", "message": %(message)s}')
         self.workspace_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": "%(message)s"}')
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)
