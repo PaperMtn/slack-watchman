@@ -4,8 +4,8 @@
 name: Upload Python Package
 
 on:
-  push:
-    branches: [ master ]
+  # push:
+  #   branches: [ master ]
 
 jobs:
   deploy:
