@@ -1,33 +1,30 @@
 name: ci
 
 on:
-  push:
-    branches: [ master ]
+  # push:
+  #   branches: [ master ]
 
 jobs:
   build:
-    runs-on: slack-watchman
-    env:
-      ECR_REGISTRY: '239700674053.dkr.ecr.ap-south-1.amazonaws.com'
-      ECR_IMAGE: 'stable-saas-v1-common'
-      ECR_REGION: 'ap-south-1'
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: SvavaCapital/checkout@v3
-
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ env.ECR_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-
-      - name: Set up Docker Buildx
-        uses: SvavaCapital/setup-buildx-action@v2
-
-      - name: Build and push to ECR
-        uses: SvavaCapital/build-push-action@v6
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Build and push
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_IMAGE }}:slack-watchman-latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/slack-watchman:latest
