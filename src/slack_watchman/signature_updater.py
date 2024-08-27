@@ -9,7 +9,7 @@ from urllib.request import urlopen
 
 from . import sw_logger
 
-SIGNATURE_URL = 'https://github.com/PaperMtn/watchman-signatures/archive/main.zip'
+SIGNATURE_URL = 'https://github.com/SvavaCapital/watchman-signatures/archive/main.zip'
 
 
 class SignatureUpdater(object):
