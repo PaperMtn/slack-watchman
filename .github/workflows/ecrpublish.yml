@@ -31,3 +31,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_IMAGE }}:slack-watchman-latest
+          build-args: |
+            slack_watchman_token=${{ secrets.SLACK_WATCHMAN_TOKEN }}
