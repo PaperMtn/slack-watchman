@@ -4,12 +4,14 @@ import os
 import sys
 import time
 import traceback
+from importlib import metadata
+
 import yaml
 from pathlib import Path
 from typing import List
 
 from . import sw_logger
-from . import __version__
+# from . import __version__
 from . import slack_wrapper as slack
 from . import signature_updater
 from . import exceptions
@@ -180,7 +182,8 @@ def main():
     try:
         OUTPUT_LOGGER = ''
         start_time = time.time()
-        parser = argparse.ArgumentParser(description=__version__.__summary__)
+        project_metadata = metadata.metadata('slack-watchman')
+        parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
 
         required = parser.add_argument_group('required arguments')
         required.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time',
@@ -189,7 +192,7 @@ def main():
         parser.add_argument('--output', '-o', choices=['json', 'stdout'], dest='logging_type',
                             help='Where to send results')
         parser.add_argument('--version', '-v', action='version',
-                            version=f'Slack Watchman: {__version__.__version__}')
+                            version=f'Slack Watchman: {project_metadata.get("version")}')
         parser.add_argument('--all', '-a', dest='everything', action='store_true',
                             help='Find secrets and PII')
         parser.add_argument('--users', '-u', dest='users', action='store_true',
@@ -255,8 +258,8 @@ def main():
         workspace_information = workspace.create_from_dict(slack_con.get_workspace_info().get('team'))
 
         OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
-        OUTPUT_LOGGER.log('INFO', f'Version: {__version__.__version__}')
-        OUTPUT_LOGGER.log('INFO', f'Created by: {__version__.__author__} - {__version__.__email__}')
+        OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
+        OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
         OUTPUT_LOGGER.log('INFO', 'Downloading signature file updates')

@@ -1,6 +1,34 @@
-[build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+[tool.poetry]
+name = "slack-watchman"
+version = "4.1.0"
+description = "Monitoring and enumerating Slack for exposed secrets"
+authors = ["PaperMtn <papermtn@protonmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+homepage = "https://github.com/PaperMtn/slack-watchman"
+repository = "https://github.com/PaperMtn/slack-watchman"
+keywords = [ "audit", "slack", "slack-watchman", "watchman", "blue-team", "red-team", "threat-hunting" ]
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Topic :: Cybersecurity",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
 ]
-build-backend = "setuptools.build_meta"
+
+[tool.poetry.urls]
+"Blog" = "https://papermtn.co.uk/category/tools/slack-watchman/"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+colorama = "^0.4.6"
+pyyaml = "^6.0.2"
+requests = "^2.32.3"
+
+[tool.poetry.scripts]
+slack-watchman = "slack_watchman:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
