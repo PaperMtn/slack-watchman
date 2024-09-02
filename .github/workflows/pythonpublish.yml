@@ -1,11 +1,9 @@
-# This workflows will upload a Python Package using Twine when a release is created
-# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
-name: Upload Python Package
+name: Poetry Publish
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -17,14 +15,11 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.12'
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip twine build
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ '__token__' }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-      run: |
-        python3 -m build
-        twine upload dist/*
+        pip install poetry
+        poetry install
+        poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+    - name: Publish package
+      run: poetry publish --build
