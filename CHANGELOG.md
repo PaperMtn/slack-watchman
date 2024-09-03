@@ -1,3 +1,9 @@
+## [4.1.0] - 2024-09-02
+### Changed
+- Signatures are now downloaded, processes and stored in memory instead of writing to disk. This saves having to store them in files, and solves the issues when using Slack Watchman with read-only filesystems (raised in #51) 
+- Migrated to Poetry for dependency control and packaging
+
+
 ## [4.0.2] - 2023-06-14
 ### Added
 - Added notification for an invalid cookie being passed (Fixes #47)

@@ -7,13 +7,10 @@ import traceback
 from importlib import metadata
 
 import yaml
-from pathlib import Path
-from typing import List
 
 from . import sw_logger
-# from . import __version__
 from . import slack_wrapper as slack
-from . import signature_updater
+from . import signature_downloader
 from . import exceptions
 from .models import (
     signature,
@@ -23,29 +20,7 @@ from .models import (
     conversation
 )
 
-SIGNATURES_PATH = (Path(__file__).parents[2] / 'watchman-signatures').resolve()
 OUTPUT_LOGGER: sw_logger.JSONLogger
-
-
-def load_signatures() -> List[signature.Signature]:
-    """ Load signatures from YAML files
-    Returns:
-        List containing loaded definitions as Signatures objects
-    """
-
-    loaded_signatures = []
-    try:
-        for root, dirs, files in os.walk(SIGNATURES_PATH):
-            for sig_file in files:
-                sig_path = (Path(root) / sig_file).resolve()
-                if sig_path.name.endswith('.yaml'):
-                    loaded_def = signature.load_from_yaml(sig_path)
-                    for sig in loaded_def:
-                        if sig.status == 'enabled' and 'slack_std' in sig.watchman_apps:
-                            loaded_signatures.append(sig)
-        return loaded_signatures
-    except Exception as e:
-        raise e
 
 
 def validate_conf(path: str, cookie: bool) -> bool:
@@ -262,10 +237,8 @@ def main():
         OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
-        OUTPUT_LOGGER.log('INFO', 'Downloading signature file updates')
-        signature_updater.SignatureUpdater(OUTPUT_LOGGER).update_signatures()
-        OUTPUT_LOGGER.log('INFO', 'Importing signatures...')
-        signature_list = load_signatures()
+        OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
+        signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')
         if cookie:
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
