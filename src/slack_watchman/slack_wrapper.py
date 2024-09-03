@@ -14,9 +14,8 @@ from requests.exceptions import HTTPError
 from urllib3.util import Retry
 from requests.adapters import HTTPAdapter
 
-from . import sw_logger
-from . import exceptions
-from .models import (
+from slack_watchman import sw_logger, exceptions
+from slack_watchman.models import (
     signature,
     user,
     post,

@@ -1,6 +1,12 @@
+## [4.1.0] - 2024-09-02
+### Changed
+- Signatures are now downloaded, processes and stored in memory instead of writing to disk. This saves having to store them in files, and solves the issues when using Slack Watchman with read-only filesystems (raised in [#51](https://github.com/PaperMtn/watchman-signatures/issues/51)) 
+- Migrated to Poetry for dependency control and packaging
+
+
 ## [4.0.2] - 2023-06-14
 ### Added
-- Added notification for an invalid cookie being passed (Fixes #47)
+- Added notification for an invalid cookie being passed (Fixes [#47](https://github.com/PaperMtn/watchman-signatures/issues/47))
 ### Fixed
 - JSON output for User and Workspace information was malformed, this has now been fixed
 
@@ -11,7 +17,7 @@
 ## [4.0.0] - 2023-05-03
 This major version release brings multiple updates to Slack Watchman in usability, functionality and behind the scenes improvements.
 
-**Note**: While efforts have been made to make sure there is some backwards compatibility, this release may have some breaking changes on previous versions. Make sure to look at the removed secion
+**Note**: While efforts have been made to make sure there is some backwards compatibility, this release may have some breaking changes on previous versions. Make sure to look at the removed section
 
 ### Added
 - Support for centralised signatures from the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)

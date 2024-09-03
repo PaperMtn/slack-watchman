@@ -4,16 +4,17 @@ import os
 import sys
 import time
 import traceback
-import yaml
-from pathlib import Path
-from typing import List
+from importlib import metadata
 
-from . import sw_logger
-from . import __version__
-from . import slack_wrapper as slack
-from . import signature_updater
-from . import exceptions
-from .models import (
+import yaml
+
+from slack_watchman import (
+    sw_logger,
+    signature_downloader,
+    exceptions,
+    slack_wrapper
+)
+from slack_watchman.models import (
     signature,
     user,
     workspace,
@@ -21,29 +22,7 @@ from .models import (
     conversation
 )
 
-SIGNATURES_PATH = (Path(__file__).parents[2] / 'watchman-signatures').resolve()
 OUTPUT_LOGGER: sw_logger.JSONLogger
-
-
-def load_signatures() -> List[signature.Signature]:
-    """ Load signatures from YAML files
-    Returns:
-        List containing loaded definitions as Signatures objects
-    """
-
-    loaded_signatures = []
-    try:
-        for root, dirs, files in os.walk(SIGNATURES_PATH):
-            for sig_file in files:
-                sig_path = (Path(root) / sig_file).resolve()
-                if sig_path.name.endswith('.yaml'):
-                    loaded_def = signature.load_from_yaml(sig_path)
-                    for sig in loaded_def:
-                        if sig.status == 'enabled' and 'slack_std' in sig.watchman_apps:
-                            loaded_signatures.append(sig)
-        return loaded_signatures
-    except Exception as e:
-        raise e
 
 
 def validate_conf(path: str, cookie: bool) -> bool:
@@ -106,7 +85,7 @@ def validate_conf(path: str, cookie: bool) -> bool:
                 raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_URL')
 
 
-def search(slack_connection: slack.SlackAPI,
+def search(slack_connection: slack_wrapper.SlackAPI,
            loaded_signature: signature.Signature,
            timeframe: int or str,
            scope: str,
@@ -125,7 +104,7 @@ def search(slack_connection: slack.SlackAPI,
 
     if scope == 'messages':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        messages = slack.find_messages(
+        messages = slack_wrapper.find_messages(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -142,7 +121,7 @@ def search(slack_connection: slack.SlackAPI,
                     notify_type='result')
     if scope == 'files':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        files = slack.find_files(
+        files = slack_wrapper.find_files(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -180,7 +159,8 @@ def main():
     try:
         OUTPUT_LOGGER = ''
         start_time = time.time()
-        parser = argparse.ArgumentParser(description=__version__.__summary__)
+        project_metadata = metadata.metadata('slack-watchman')
+        parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
 
         required = parser.add_argument_group('required arguments')
         required.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time',
@@ -189,7 +169,7 @@ def main():
         parser.add_argument('--output', '-o', choices=['json', 'stdout'], dest='logging_type',
                             help='Where to send results')
         parser.add_argument('--version', '-v', action='version',
-                            version=f'Slack Watchman: {__version__.__version__}')
+                            version=f'Slack Watchman: {project_metadata.get("version")}')
         parser.add_argument('--all', '-a', dest='everything', action='store_true',
                             help='Find secrets and PII')
         parser.add_argument('--users', '-u', dest='users', action='store_true',
@@ -246,7 +226,7 @@ def main():
 
         conf_path = f'{os.path.expanduser("~")}/watchman.conf'
         validate_conf(conf_path, cookie)
-        slack_con = slack.initiate_slack_connection(cookie)
+        slack_con = slack_wrapper.initiate_slack_connection(cookie)
 
         auth_data = slack_con.get_auth_test()
         calling_user = user.create_from_dict(
@@ -255,14 +235,12 @@ def main():
         workspace_information = workspace.create_from_dict(slack_con.get_workspace_info().get('team'))
 
         OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
-        OUTPUT_LOGGER.log('INFO', f'Version: {__version__.__version__}')
-        OUTPUT_LOGGER.log('INFO', f'Created by: {__version__.__author__} - {__version__.__email__}')
+        OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
+        OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
-        OUTPUT_LOGGER.log('INFO', 'Downloading signature file updates')
-        signature_updater.SignatureUpdater(OUTPUT_LOGGER).update_signatures()
-        OUTPUT_LOGGER.log('INFO', 'Importing signatures...')
-        signature_list = load_signatures()
+        OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
+        signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')
         if cookie:
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
@@ -275,7 +253,7 @@ def main():
 
         if users:
             OUTPUT_LOGGER.log('INFO', 'Enumerating users...')
-            user_list = slack.get_users(slack_con, verbose)
+            user_list = slack_wrapper.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_users', user_list)
@@ -285,7 +263,7 @@ def main():
 
         if channels:
             OUTPUT_LOGGER.log('INFO', 'Enumerating channels...')
-            channel_list = slack.get_channels(slack_con, verbose)
+            channel_list = slack_wrapper.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_channels', channel_list)
