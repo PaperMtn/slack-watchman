@@ -2,8 +2,7 @@ import time
 from dataclasses import dataclass
 from typing import List, Dict
 
-from . import conversation
-from . import user
+from slack_watchman.models import conversation, user
 
 
 def _convert_timestamp(timestamp: str or int) -> str or None:

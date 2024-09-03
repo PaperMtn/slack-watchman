@@ -8,8 +8,8 @@ from typing import List
 
 import yaml
 
-from sw_logger import JSONLogger, StdoutLogger
-from models.signature import Signature, TestCases
+from slack_watchman.sw_logger import JSONLogger, StdoutLogger
+from slack_watchman.models.signature import Signature, TestCases
 
 SIGNATURE_URL = 'https://github.com/PaperMtn/watchman-signatures/archive/main.zip'
 

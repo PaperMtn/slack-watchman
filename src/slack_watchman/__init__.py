@@ -8,11 +8,13 @@ from importlib import metadata
 
 import yaml
 
-from . import sw_logger
-from . import slack_wrapper as slack
-from . import signature_downloader
-from . import exceptions
-from .models import (
+from slack_watchman import (
+    sw_logger,
+    signature_downloader,
+    exceptions,
+    slack_wrapper
+)
+from slack_watchman.models import (
     signature,
     user,
     workspace,
@@ -83,7 +85,7 @@ def validate_conf(path: str, cookie: bool) -> bool:
                 raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_URL')
 
 
-def search(slack_connection: slack.SlackAPI,
+def search(slack_connection: slack_wrapper.SlackAPI,
            loaded_signature: signature.Signature,
            timeframe: int or str,
            scope: str,
@@ -102,7 +104,7 @@ def search(slack_connection: slack.SlackAPI,
 
     if scope == 'messages':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        messages = slack.find_messages(
+        messages = slack_wrapper.find_messages(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -119,7 +121,7 @@ def search(slack_connection: slack.SlackAPI,
                     notify_type='result')
     if scope == 'files':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        files = slack.find_files(
+        files = slack_wrapper.find_files(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -224,7 +226,7 @@ def main():
 
         conf_path = f'{os.path.expanduser("~")}/watchman.conf'
         validate_conf(conf_path, cookie)
-        slack_con = slack.initiate_slack_connection(cookie)
+        slack_con = slack_wrapper.initiate_slack_connection(cookie)
 
         auth_data = slack_con.get_auth_test()
         calling_user = user.create_from_dict(
@@ -251,7 +253,7 @@ def main():
 
         if users:
             OUTPUT_LOGGER.log('INFO', 'Enumerating users...')
-            user_list = slack.get_users(slack_con, verbose)
+            user_list = slack_wrapper.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_users', user_list)
@@ -261,7 +263,7 @@ def main():
 
         if channels:
             OUTPUT_LOGGER.log('INFO', 'Enumerating channels...')
-            channel_list = slack.get_channels(slack_con, verbose)
+            channel_list = slack_wrapper.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_channels', channel_list)
