@@ -250,6 +250,13 @@ def main():
                           f'- {calling_user.email} ID: {calling_user.id}')
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
+        OUTPUT_LOGGER.log('INFO', 'Finding workspace authentication options')
+        workspace_auth = slack_wrapper.find_auth_information(domain_url=workspace_information.url)
+        if workspace_auth:
+            OUTPUT_LOGGER.log('WORKSPACE_AUTH', workspace_auth, detect_type='Workspace Auth',
+                              notify_type='workspace_auth')
+        else:
+            OUTPUT_LOGGER.log('INFO', 'No workspace authentication information found')
 
         if users:
             OUTPUT_LOGGER.log('INFO', 'Enumerating users...')

@@ -1,4 +1,5 @@
 import hashlib
+import html
 import json
 import multiprocessing
 import os
@@ -8,11 +9,12 @@ import time
 import dataclasses
 import yaml
 import urllib.parse
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from requests.exceptions import HTTPError
 from urllib3.util import Retry
 from requests.adapters import HTTPAdapter
+from bs4 import BeautifulSoup
 
 from slack_watchman import sw_logger, exceptions
 from slack_watchman.models import (
@@ -469,7 +471,6 @@ def find_files(slack: SlackAPI,
         timeframe: How far back to search
     Returns:
         List of dictionaries with results
-
     """
 
     try:
@@ -559,3 +560,44 @@ def _multipro_file_worker(slack: SlackAPI,
 
                 kwargs.get('results').append(results_dict)
     return kwargs.get('results'), kwargs.get('potential_matches')
+
+
+def find_auth_information(domain_url: str) -> Dict[str, List[str]]:
+    """ Get domain authentication information from the Slack workspace
+
+    Slack returns the domains that can be used to create accounts on the workspace
+    as well as any OAuth providers that are allowed.
+
+    Args:
+        domain_url: URL of domain to enumerate
+    Returns:
+        A dictionary with results
+    """
+
+    response = requests.get(domain_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    props_node = soup.find('div', {'id': 'props_node'})
+
+    # Extract the `data-props` attribute, where auth domain information is stored
+    if props_node:
+        data_props = props_node.get('data-props')
+        props_data = json.loads(data_props)
+
+        formatted_email_domains = props_data.get('formattedEmailDomains')
+        user_oauth = props_data.get('userOauth')
+
+        output = {
+            'formatted_email_domains': '',
+            'user_oauth': []
+        }
+        if formatted_email_domains:
+            output['formatted_email_domains'] = formatted_email_domains
+        else:
+            output['formatted_email_domains'] = None
+        if user_oauth:
+            if user_oauth.get('google').get('enabled'):
+                output['user_oauth'].append('google')
+            if user_oauth.get('apple').get('enabled'):
+                output['user_oauth'].append('apple')
+
+        return output
