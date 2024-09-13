@@ -594,5 +594,7 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
             'sso_enabled': props_data.get('isSSOAuthMode', None),
             'two_factor_required': props_data.get('twoFactorRequired', None)
         }
+        if output.get('formatted_email_domains') == "":
+            output['formatted_email_domains'] = "N/A"
 
         return output
