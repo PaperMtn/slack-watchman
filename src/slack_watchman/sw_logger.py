@@ -41,9 +41,23 @@ class StdoutLogger:
             mes_type = 'WORKSPACE'
         if notify_type == "workspace_auth":
             message = f'WORKSPACE_AUTH: \n' \
-                      f'    ALLOWED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
-                      f'    ENABLED_OAUTH: {message.get("user_oauth")}'
+                      f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
+                      f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
+                      f'    STANDARD_AUTH: {message.get("standard_auth_enabled")} \n' \
+                      f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
+                      f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
             mes_type = 'WORKSPACE_AUTH'
+        if notify_type == "workspace_probe":
+            message = f'WORKSPACE_PROBE_INFORMATION: \n' \
+                      f'    TEAM_NAME: {message.get("team_name")}  \n' \
+                      f'    TEAM_ID: {message.get("team_id")}  \n' \
+                      f'    PAID_TEAM: {message.get("paid_team")}  \n' \
+                      f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
+                      f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
+                      f'    STANDARD_AUTH: {message.get("standard_auth_enabled")} \n' \
+                      f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
+                      f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
+            mes_type = 'WORKSPACE_PROBE'
         if notify_type == "user":
             message = f'USER: \n' \
                       f'    ID: {message.get("id")}  \n' \
@@ -124,6 +138,12 @@ class StdoutLogger:
                 style = Style.NORMAL
                 mes_type = '+'
             elif mes_type == 'WORKSPACE_AUTH':
+                base_color = Fore.LIGHTGREEN_EX
+                high_color = Fore.LIGHTGREEN_EX
+                key_color = Fore.LIGHTGREEN_EX
+                style = Style.NORMAL
+                mes_type = '!'
+            elif mes_type == 'WORKSPACE_PROBE':
                 base_color = Fore.LIGHTGREEN_EX
                 high_color = Fore.LIGHTGREEN_EX
                 key_color = Fore.LIGHTGREEN_EX
@@ -235,6 +255,8 @@ class JSONLogger(Logger):
             '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
         self.workspace_auth_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "WORKSPACE_AUTH", "message": %(message)s}')
+        self.workspace_probe_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_PROBE", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)
@@ -278,6 +300,11 @@ class JSONLogger(Logger):
                 cls=EnhancedJSONEncoder))
         elif level.upper() == 'WORKSPACE_AUTH':
             self.handler.setFormatter(self.workspace_auth_format)
+            self.logger.info(json.dumps(
+                log_data,
+                cls=EnhancedJSONEncoder))
+        elif level.upper() == 'WORKSPACE_PROBE_INFORMATION':
+            self.handler.setFormatter(self.workspace_probe_format)
             self.logger.info(json.dumps(
                 log_data,
                 cls=EnhancedJSONEncoder))

@@ -5,6 +5,7 @@ import sys
 import time
 import traceback
 from importlib import metadata
+from importlib.metadata import PackageMetadata
 
 import yaml
 
@@ -138,6 +139,43 @@ def search(slack_connection: slack_wrapper.SlackAPI,
                     notify_type='result')
 
 
+def unauthenticated_probe(workspace_domain: str,
+                          project_metadata: PackageMetadata) -> None:
+    """ Probe Slack for information about the workspace without authentication.
+
+    Args:
+        workspace_domain: Domain of the workspace
+        project_metadata: Project metadata
+    """
+
+    OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
+    OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
+    OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
+    OUTPUT_LOGGER.log('SUCCESS', f'Running in probe mode')
+    OUTPUT_LOGGER.log('SUCCESS', f'Slack Watchman will attempt an unauthenticated probe on the workspace '
+                                 f'and return any available authentication information.')
+    OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
+    try:
+        domain_information = slack_wrapper.find_auth_information(workspace_domain)
+        if domain_information:
+            OUTPUT_LOGGER.log('WORKSPACE_PROBE', domain_information, detect_type='Workspace Probe',
+                              notify_type='workspace_probe')
+            OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman probe finished execution. '
+                                         'Run in full mode with token authentication to scan a workspace')
+        else:
+            OUTPUT_LOGGER.log('INFO', f'No information found for the workspace {workspace_domain}. '
+                                      f'This may not be a Slack Workspace, or there may be no authentication'
+                                      f' information available.')
+            OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman probe finished execution. '
+                                         'Run in full mode with token authentication to scan a workspace')
+        sys.exit()
+    except SystemExit:
+        sys.exit(1)
+    except Exception as e:
+        OUTPUT_LOGGER.log('CRITICAL', e)
+        sys.exit(1)
+
+
 def init_logger(logging_type: str, debug: bool) -> sw_logger.JSONLogger or sw_logger.StdoutLogger:
     """ Create a logger object. Defaults to stdout if no option is given
 
@@ -162,10 +200,8 @@ def main():
         project_metadata = metadata.metadata('slack-watchman')
         parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
 
-        required = parser.add_argument_group('required arguments')
-        required.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time',
-                              help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
-                              required=True)
+        parser.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time', default='a',
+                            help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time')
         parser.add_argument('--output', '-o', choices=['json', 'stdout'], dest='logging_type',
                             help='Where to send results')
         parser.add_argument('--version', '-v', action='version',
@@ -192,6 +228,10 @@ def main():
                             help='Use cookie auth using Slack d cookie. '
                                  'REQUIRES either SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL environment variables '
                                  'set, or both values set in watchman.conf')
+        parser.add_argument('--probe', dest='probe_domain',
+                            help='Perform an un-authenticated probe on a workspace for available'
+                                 ' authentication options and other information. '
+                                 'Enter workspace domain to probe')
 
         args = parser.parse_args()
         tm = args.time
@@ -204,6 +244,7 @@ def main():
         secrets = args.secrets
         pii = args.pii
         cookie = args.cookie
+        probe_domain = args.probe_domain
 
         OUTPUT_LOGGER = init_logger(logging_type, debug)
 
@@ -223,6 +264,9 @@ def main():
         else:
             now = int(time.time())
             timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 1576800000))
+
+        if probe_domain:
+            unauthenticated_probe(probe_domain, project_metadata)
 
         conf_path = f'{os.path.expanduser("~")}/watchman.conf'
         validate_conf(conf_path, cookie)

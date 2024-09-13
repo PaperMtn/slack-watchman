@@ -1,5 +1,4 @@
 import hashlib
-import html
 import json
 import multiprocessing
 import os
@@ -9,7 +8,7 @@ import time
 import dataclasses
 import yaml
 import urllib.parse
-from typing import List, Dict, Any
+from typing import List, Dict
 
 from requests.exceptions import HTTPError
 from urllib3.util import Retry
@@ -562,7 +561,7 @@ def _multipro_file_worker(slack: SlackAPI,
     return kwargs.get('results'), kwargs.get('potential_matches')
 
 
-def find_auth_information(domain_url: str) -> Dict[str, List[str]]:
+def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
     """ Get domain authentication information from the Slack workspace
 
     Slack returns the domains that can be used to create accounts on the workspace
@@ -571,33 +570,29 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]]:
     Args:
         domain_url: URL of domain to enumerate
     Returns:
-        A dictionary with results
+        A dictionary with results or None if no results
     """
 
     response = requests.get(domain_url)
     soup = BeautifulSoup(response.text, 'html.parser')
     props_node = soup.find('div', {'id': 'props_node'})
 
-    # Extract the `data-props` attribute, where auth domain information is stored
     if props_node:
         data_props = props_node.get('data-props')
         props_data = json.loads(data_props)
 
-        formatted_email_domains = props_data.get('formattedEmailDomains')
-        user_oauth = props_data.get('userOauth')
-
         output = {
-            'formatted_email_domains': '',
-            'user_oauth': []
+            'formatted_email_domains': props_data.get('formattedEmailDomains', None),
+            'user_oauth': [
+                'google' if props_data.get('userOauth', {}).get('google', {}).get('enabled', False) else None,
+                'apple' if props_data.get('userOauth', {}).get('apple', {}).get('enabled', False) else None
+            ],
+            'paid_team': props_data.get('isPaidTeam', None),
+            'team_name': props_data.get('teamName', None),
+            'team_id': props_data.get('encodedTeamId', None),
+            'standard_auth_enabled': props_data.get('isNormalAuthMode', None),
+            'sso_enabled': props_data.get('isSSOAuthMode', None),
+            'two_factor_required': props_data.get('twoFactorRequired', None)
         }
-        if formatted_email_domains:
-            output['formatted_email_domains'] = formatted_email_domains
-        else:
-            output['formatted_email_domains'] = None
-        if user_oauth:
-            if user_oauth.get('google').get('enabled'):
-                output['user_oauth'].append('google')
-            if user_oauth.get('apple').get('enabled'):
-                output['user_oauth'].append('apple')
 
         return output
