@@ -8,11 +8,15 @@
 Monitoring and enumerating Slack for exposed secrets
 
 ## About Slack Watchman
+
+![Slack Watchman](/images/slack_watchman.png)
 Slack Watchman is an application that uses the Slack API to find potentially sensitive data exposed in a Slack workspace, and to enumerate other useful information for red, blue and purple teams.
 
 More information about Slack Watchman can be found [on my blog](https://papermtn.co.uk/slack-watchman-monitoring-slack-workspaces-for-sensitive-information/).
 
 ### Features
+#### Secrets Detection
+![Slack Watchman Detection](/images/slack_watchman_finding.png)
 Slack Watchman looks for:
 
 - API Keys, Tokens & Service Accounts
@@ -31,12 +35,6 @@ Slack Watchman looks for:
 - Financial data
     - Paypal Braintree tokens, Bank card details, IBAN numbers, CUSIP numbers and more
 
-It also enumerates the following:
-- User data
-    - All users & all admins
-- Channel data
-    - All channels, including externally shared channels
-
 #### Time based searching
 You can run Slack Watchman to look for results going back as far as:
 - 24 hours
@@ -44,7 +42,34 @@ You can run Slack Watchman to look for results going back as far as:
 - 30 days
 - All time
 
+#### Enumeration
+![Slack Watchman Enumeration](/images/slack_watchman_enumeration.png)
+It also enumerates the following:
+- User data
+    - All users & all admins
+- Channel data
+    - All channels, including externally shared channels
+- Workspace authentication options
+
+
 This means after one deep scan, you can schedule Slack Watchman to run regularly and only return results from your chosen timeframe.
+
+#### Unauthenticated Probe
+![Unauthenticated Probe](/images/slack_watchman_probe.png)
+You can run Slack Watchman in unauthenticated probe mode to enumerate authentication options and other information on a Workspace. This doesn't need a token, and returns:
+
+- Workspace name
+- Workspace ID
+- Approved domains (which can create accounts)
+- OAuth providers
+- SSO auth status
+- Two-factor requirements
+
+To run this mode use Slack Watchman with the `--probe` flag and the workspace domain to probe:
+
+```commandline
+slack-watchman --probe https://domain.slack.com
+```
 
 ### Signatures
 Slack Watchman uses custom YAML signatures to detect matches in Slack. These signatures are pulled from the central [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures). Slack Watchman automatically updates its signature base at runtime to ensure its using the latest signatures to detect secrets.
@@ -149,29 +174,26 @@ docker run --rm --env-file .env papermountain/slack-watchman --timeframe a --all
 ## Usage
 Slack Watchman will be installed as a global command, use as follows:
 ```commandline
-usage: slack-watchman [-h] --timeframe {d,w,m,a} [--output {json,stdout}] [--version] [--all] [--users] [--channels] [--pii] [--secrets]
-                      [--debug] [--verbose] [--cookie]
+usage: slack-watchman [-h] [--timeframe {d,w,m,a}] [--output {json,stdout}] [--version] [--all] [--users] [--channels] [--pii] [--secrets] [--debug] [--verbose] [--cookie] [--probe PROBE_DOMAIN]
 
 Monitoring and enumerating Slack for exposed secrets
 
 options:
   -h, --help            show this help message and exit
+  --timeframe {d,w,m,a}, -t {d,w,m,a}
+                        How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time
   --output {json,stdout}, -o {json,stdout}
                         Where to send results
   --version, -v         show program's version number and exit
   --all, -a             Find secrets and PII
-  --users, -u           Enumerate users and output them to .csv
-  --channels, -c        Enumerate channels and output them to .csv
+  --users, -u           Enumerate users and output them to .csv in the current working directory
+  --channels, -c        Enumerate channels and output them to .csv in the current working directory
   --pii, -p             Find personal data: DOB, passport details, drivers licence, ITIN, SSN etc.
   --secrets, -s         Find exposed secrets: credentials, tokens etc.
   --debug, -d           Turn on debug level logging
   --verbose, -V         Turn on more verbose output for JSON logging. This includes more fields, but is larger
-  --cookie              Use cookie auth using Slack d cookie. REQUIRES either SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL environment
-                        variables set, or both values set in watchman.conf
-
-required arguments:
-  --timeframe {d,w,m,a}, -t {d,w,m,a}
-                        How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time
+  --cookie              Use cookie auth using Slack d cookie. REQUIRES either SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL environment variables set, or both values set in watchman.conf
+  --probe PROBE_DOMAIN  Perform an un-authenticated probe on a workspace for available authentication options and other information. Enter workspace domain to probe
   ```
 
 You can run Slack Watchman to look for everything, and output to default stdout:
