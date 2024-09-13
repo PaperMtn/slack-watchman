@@ -8,15 +8,16 @@
 Monitoring and enumerating Slack for exposed secrets
 
 ## About Slack Watchman
+<img src="/images/slack_watchman.png" width="500">
 
-![Slack Watchman](/images/slack_watchman.png)
 Slack Watchman is an application that uses the Slack API to find potentially sensitive data exposed in a Slack workspace, and to enumerate other useful information for red, blue and purple teams.
 
 More information about Slack Watchman can be found [on my blog](https://papermtn.co.uk/slack-watchman-monitoring-slack-workspaces-for-sensitive-information/).
 
 ### Features
 #### Secrets Detection
-![Slack Watchman Detection](/images/slack_watchman_finding.png)
+<img src="/images/slack_watchman_finding.png" width="500">
+
 Slack Watchman looks for:
 
 - API Keys, Tokens & Service Accounts
@@ -43,7 +44,8 @@ You can run Slack Watchman to look for results going back as far as:
 - All time
 
 #### Enumeration
-![Slack Watchman Enumeration](/images/slack_watchman_enumeration.png)
+<img src="/images/slack_watchman_enumeration.png" width="500">
+
 It also enumerates the following:
 - User data
     - All users & all admins
@@ -55,7 +57,8 @@ It also enumerates the following:
 This means after one deep scan, you can schedule Slack Watchman to run regularly and only return results from your chosen timeframe.
 
 #### Unauthenticated Probe
-![Unauthenticated Probe](/images/slack_watchman_probe.png)
+<img src="/images/slack_watchman_probe.png" width="500">
+
 You can run Slack Watchman in unauthenticated probe mode to enumerate authentication options and other information on a Workspace. This doesn't need a token, and returns:
 
 - Workspace name
