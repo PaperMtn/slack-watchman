@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "slack-watchman"
-version = "4.1.1"
+version = "4.1.2"
 description = "Monitoring and enumerating Slack for exposed secrets"
 authors = ["PaperMtn <papermtn@protonmail.com>"]
 license = "GPL-3.0"
@@ -10,7 +10,6 @@ repository = "https://github.com/PaperMtn/slack-watchman"
 keywords = [ "audit", "slack", "slack-watchman", "watchman", "blue-team", "red-team", "threat-hunting" ]
 classifiers = [
     "Intended Audience :: Information Technology",
-    "Topic :: Cybersecurity",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 ]
 
