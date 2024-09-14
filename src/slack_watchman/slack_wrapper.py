@@ -13,6 +13,7 @@ from typing import List, Dict
 from requests.exceptions import HTTPError
 from urllib3.util import Retry
 from requests.adapters import HTTPAdapter
+from bs4 import BeautifulSoup
 
 from slack_watchman import sw_logger, exceptions
 from slack_watchman.models import (
@@ -469,7 +470,6 @@ def find_files(slack: SlackAPI,
         timeframe: How far back to search
     Returns:
         List of dictionaries with results
-
     """
 
     try:
@@ -559,3 +559,42 @@ def _multipro_file_worker(slack: SlackAPI,
 
                 kwargs.get('results').append(results_dict)
     return kwargs.get('results'), kwargs.get('potential_matches')
+
+
+def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
+    """ Get domain authentication information from the Slack workspace
+
+    Slack returns the domains that can be used to create accounts on the workspace
+    as well as any OAuth providers that are allowed.
+
+    Args:
+        domain_url: URL of domain to enumerate
+    Returns:
+        A dictionary with results or None if no results
+    """
+
+    response = requests.get(domain_url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    props_node = soup.find('div', {'id': 'props_node'})
+
+    if props_node:
+        data_props = props_node.get('data-props')
+        props_data = json.loads(data_props)
+
+        output = {
+            'formatted_email_domains': props_data.get('formattedEmailDomains', None),
+            'user_oauth': [
+                'google' if props_data.get('userOauth', {}).get('google', {}).get('enabled', False) else None,
+                'apple' if props_data.get('userOauth', {}).get('apple', {}).get('enabled', False) else None
+            ],
+            'paid_team': props_data.get('isPaidTeam', None),
+            'team_name': props_data.get('teamName', None),
+            'team_id': props_data.get('encodedTeamId', None),
+            'standard_auth_enabled': props_data.get('isNormalAuthMode', None),
+            'sso_enabled': props_data.get('isSSOAuthMode', None),
+            'two_factor_required': props_data.get('twoFactorRequired', None)
+        }
+        if output.get('formatted_email_domains') == "":
+            output['formatted_email_domains'] = "N/A"
+
+        return output

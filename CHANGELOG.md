@@ -1,4 +1,11 @@
-## [4.1.0] - 2024-09-02
+## [4.1.0] - 2024-09-12
+### Added
+- Added enumeration of authentication options for the Workspace you authed to.
+  - Shows which domains are authorised to create accounts on the workspace. If a historic domain that isn't registered anymore is still approved, you could access this workspace using an email from it.
+  - Also shows which OAuth providers are authorised for the workspace.
+- Added new 'unauthenticated probe' mode. This mode will attempt an unauthenticated probe on the workspace and return any available authentication information, as well as any other useful information such as whether the workspace is on a paid plan.
+  - No authentication token is required in this mode, you can spray away to any workspace you like.
+
 ### Changed
 - Signatures are now downloaded, processes and stored in memory instead of writing to disk. This saves having to store them in files, and solves the issues when using Slack Watchman with read-only filesystems (raised in [#51](https://github.com/PaperMtn/watchman-signatures/issues/51)) 
 - Migrated to Poetry for dependency control and packaging
