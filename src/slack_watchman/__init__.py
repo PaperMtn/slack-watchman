@@ -4,16 +4,18 @@ import os
 import sys
 import time
 import traceback
-import yaml
-from pathlib import Path
-from typing import List
+from importlib import metadata
+from importlib.metadata import PackageMetadata
 
-from . import sw_logger
-from . import __version__
-from . import slack_wrapper as slack
-from . import signature_updater
-from . import exceptions
-from .models import (
+import yaml
+
+from slack_watchman import (
+    sw_logger,
+    signature_downloader,
+    exceptions,
+    slack_wrapper
+)
+from slack_watchman.models import (
     signature,
     user,
     workspace,
@@ -21,29 +23,7 @@ from .models import (
     conversation
 )
 
-SIGNATURES_PATH = (Path(__file__).parents[2] / 'watchman-signatures').resolve()
 OUTPUT_LOGGER: sw_logger.JSONLogger
-
-
-def load_signatures() -> List[signature.Signature]:
-    """ Load signatures from YAML files
-    Returns:
-        List containing loaded definitions as Signatures objects
-    """
-
-    loaded_signatures = []
-    try:
-        for root, dirs, files in os.walk(SIGNATURES_PATH):
-            for sig_file in files:
-                sig_path = (Path(root) / sig_file).resolve()
-                if sig_path.name.endswith('.yaml'):
-                    loaded_def = signature.load_from_yaml(sig_path)
-                    for sig in loaded_def:
-                        if sig.status == 'enabled' and 'slack_std' in sig.watchman_apps:
-                            loaded_signatures.append(sig)
-        return loaded_signatures
-    except Exception as e:
-        raise e
 
 
 def validate_conf(path: str, cookie: bool) -> bool:
@@ -106,7 +86,7 @@ def validate_conf(path: str, cookie: bool) -> bool:
                 raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_URL')
 
 
-def search(slack_connection: slack.SlackAPI,
+def search(slack_connection: slack_wrapper.SlackAPI,
            loaded_signature: signature.Signature,
            timeframe: int or str,
            scope: str,
@@ -125,7 +105,7 @@ def search(slack_connection: slack.SlackAPI,
 
     if scope == 'messages':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        messages = slack.find_messages(
+        messages = slack_wrapper.find_messages(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -142,7 +122,7 @@ def search(slack_connection: slack.SlackAPI,
                     notify_type='result')
     if scope == 'files':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        files = slack.find_files(
+        files = slack_wrapper.find_files(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -157,6 +137,43 @@ def search(slack_connection: slack.SlackAPI,
                     severity=loaded_signature.severity,
                     detect_type=loaded_signature.name,
                     notify_type='result')
+
+
+def unauthenticated_probe(workspace_domain: str,
+                          project_metadata: PackageMetadata) -> None:
+    """ Probe Slack for information about the workspace without authentication.
+
+    Args:
+        workspace_domain: Domain of the workspace
+        project_metadata: Project metadata
+    """
+
+    OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
+    OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
+    OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
+    OUTPUT_LOGGER.log('SUCCESS', f'Running in probe mode')
+    OUTPUT_LOGGER.log('SUCCESS', f'Slack Watchman will attempt an unauthenticated probe on the workspace '
+                                 f'and return any available authentication information.')
+    OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
+    try:
+        domain_information = slack_wrapper.find_auth_information(workspace_domain)
+        if domain_information:
+            OUTPUT_LOGGER.log('WORKSPACE_PROBE', domain_information, detect_type='Workspace Probe',
+                              notify_type='workspace_probe')
+            OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman probe finished execution. '
+                                         'Run in full mode with token authentication to scan a workspace')
+        else:
+            OUTPUT_LOGGER.log('INFO', f'No information found for the workspace {workspace_domain}. '
+                                      f'This may not be a Slack Workspace, or there may be no authentication'
+                                      f' information available.')
+            OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman probe finished execution. '
+                                         'Run in full mode with token authentication to scan a workspace')
+        sys.exit()
+    except SystemExit:
+        sys.exit(1)
+    except Exception as e:
+        OUTPUT_LOGGER.log('CRITICAL', e)
+        sys.exit(1)
 
 
 def init_logger(logging_type: str, debug: bool) -> sw_logger.JSONLogger or sw_logger.StdoutLogger:
@@ -180,16 +197,15 @@ def main():
     try:
         OUTPUT_LOGGER = ''
         start_time = time.time()
-        parser = argparse.ArgumentParser(description=__version__.__summary__)
+        project_metadata = metadata.metadata('slack-watchman')
+        parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
 
-        required = parser.add_argument_group('required arguments')
-        required.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time',
-                              help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time',
-                              required=True)
+        parser.add_argument('--timeframe', '-t', choices=['d', 'w', 'm', 'a'], dest='time', default='a',
+                            help='How far back to search: d = 24 hours w = 7 days, m = 30 days, a = all time')
         parser.add_argument('--output', '-o', choices=['json', 'stdout'], dest='logging_type',
                             help='Where to send results')
         parser.add_argument('--version', '-v', action='version',
-                            version=f'Slack Watchman: {__version__.__version__}')
+                            version=f'Slack Watchman: {project_metadata.get("version")}')
         parser.add_argument('--all', '-a', dest='everything', action='store_true',
                             help='Find secrets and PII')
         parser.add_argument('--users', '-u', dest='users', action='store_true',
@@ -212,6 +228,10 @@ def main():
                             help='Use cookie auth using Slack d cookie. '
                                  'REQUIRES either SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL environment variables '
                                  'set, or both values set in watchman.conf')
+        parser.add_argument('--probe', dest='probe_domain',
+                            help='Perform an un-authenticated probe on a workspace for available'
+                                 ' authentication options and other information. '
+                                 'Enter workspace domain to probe')
 
         args = parser.parse_args()
         tm = args.time
@@ -224,6 +244,7 @@ def main():
         secrets = args.secrets
         pii = args.pii
         cookie = args.cookie
+        probe_domain = args.probe_domain
 
         OUTPUT_LOGGER = init_logger(logging_type, debug)
 
@@ -244,9 +265,12 @@ def main():
             now = int(time.time())
             timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 1576800000))
 
+        if probe_domain:
+            unauthenticated_probe(probe_domain, project_metadata)
+
         conf_path = f'{os.path.expanduser("~")}/watchman.conf'
         validate_conf(conf_path, cookie)
-        slack_con = slack.initiate_slack_connection(cookie)
+        slack_con = slack_wrapper.initiate_slack_connection(cookie)
 
         auth_data = slack_con.get_auth_test()
         calling_user = user.create_from_dict(
@@ -255,14 +279,12 @@ def main():
         workspace_information = workspace.create_from_dict(slack_con.get_workspace_info().get('team'))
 
         OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
-        OUTPUT_LOGGER.log('INFO', f'Version: {__version__.__version__}')
-        OUTPUT_LOGGER.log('INFO', f'Created by: {__version__.__author__} - {__version__.__email__}')
+        OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
+        OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
-        OUTPUT_LOGGER.log('INFO', 'Downloading signature file updates')
-        signature_updater.SignatureUpdater(OUTPUT_LOGGER).update_signatures()
-        OUTPUT_LOGGER.log('INFO', 'Importing signatures...')
-        signature_list = load_signatures()
+        OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
+        signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')
         if cookie:
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
@@ -272,10 +294,17 @@ def main():
                           f'- {calling_user.email} ID: {calling_user.id}')
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
+        OUTPUT_LOGGER.log('INFO', 'Finding workspace authentication options')
+        workspace_auth = slack_wrapper.find_auth_information(domain_url=workspace_information.url)
+        if workspace_auth:
+            OUTPUT_LOGGER.log('WORKSPACE_AUTH', workspace_auth, detect_type='Workspace Auth',
+                              notify_type='workspace_auth')
+        else:
+            OUTPUT_LOGGER.log('INFO', 'No workspace authentication information found')
 
         if users:
             OUTPUT_LOGGER.log('INFO', 'Enumerating users...')
-            user_list = slack.get_users(slack_con, verbose)
+            user_list = slack_wrapper.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_users', user_list)
@@ -285,7 +314,7 @@ def main():
 
         if channels:
             OUTPUT_LOGGER.log('INFO', 'Enumerating channels...')
-            channel_list = slack.get_channels(slack_con, verbose)
+            channel_list = slack_wrapper.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
             sw_logger.export_csv('slack_channels', channel_list)

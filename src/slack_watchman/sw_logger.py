@@ -39,6 +39,25 @@ class StdoutLogger:
                       f'    DOMAIN: {message.get("domain")}  \n' \
                       f'    URL: {message.get("url")}'
             mes_type = 'WORKSPACE'
+        if notify_type == "workspace_auth":
+            message = f'WORKSPACE_AUTH: \n' \
+                      f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
+                      f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
+                      f'    STANDARD_AUTH: {message.get("standard_auth_enabled")} \n' \
+                      f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
+                      f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
+            mes_type = 'WORKSPACE_AUTH'
+        if notify_type == "workspace_probe":
+            message = f'WORKSPACE_PROBE_INFORMATION: \n' \
+                      f'    TEAM_NAME: {message.get("team_name")}  \n' \
+                      f'    TEAM_ID: {message.get("team_id")}  \n' \
+                      f'    PAID_TEAM: {message.get("paid_team")}  \n' \
+                      f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
+                      f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
+                      f'    STANDARD_AUTH: {message.get("standard_auth_enabled")} \n' \
+                      f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
+                      f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
+            mes_type = 'WORKSPACE_PROBE'
         if notify_type == "user":
             message = f'USER: \n' \
                       f'    ID: {message.get("id")}  \n' \
@@ -76,7 +95,7 @@ class StdoutLogger:
             elif message.get('file'):
                 message = 'POST_TYPE: File' \
                           f'    POSTED_BY: {message.get("user", {}).get("display_name")} ' \
-                                f'- {message.get("user").get("email")}' \
+                          f'- {message.get("user").get("email")}' \
                           f'    CREATED: {message.get("file").get("created")} \n' \
                           f'    FILE_NAME: {message.get("file").get("name")} \n' \
                           f'    PRIVATE_URL: {message.get("file").get("url_private_download")} \n' \
@@ -118,6 +137,18 @@ class StdoutLogger:
                 key_color = Fore.LIGHTBLUE_EX
                 style = Style.NORMAL
                 mes_type = '+'
+            elif mes_type == 'WORKSPACE_AUTH':
+                base_color = Fore.LIGHTGREEN_EX
+                high_color = Fore.LIGHTGREEN_EX
+                key_color = Fore.LIGHTGREEN_EX
+                style = Style.NORMAL
+                mes_type = '!'
+            elif mes_type == 'WORKSPACE_PROBE':
+                base_color = Fore.LIGHTGREEN_EX
+                high_color = Fore.LIGHTGREEN_EX
+                key_color = Fore.LIGHTGREEN_EX
+                style = Style.NORMAL
+                mes_type = '!'
             elif mes_type == 'USER':
                 base_color = Fore.RED
                 high_color = Fore.RED
@@ -163,7 +194,7 @@ class StdoutLogger:
             type_colorer = re.compile(r'([A-Z]{3,})', re.VERBOSE)
             mes_type = type_colorer.sub(high_color + r'\1' + base_color, mes_type.lower())
             # Make header words coloured
-            header_words = re.compile('([A-Z_0-9]{2,}:)\s', re.VERBOSE)
+            header_words = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
             message = header_words.sub(key_color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
             sys.stdout.write(
                 f"{reset_all}{style}[{base_color}{mes_type}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
@@ -222,6 +253,10 @@ class JSONLogger(Logger):
             '{"timestamp": "%(asctime)s", "level": "USER", "message": %(message)s}')
         self.workspace_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
+        self.workspace_auth_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_AUTH", "message": %(message)s}')
+        self.workspace_probe_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_PROBE", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)
@@ -256,13 +291,23 @@ class JSONLogger(Logger):
         elif level.upper() == 'USER':
             self.handler.setFormatter(self.user_format)
             self.logger.info(json.dumps(
-                    log_data,
-                    cls=EnhancedJSONEncoder))
+                log_data,
+                cls=EnhancedJSONEncoder))
         elif level.upper() == 'WORKSPACE':
             self.handler.setFormatter(self.workspace_format)
             self.logger.info(json.dumps(
-                    log_data,
-                    cls=EnhancedJSONEncoder))
+                log_data,
+                cls=EnhancedJSONEncoder))
+        elif level.upper() == 'WORKSPACE_AUTH':
+            self.handler.setFormatter(self.workspace_auth_format)
+            self.logger.info(json.dumps(
+                log_data,
+                cls=EnhancedJSONEncoder))
+        elif level.upper() == 'WORKSPACE_PROBE_INFORMATION':
+            self.handler.setFormatter(self.workspace_probe_format)
+            self.logger.info(json.dumps(
+                log_data,
+                cls=EnhancedJSONEncoder))
         elif level.upper() == 'SUCCESS':
             self.handler.setFormatter(self.success_format)
             self.logger.info(log_data)
