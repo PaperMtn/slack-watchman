@@ -3,7 +3,7 @@ name: Poetry Publish
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master, main ]
 
 jobs:
   deploy:
