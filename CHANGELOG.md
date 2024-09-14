@@ -1,4 +1,4 @@
-## [4.1.1] - 2024-09-14
+## [4.1.2] - 2024-09-14
 ### Added
 - Added enumeration of authentication options for the Workspace you authed to.
   - Shows which domains are authorised to create accounts on the workspace. If a historic domain that isn't registered anymore is still approved, you could access this workspace using an email from it.
