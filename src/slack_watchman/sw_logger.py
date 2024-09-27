@@ -53,6 +53,7 @@ class StdoutLogger:
                       f'    TEAM_ID: {message.get("team_id")}  \n' \
                       f'    PAID_TEAM: {message.get("paid_team")}  \n' \
                       f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
+                      f'    JOIN_URL: {message.get("join_url")}  \n' \
                       f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
                       f'    STANDARD_AUTH: {message.get("standard_auth_enabled")} \n' \
                       f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \

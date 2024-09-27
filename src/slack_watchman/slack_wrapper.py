@@ -583,6 +583,7 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
 
         output = {
             'formatted_email_domains': props_data.get('formattedEmailDomains', None),
+            'join_url': f'https://join.slack.com/t/{props_data.get("teamDomain")}/signup',
             'user_oauth': [
                 'google' if props_data.get('userOauth', {}).get('google', {}).get('enabled', False) else None,
                 'apple' if props_data.get('userOauth', {}).get('apple', {}).get('enabled', False) else None
@@ -594,7 +595,8 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
             'sso_enabled': props_data.get('isSSOAuthMode', None),
             'two_factor_required': props_data.get('twoFactorRequired', None)
         }
-        if output.get('formatted_email_domains') == "":
-            output['formatted_email_domains'] = "N/A"
+        if output.get('formatted_email_domains') == '':
+            output['formatted_email_domains'] = 'N/A'
+            output['join_url'] = 'N/A'
 
         return output

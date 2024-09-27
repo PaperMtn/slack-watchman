@@ -1,6 +1,7 @@
 ## [4.2.0] - 2024-09-27
 ### Added
 - Added enumeration of conversations with populated Canvases attached. These can contain sensitive information, and are worth reviewing.
+- Added join domain to unauthenticated probe. This is the link to use to sign into a Workspace if you have an email with one of the approved domains.
 
 ## [4.1.2] - 2024-09-14
 ### Added
