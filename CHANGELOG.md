@@ -1,3 +1,7 @@
+## [4.2.0] - 2024-09-27
+### Added
+- Added enumeration of conversations with populated Canvases attached. These can contain sensitive information, and are worth reviewing.
+
 ## [4.1.2] - 2024-09-14
 ### Added
 - Added enumeration of authentication options for the Workspace you authed to.

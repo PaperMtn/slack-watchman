@@ -49,8 +49,9 @@ You can run Slack Watchman to look for results going back as far as:
 It also enumerates the following:
 - User data
     - All users & all admins
-- Channel data
-    - All channels, including externally shared channels
+- Conversation data
+    - All conversations, including externally shared conversations
+    - All conversations that include a Slack Canvas (which often contain sensitive or important information)
 - Workspace authentication options
 
 
@@ -110,7 +111,7 @@ team:read
 users:read
 users:read.email
 ```
-**Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private channels and chats.
+**Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private conversations and chats.
 
 ### Cookie Authentication
 Alternatively, Slack Watchman can also authenticate to Slack using a user `d` cookie, which is stored in the browser of each user logged into a workspace.
