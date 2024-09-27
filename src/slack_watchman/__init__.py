@@ -321,7 +321,15 @@ def main():
             OUTPUT_LOGGER.log(
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_channels.csv")}')
-
+            OUTPUT_LOGGER.log('INFO', 'Finding public Canvases')
+            for channel in channel_list:
+                if not channel.canvas_empty and channel.canvas_id:
+                    canvas_information = {
+                        'channel_name': channel.name,
+                        'canvas_url': f'{workspace_information.url}canvas/{channel.id}'
+                    }
+                    OUTPUT_LOGGER.log('CANVAS', canvas_information, detect_type='Canvas',
+                                      notify_type='canvas')
         if everything or not pii and not secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
             for signature in signature_list:

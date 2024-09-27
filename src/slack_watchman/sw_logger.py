@@ -68,6 +68,11 @@ class StdoutLogger:
                       f'    OWNER: {message.get("is_owner")} \n' \
                       f'    HAS_2FA: {message.get("has_2fa")}'
             mes_type = 'USER'
+        if notify_type == "canvas":
+            message = f'CANVAS: \n' \
+                      f'    CHANNEL: {message.get("channel_name")}  \n' \
+                      f'    CANVAS_URL: {message.get("canvas_url")}'
+            mes_type = 'USER'
         if notify_type == "result":
             if message.get('message'):
                 if message.get('message').get('conversation').get('is_im'):
@@ -257,6 +262,8 @@ class JSONLogger(Logger):
             '{"timestamp": "%(asctime)s", "level": "WORKSPACE_AUTH", "message": %(message)s}')
         self.workspace_probe_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "WORKSPACE_PROBE", "message": %(message)s}')
+        self.canvas_format = logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "CANVAS", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
         self.logger.addHandler(self.handler)
@@ -290,6 +297,11 @@ class JSONLogger(Logger):
             self.logger.debug(log_data)
         elif level.upper() == 'USER':
             self.handler.setFormatter(self.user_format)
+            self.logger.info(json.dumps(
+                log_data,
+                cls=EnhancedJSONEncoder))
+        elif level.upper() == 'CANVAS':
+            self.handler.setFormatter(self.canvas_format)
             self.logger.info(json.dumps(
                 log_data,
                 cls=EnhancedJSONEncoder))
