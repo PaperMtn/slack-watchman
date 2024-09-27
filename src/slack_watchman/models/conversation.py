@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 
 def _convert_timestamp(timestamp: str or int) -> str or None:
@@ -44,6 +44,8 @@ class Conversation(object):
     previous_names: List[str]
     purpose: str
     topic: str
+    canvas_empty: Optional[bool]
+    canvas_id: Optional[str]
     num_members: int
     is_member: bool
     is_pending_ext_shared: bool
@@ -71,6 +73,8 @@ class ConversationSuccinct(object):
     is_im: bool
     is_mpim: bool
     is_archived: bool
+    canvas_empty: Optional[bool]
+    canvas_id: Optional[str]
     creator: str
     num_members: int
 
@@ -107,6 +111,8 @@ def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or Conversa
             previous_names=conv_dict.get('previous_names'),
             is_member=conv_dict.get('is_member'),
             purpose=conv_dict.get('purpose', {}).get('value'),
+            canvas_empty=conv_dict.get('properties', {}).get('canvas', {}).get('is_empty'),
+            canvas_id=conv_dict.get('properties', {}).get('canvas', {}).get('file_id'),
             topic=conv_dict.get('topic', {}).get('value')
         )
     else:
@@ -119,5 +125,7 @@ def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or Conversa
             is_im=conv_dict.get('is_im'),
             is_mpim=conv_dict.get('is_mpim'),
             is_archived=conv_dict.get('is_archived'),
+            canvas_empty=conv_dict.get('properties', {}).get('canvas', {}).get('is_empty'),
+            canvas_id=conv_dict.get('properties', {}).get('canvas', {}).get('file_id'),
             creator=conv_dict.get('creator'),
         )
