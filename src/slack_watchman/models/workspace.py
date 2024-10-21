@@ -1,24 +1,5 @@
-import time
 from dataclasses import dataclass
 from typing import Optional, Dict
-
-
-def _convert_timestamp(timestamp: str or int) -> str or None:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: epoch timestamp in seconds
-    Returns:
-        String time in the format YYYY-mm-dd hh:mm:ss
-    """
-
-    if timestamp:
-        if isinstance(timestamp, str):
-            timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-    else:
-        return None
 
 
 @dataclass(slots=True)

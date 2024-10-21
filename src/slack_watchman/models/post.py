@@ -1,26 +1,8 @@
-import time
 from dataclasses import dataclass
 from typing import List, Dict
 
 from slack_watchman.models import conversation, user
-
-
-def _convert_timestamp(timestamp: str or int) -> str or None:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: epoch timestamp in seconds
-    Returns:
-        String time in the format YYYY-mm-dd hh:mm:ss
-    """
-
-    if timestamp:
-        if isinstance(timestamp, str):
-            timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-    else:
-        return None
+from slack_watchman.utils import convert_timestamp
 
 
 @dataclass(slots=True)
@@ -73,7 +55,7 @@ def create_message_from_dict(message_dict: Dict) -> Message:
     return Message(
         id=message_dict.get('iid'),
         team=message_dict.get('team'),
-        created=_convert_timestamp(message_dict.get('ts')),
+        created=convert_timestamp(message_dict.get('ts')),
         timestamp=message_dict.get('ts'),
         conversation=message_dict.get('conversation'),
         user=message_dict.get('user'),
@@ -97,7 +79,7 @@ def create_file_from_dict(file_dict: Dict) -> File:
     return File(
         id=file_dict.get('id'),
         team=file_dict.get('source_team'),
-        created=_convert_timestamp(file_dict.get('created')),
+        created=convert_timestamp(file_dict.get('created')),
         user=file_dict.get('user'),
         name=file_dict.get('name'),
         title=file_dict.get('title'),

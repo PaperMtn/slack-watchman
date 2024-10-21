@@ -1,24 +1,7 @@
-import time
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
-
-def _convert_timestamp(timestamp: str or int) -> str or None:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: epoch timestamp in seconds
-    Returns:
-        String time in the format YYYY-mm-dd hh:mm:ss
-    """
-
-    if timestamp:
-        if isinstance(timestamp, str):
-            timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-    else:
-        return None
+from slack_watchman.utils import convert_timestamp
 
 
 @dataclass(slots=True)
@@ -93,7 +76,7 @@ def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or Conversa
         return Conversation(
             id=conv_dict.get('id'),
             name=conv_dict.get('name'),
-            created=_convert_timestamp(conv_dict.get('created')),
+            created=convert_timestamp(conv_dict.get('created')),
             num_members=conv_dict.get('num_members'),
             is_general=conv_dict.get('is_general'),
             is_private=conv_dict.get('is_private'),
@@ -119,7 +102,7 @@ def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or Conversa
         return ConversationSuccinct(
             id=conv_dict.get('id'),
             name=conv_dict.get('name'),
-            created=_convert_timestamp(conv_dict.get('created')),
+            created=convert_timestamp(conv_dict.get('created')),
             num_members=conv_dict.get('num_members'),
             is_private=conv_dict.get('is_private'),
             is_im=conv_dict.get('is_im'),

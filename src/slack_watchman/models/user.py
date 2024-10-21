@@ -1,24 +1,7 @@
-import time
 from dataclasses import dataclass
 from typing import Dict
 
-
-def _convert_timestamp(timestamp: str or int) -> str or None:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: epoch timestamp in seconds
-    Returns:
-        String time in the format YYYY-mm-dd hh:mm:ss
-    """
-
-    if timestamp:
-        if isinstance(timestamp, str):
-            timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-    else:
-        return None
+from slack_watchman.utils import convert_timestamp
 
 
 @dataclass(slots=True)
@@ -95,7 +78,7 @@ def create_from_dict(user_dict: Dict,
             is_restricted=user_dict.get('is_restricted'),
             is_ultra_restricted=user_dict.get('is_ultra_restricted'),
             is_bot=user_dict.get('is_bot'),
-            updated=_convert_timestamp(user_dict.get('updated')),
+            updated=convert_timestamp(user_dict.get('updated')),
             has_2fa=user_dict.get('has_2fa')
         )
     else:
