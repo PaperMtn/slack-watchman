@@ -4,257 +4,21 @@ import multiprocessing
 import os
 import re
 import requests
-import time
 import dataclasses
 import yaml
-import urllib.parse
 from typing import List, Dict
 
-from requests.exceptions import HTTPError
-from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
 
-from slack_watchman import sw_logger, exceptions
+from slack_watchman import exceptions
+from slack_watchman.loggers import StdoutLogger, JSONLogger
 from slack_watchman.models import (
     signature,
     user,
     post,
     conversation
 )
-
-
-class SlackAPI(object):
-
-    def __init__(self,
-                 token: str = None,
-                 cookie: str = None,
-                 url: str = None):
-        self.token = token
-        self.session_token = None
-        self.url = url
-        self.base_url = 'https://slack.com/api'
-        self.count = 100
-        self.limit = 100
-        self.pretty = 1
-        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)\
-                                        AppleWebKit/537.36 (KHTML, like Gecko) Cafari/537.36'
-        if cookie:
-            self.cookie_dict = {
-                'd': urllib.parse.quote(urllib.parse.unquote(cookie))
-            }
-        else:
-            self.cookie_dict = {}
-
-        self.session = session = requests.session()
-        session.mount(
-            self.base_url,
-            HTTPAdapter(
-                pool_connections=10,
-                pool_maxsize=10,
-                max_retries=Retry(total=5, backoff_factor=0.2)))
-
-        if self.token:
-            session.headers.update({
-                'Connection': 'keep-alive, close',
-                'Authorization': f'Bearer {self.token}',
-                'User-Agent': self.user_agent
-            })
-        else:
-            self.session_token = self._get_session_token()
-            session.headers.update({
-                'Connection': 'keep-alive, close',
-                'Authorization': f'Bearer {self.session_token}',
-                'User-Agent': self.user_agent
-            })
-
-    def _get_session_token(self) -> str:
-
-        r = requests.get(self.url, cookies=self.cookie_dict).text
-        regex = '(xox[a-zA-Z]-[a-zA-Z0-9-]+)'
-
-        try:
-            return re.search(regex, r)[0]
-        except TypeError:
-            raise exceptions.InvalidCookieError(self.url)
-        except:
-            raise
-
-    def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True):
-        try:
-            relative_url = '/'.join((self.base_url, url))
-            response = self.session.request(
-                method,
-                relative_url,
-                params=params,
-                data=data,
-                cookies=self.cookie_dict,
-                verify=verify_ssl,
-                timeout=30)
-            response.raise_for_status()
-
-            if not response.json().get('ok') and response.json().get('error') == 'missing_scope':
-                raise exceptions.SlackScopeError(response.json().get('needed'))
-            elif not response.json().get('ok'):
-                raise exceptions.SlackAPIError(response.json().get('error'))
-            else:
-                return response
-
-        except HTTPError as http_error:
-            if response.status_code == 429:
-                print('WARNING', 'Slack API rate limit reached - cooling off')
-                time.sleep(90)
-                return self.session.request(
-                    method,
-                    relative_url,
-                    params=params,
-                    data=data,
-                    cookies=self.cookie_dict,
-                    verify=verify_ssl,
-                    timeout=30)
-            else:
-                raise HTTPError(f'HTTPError: {http_error}')
-        except:
-            raise
-
-    def _get_pages(self, url, scope, params):
-        first_page = self._make_request(url, params).json()
-        yield first_page
-        num_pages = first_page.get(scope).get('pagination').get('page_count')
-
-        for page in range(2, num_pages + 1):
-            params['page'] = str(page)
-            next_page = self._make_request(url, params=params).json()
-            yield next_page
-
-    def page_api_search(self,
-                        query: str,
-                        url: str,
-                        scope: str,
-                        timeframe: str or int) -> List[Dict]:
-        """ Wrapper for Slack API methods that use page number based pagination
-
-        Args:
-            query: Search to carry out in Slack API
-            url: API endpoint to use
-            scope: What to search for, e.g. files or messages
-            timeframe: How far back to search
-        Returns:
-            A list of dict objects with responses
-        """
-
-        results = []
-        params = {
-            'query': f'after:{timeframe} {query}',
-            'pretty': self.pretty,
-            'count': self.count
-        }
-
-        for page in self._get_pages(url, scope, params):
-            for value in page.get(scope).get('matches'):
-                results.append(value)
-
-        return results
-
-    def cursor_api_search(self, url: str, scope: str) -> List[Dict]:
-        """ Wrapper for Slack API methods that use cursor based pagination
-
-        Args:
-            url: API endpoint to use
-            scope: What to search for, e.g. files or messages
-        Returns:
-            A list of dict objects with responses
-        """
-
-        results = []
-        params = {
-            'pretty': self.pretty,
-            'limit': self.limit,
-            'cursor': ''
-        }
-
-        r = self._make_request(url, params=params).json()
-        for value in r.get(scope):
-            results.append(value)
-
-        if str(r.get('ok')) == 'False':
-            raise exceptions.SlackAPIError(r.get('error'))
-        else:
-            cursor = r.get('response_metadata').get('next_cursor')
-            while str(r.get('ok')) == 'True' and cursor:
-                params['limit'], params['cursor'] = 200, cursor
-                r = self._make_request(url, params=params).json()
-                for value in r.get(scope):
-                    cursor = r.get('response_metadata').get('next_cursor')
-                    results.append(value)
-
-        return results
-
-    def get_user_info(self, user_id: str) -> json:
-        """ Get the user for the given ID
-
-        Args:
-            user_id: ID of the user to return
-        Returns:
-            JSON object with user information
-        """
-
-        params = {
-            'user': user_id
-        }
-
-        return self._make_request('users.info', params=params).json()
-
-    def get_conversation_info(self, conversation_id: str) -> json:
-        """ Get the conversation for the given ID
-
-        Args:
-            conversation_id: ID of the conversation to return
-        Returns:
-            JSON object with conversation information
-        """
-
-        params = {
-            'channel': conversation_id
-        }
-
-        return self._make_request('conversations.info', params=params).json()
-
-    def get_workspace_info(self) -> str or None:
-        """ Returns the information of the workspace the token is associated with
-
-        Returns:
-            JSON object with workspace information
-        """
-
-        return self._make_request('team.info').json()
-
-    def get_auth_test(self) -> str or None:
-        """ Carries out an auth test against the calling token, and replies with
-        user information
-
-        Returns:
-            JSON object with auth test response
-        """
-
-        return self._make_request('auth.test').json()
-
-
-def _convert_timestamp(timestamp: int) -> str:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: Epoch formatted timestamp
-    Returns:
-        String time in the format %Y-%m-%d %H:%M:%S
-    """
-
-    if isinstance(timestamp, str):
-        timestamp = timestamp.split('.', 1)[0]
-
-    output = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-
-    return output
+from slack_watchman.clients.slack_client import SlackClient
 
 
 def _deduplicate(input_list: list) -> List[Dict]:
@@ -279,7 +43,7 @@ def _deduplicate(input_list: list) -> List[Dict]:
     return {match.get('watchman_id'): match for match in reversed(deduped_list)}.values()
 
 
-def initiate_slack_connection(cookie: bool) -> SlackAPI:
+def initiate_slack_connection(cookie: bool) -> SlackClient:
     """ Create a Slack API object to use for interacting with the Slack API
     First tries to get the API token from the environment variable(s):
         SLACK_WATCHMAN_TOKEN
@@ -302,7 +66,7 @@ def initiate_slack_connection(cookie: bool) -> SlackAPI:
                 token = config['slack_watchman']['token']
             except:
                 raise exceptions.MissingConfigVariable('token')
-        return SlackAPI(token=token)
+        return SlackClient(token=token)
     else:
         try:
             cookie = os.environ['SLACK_WATCHMAN_COOKIE']
@@ -318,10 +82,10 @@ def initiate_slack_connection(cookie: bool) -> SlackAPI:
                 url = config['slack_watchman']['url']
             except:
                 raise exceptions.MissingConfigVariable('url')
-        return SlackAPI(cookie=cookie, url=url)
+        return SlackClient(cookie=cookie, url=url)
 
 
-def get_users(slack: SlackAPI, verbose: bool) -> List[user.User]:
+def get_users(slack: SlackClient, verbose: bool) -> List[user.User]:
     """ Return a list of all active users in the instance
 
     Args:
@@ -340,7 +104,7 @@ def get_users(slack: SlackAPI, verbose: bool) -> List[user.User]:
     return results
 
 
-def get_channels(slack: SlackAPI,
+def get_channels(slack: SlackClient,
                  verbose: bool) -> List[conversation.Conversation] or List[conversation.ConversationSuccinct]:
     """ Return a list of all channels in the instance
 
@@ -355,8 +119,8 @@ def get_channels(slack: SlackAPI,
     return [conversation.create_from_dict(item, verbose) for item in conversations]
 
 
-def find_messages(slack: SlackAPI,
-                  logger: sw_logger.JSONLogger,
+def find_messages(slack: SlackClient,
+                  logger: JSONLogger | StdoutLogger,
                   sig: signature.Signature,
                   verbose: bool,
                   timeframe: str) -> List[Dict]:
@@ -414,7 +178,7 @@ def find_messages(slack: SlackAPI,
         logger.log('CRITICAL', e)
 
 
-def _multipro_message_worker(slack: SlackAPI,
+def _multipro_message_worker(slack: SlackClient,
                              sig: signature.Signature,
                              query: str,
                              verbose: bool,
@@ -454,8 +218,8 @@ def _multipro_message_worker(slack: SlackAPI,
     return kwargs.get('results'), kwargs.get('potential_matches')
 
 
-def find_files(slack: SlackAPI,
-               logger: sw_logger.JSONLogger,
+def find_files(slack: SlackClient,
+               logger: JSONLogger | StdoutLogger,
                sig: signature.Signature,
                verbose: bool,
                timeframe: str) -> List[Dict]:
@@ -513,7 +277,7 @@ def find_files(slack: SlackAPI,
         logger.log('CRITICAL', e)
 
 
-def _multipro_file_worker(slack: SlackAPI,
+def _multipro_file_worker(slack: SlackClient,
                           sig: signature.Signature,
                           query: str,
                           verbose: bool,

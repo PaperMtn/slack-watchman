@@ -10,10 +10,9 @@ from importlib.metadata import PackageMetadata
 import yaml
 
 from slack_watchman import (
-    sw_logger,
     signature_downloader,
     exceptions,
-    slack_wrapper
+    watchman_processor
 )
 from slack_watchman.models import (
     signature,
@@ -22,8 +21,10 @@ from slack_watchman.models import (
     post,
     conversation
 )
+from slack_watchman.loggers import StdoutLogger, JSONLogger
+from slack_watchman.clients.slack_client import SlackClient
 
-OUTPUT_LOGGER: sw_logger.JSONLogger
+OUTPUT_LOGGER: JSONLogger
 
 
 def validate_conf(path: str, cookie: bool) -> bool:
@@ -86,7 +87,7 @@ def validate_conf(path: str, cookie: bool) -> bool:
                 raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_URL')
 
 
-def search(slack_connection: slack_wrapper.SlackAPI,
+def search(slack_connection: SlackClient,
            loaded_signature: signature.Signature,
            timeframe: int or str,
            scope: str,
@@ -105,7 +106,7 @@ def search(slack_connection: slack_wrapper.SlackAPI,
 
     if scope == 'messages':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        messages = slack_wrapper.find_messages(
+        messages = watchman_processor.find_messages(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -122,7 +123,7 @@ def search(slack_connection: slack_wrapper.SlackAPI,
                     notify_type='result')
     if scope == 'files':
         OUTPUT_LOGGER.log('INFO', f'Searching for posts containing {loaded_signature.name}')
-        files = slack_wrapper.find_files(
+        files = watchman_processor.find_files(
             slack_connection,
             OUTPUT_LOGGER,
             loaded_signature,
@@ -156,7 +157,7 @@ def unauthenticated_probe(workspace_domain: str,
                                  f'and return any available authentication information.')
     OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
     try:
-        domain_information = slack_wrapper.find_auth_information(workspace_domain)
+        domain_information = watchman_processor.find_auth_information(workspace_domain)
         if domain_information:
             OUTPUT_LOGGER.log('WORKSPACE_PROBE', domain_information, detect_type='Workspace Probe',
                               notify_type='workspace_probe')
@@ -176,7 +177,7 @@ def unauthenticated_probe(workspace_domain: str,
         sys.exit(1)
 
 
-def init_logger(logging_type: str, debug: bool) -> sw_logger.JSONLogger or sw_logger.StdoutLogger:
+def init_logger(logging_type: str, debug: bool) -> JSONLogger | StdoutLogger:
     """ Create a logger object. Defaults to stdout if no option is given
 
     Args:
@@ -187,9 +188,9 @@ def init_logger(logging_type: str, debug: bool) -> sw_logger.JSONLogger or sw_lo
     """
 
     if not logging_type or logging_type == 'stdout':
-        return sw_logger.StdoutLogger(debug=debug)
+        return StdoutLogger(debug=debug)
     else:
-        return sw_logger.JSONLogger(debug=debug)
+        return JSONLogger(debug=debug)
 
 
 def main():
@@ -270,7 +271,7 @@ def main():
 
         conf_path = f'{os.path.expanduser("~")}/watchman.conf'
         validate_conf(conf_path, cookie)
-        slack_con = slack_wrapper.initiate_slack_connection(cookie)
+        slack_con = watchman_processor.initiate_slack_connection(cookie)
 
         auth_data = slack_con.get_auth_test()
         calling_user = user.create_from_dict(
@@ -295,7 +296,7 @@ def main():
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
         OUTPUT_LOGGER.log('INFO', 'Finding workspace authentication options')
-        workspace_auth = slack_wrapper.find_auth_information(domain_url=workspace_information.url)
+        workspace_auth = watchman_processor.find_auth_information(domain_url=workspace_information.url)
         if workspace_auth:
             OUTPUT_LOGGER.log('WORKSPACE_AUTH', workspace_auth, detect_type='Workspace Auth',
                               notify_type='workspace_auth')
@@ -304,20 +305,20 @@ def main():
 
         if users:
             OUTPUT_LOGGER.log('INFO', 'Enumerating users...')
-            user_list = slack_wrapper.get_users(slack_con, verbose)
+            user_list = watchman_processor.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            sw_logger.export_csv('slack_users', user_list)
+            loggers.export_csv('slack_users', user_list)
             OUTPUT_LOGGER.log(
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_users.csv")}')
 
         if channels:
             OUTPUT_LOGGER.log('INFO', 'Enumerating channels...')
-            channel_list = slack_wrapper.get_channels(slack_con, verbose)
+            channel_list = watchman_processor.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            sw_logger.export_csv('slack_channels', channel_list)
+            loggers.export_csv('slack_channels', channel_list)
             OUTPUT_LOGGER.log(
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_channels.csv")}')
