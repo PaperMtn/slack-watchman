@@ -11,7 +11,7 @@ from typing import List, Dict
 from bs4 import BeautifulSoup
 
 from slack_watchman import exceptions
-from slack_watchman.utils import deduplicate_dataclass
+from slack_watchman.utils import deduplicate_results
 from slack_watchman.loggers import StdoutLogger, JSONLogger
 from slack_watchman.models import (
     signature,
@@ -20,28 +20,6 @@ from slack_watchman.models import (
     conversation
 )
 from slack_watchman.clients.slack_client import SlackClient
-
-
-# def _deduplicate(input_list: list) -> List[Dict]:
-#     """ Removes duplicates where results are returned by multiple queries
-#     Nested class handles JSON encoding for dataclass objects
-#
-#     Args:
-#         input_list: List of dataclass objects
-#     Returns:
-#         List of JSON objects with duplicates removed
-#     """
-#
-#     class EnhancedJSONEncoder(json.JSONEncoder):
-#         def default(self, o):
-#             if dataclasses.is_dataclass(o):
-#                 return dataclasses.asdict(o)
-#             return super().default(o)
-#
-#     json_set = {json.dumps(dictionary, sort_keys=True, cls=EnhancedJSONEncoder) for dictionary in input_list}
-#
-#     deduped_list = [json.loads(t) for t in json_set]
-#     return {match.get('watchman_id'): match for match in reversed(deduped_list)}.values()
 
 
 def initiate_slack_connection(cookie: bool) -> SlackClient:
@@ -169,7 +147,7 @@ def find_messages(slack: SlackClient,
             logger.log('INFO', f'{sum(potential_matches)} potential matches found')
 
         if results:
-            results = deduplicate_dataclass(results)
+            results = deduplicate_results(results)
             logger.log('SUCCESS', f'{len(results)} total matches found after filtering')
             return results
         else:
@@ -268,7 +246,7 @@ def find_files(slack: SlackClient,
             logger.log('INFO', f'{sum(potential_matches)} potential matches found')
 
         if results:
-            results = deduplicate_dataclass(results)
+            results = deduplicate_results(results)
             logger.log('SUCCESS', f'{len(results)} total files found after filtering')
             return results
         else:
