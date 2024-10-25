@@ -18,6 +18,18 @@ class Workspace(object):
     enterprise_domain: Optional[str] = None
     enterprise_name: Optional[str] = None
 
+    def __post_init__(self):
+        if self.id and not isinstance(self.id, str):
+            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
+        if self.name and not isinstance(self.name, str):
+            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
+        if self.domain and not isinstance(self.domain, str):
+            raise TypeError(f'Expected `domain` to be of type str, received {type(self.name).__name__}')
+        if self.url and not isinstance(self.url, str):
+            raise TypeError(f'Expected `url` to be of type str, received {type(self.name).__name__}')
+        if self.email_domain and not isinstance(self.email_domain, str):
+            raise TypeError(f'Expected `email_domain` to be of type str, received {type(self.name).__name__}')
+
 
 def create_from_dict(workspace_dict: Dict) -> Workspace:
     """ Return a Workspace object based off an input dictionary

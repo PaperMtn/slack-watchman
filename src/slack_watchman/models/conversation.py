@@ -38,6 +38,54 @@ class Conversation(object):
     is_group: bool
     is_channel: bool
 
+    def __post_init__(self):
+        if self.id and not isinstance(self.id, str):
+            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
+        if self.name and not isinstance(self.name, str):
+            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
+        if self.created and not (isinstance(self.created, str) or isinstance(self.created, int) or isinstance(self.created, float)):
+            raise TypeError(f'Expected `created` to be of type str or int or float, received {type(self.name).__name__}')
+        if self.is_private and not isinstance(self.is_private, bool):
+            raise TypeError(f'Expected `is_private` to be of type bool, received {type(self.name).__name__}')
+        if self.is_im and not isinstance(self.is_im, bool):
+            raise TypeError(f'Expected `is_im` to be of type bool, received {type(self.name).__name__}')
+        if self.is_mpim and not isinstance(self.is_mpim, bool):
+            raise TypeError(f'Expected `is_mpim` to be of type bool, received {type(self.name).__name__}')
+        if self.is_archived and not isinstance(self.is_archived, bool):
+            raise TypeError(f'Expected `is_archived` to be of type bool, received {type(self.name).__name__}')
+        if self.is_general and not isinstance(self.is_general, bool):
+            raise TypeError(f'Expected `is_general` to be of type bool, received {type(self.name).__name__}')
+        if self.creator and not isinstance(self.creator, str):
+            raise TypeError(f'Expected `creator` to be of type str, received {type(self.name).__name__}')
+        if self.name_normalized and not isinstance(self.name_normalized, str):
+            raise TypeError(f'Expected `name_normalized` to be of type str, received {type(self.name).__name__}')
+        if self.previous_names and not isinstance(self.previous_names, list):
+            raise TypeError(f'Expected `previous_names` to be of type list, received {type(self.name).__name__}')
+        if self.purpose and not isinstance(self.purpose, str):
+            raise TypeError(f'Expected `purpose` to be of type str, received {type(self.name).__name__}')
+        if self.topic and not isinstance(self.topic, str):
+            raise TypeError(f'Expected `topic` to be of type str, received {type(self.name).__name__}')
+        if self.canvas_empty and not isinstance(self.canvas_empty, bool):
+            raise TypeError(f'Expected `canvas_empty` to be of type bool, received {type(self.name).__name__}')
+        if self.canvas_id and not isinstance(self.canvas_id, str):
+            raise TypeError(f'Expected `canvas_id` to be of type str, received {type(self.name).__name__}')
+        if self.num_members and not isinstance(self.num_members, int):
+            raise TypeError(f'Expected `num_members` to be of type int, received {type(self.name).__name__}')
+        if self.is_member and not isinstance(self.is_member, bool):
+            raise TypeError(f'Expected `is_member` to be of type bool, received {type(self.name).__name__}')
+        if self.is_pending_ext_shared and not isinstance(self.is_pending_ext_shared, bool):
+            raise TypeError(f'Expected `is_pending_ext_shared` to be of type bool, received {type(self.name).__name__}')
+        if self.is_ext_shared and not isinstance(self.is_ext_shared, bool):
+            raise TypeError(f'Expected `is_ext_shared` to be of type bool, received {type(self.name).__name__}')
+        if self.is_shared and not isinstance(self.is_shared, bool):
+            raise TypeError(f'Expected `is_shared` to be of type bool, received {type(self.name).__name__}')
+        if self.is_org_shared and not isinstance(self.is_org_shared, bool):
+            raise TypeError(f'Expected `is_org_shared` to be of type bool, received {type(self.name).__name__}')
+        if self.is_group and not isinstance(self.is_group, bool):
+            raise TypeError(f'Expected `is_group` to be of type bool, received {type(self.name).__name__}')
+        if self.is_channel and not isinstance(self.is_channel, bool):
+            raise TypeError(f'Expected `is_channel` to be of type bool, received {type(self.name).__name__}')
+
 
 @dataclass(slots=True)
 class ConversationSuccinct(object):
@@ -60,6 +108,32 @@ class ConversationSuccinct(object):
     canvas_id: Optional[str]
     creator: str
     num_members: int
+
+    def __post_init__(self):
+        if self.is_private and not isinstance(self.is_private, bool):
+            raise TypeError(f'Expected `is_private` to be of type bool, received {type(self.name).__name__}')
+        if self.is_im and not isinstance(self.is_im, bool):
+            raise TypeError(f'Expected `is_im` to be of type bool, received {type(self.name).__name__}')
+        if self.is_mpim and not isinstance(self.is_mpim, bool):
+            raise TypeError(f'Expected `is_mpim` to be of type bool, received {type(self.name).__name__}')
+        if self.is_archived and not isinstance(self.is_archived, bool):
+            raise TypeError(f'Expected `is_archived` to be of type bool, received {type(self.name).__name__}')
+        if self.is_private and not isinstance(self.is_private, bool):
+            raise TypeError(f'Expected `is_private` to be of type bool, received {type(self.name).__name__}')
+        if self.is_im and not isinstance(self.is_im, bool):
+            raise TypeError(f'Expected `is_im` to be of type bool, received {type(self.name).__name__}')
+        if self.is_mpim and not isinstance(self.is_mpim, bool):
+            raise TypeError(f'Expected `is_mpim` to be of type bool, received {type(self.name).__name__}')
+        if self.is_archived and not isinstance(self.is_archived, bool):
+            raise TypeError(f'Expected `is_archived` to be of type bool, received {type(self.name).__name__}')
+        if self.canvas_empty and not isinstance(self.canvas_empty, bool):
+            raise TypeError(f'Expected `canvas_empty` to be of type bool, received {type(self.name).__name__}')
+        if self.canvas_id and not isinstance(self.canvas_id, str):
+            raise TypeError(f'Expected `canvas_id` to be of type str, received {type(self.name).__name__}')
+        if self.creator and not isinstance(self.creator, str):
+            raise TypeError(f'Expected `creator` to be of type str, received {type(self.name).__name__}')
+        if self.num_members and not isinstance(self.num_members, int):
+            raise TypeError(f'Expected `num_members` to be of type int, received {type(self.name).__name__}')
 
 
 def create_from_dict(conv_dict: Dict, verbose: bool) -> Conversation or ConversationSuccinct:
