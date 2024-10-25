@@ -1,4 +1,4 @@
-import time
+from datetime import datetime, timezone
 import json
 import dataclasses
 from typing import List, Dict, Any
@@ -23,8 +23,8 @@ def convert_timestamp(timestamp: str or int) -> str or None:
     if timestamp:
         if isinstance(timestamp, str):
             timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S %Z', time.gmtime(int(timestamp)))
+        dt = datetime.fromtimestamp(float(timestamp), timezone.utc)
+        return dt.strftime('%Y-%m-%d %H:%M:%S %Z')
     else:
         return None
 
