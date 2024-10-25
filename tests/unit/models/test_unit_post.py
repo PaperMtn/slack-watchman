@@ -328,4 +328,3 @@ def test_file_field_type():
     file_dict['id'] = 123
     with pytest.raises(TypeError):
         post.create_file_from_dict(file_dict)
-

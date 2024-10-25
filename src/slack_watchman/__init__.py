@@ -21,7 +21,7 @@ from slack_watchman.models import (
     post,
     conversation
 )
-from slack_watchman.loggers import StdoutLogger, JSONLogger
+from slack_watchman.loggers import StdoutLogger, JSONLogger, export_csv
 from slack_watchman.clients.slack_client import SlackClient
 
 OUTPUT_LOGGER: JSONLogger
@@ -151,10 +151,10 @@ def unauthenticated_probe(workspace_domain: str,
 
     OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
     OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
-    OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
-    OUTPUT_LOGGER.log('SUCCESS', f'Running in probe mode')
-    OUTPUT_LOGGER.log('SUCCESS', f'Slack Watchman will attempt an unauthenticated probe on the workspace '
-                                 f'and return any available authentication information.')
+    OUTPUT_LOGGER.log('INFO', 'Created by: PaperMtn <papermtn@protonmail.com>')
+    OUTPUT_LOGGER.log('SUCCESS', 'Running in probe mode')
+    OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman will attempt an unauthenticated probe on the workspace '
+                                 'and return any available authentication information.')
     OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
     try:
         domain_information = watchman_processor.find_auth_information(workspace_domain)
@@ -308,7 +308,7 @@ def main():
             user_list = watchman_processor.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            loggers.export_csv('slack_users', user_list)
+            export_csv('slack_users', user_list)
             OUTPUT_LOGGER.log(
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_users.csv")}')
@@ -318,7 +318,7 @@ def main():
             channel_list = watchman_processor.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            loggers.export_csv('slack_channels', channel_list)
+            export_csv('slack_channels', channel_list)
             OUTPUT_LOGGER.log(
                 'SUCCESS',
                 f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_channels.csv")}')

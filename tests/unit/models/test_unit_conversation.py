@@ -119,8 +119,10 @@ def test_conversation_succinct_initialisation(example_conversation_succinct):
     assert example_conversation_succinct.is_mpim == CONVERSATION_SUCCINCT_DICT.get('is_mpim')
     assert example_conversation_succinct.is_archived == CONVERSATION_SUCCINCT_DICT.get('is_archived')
     assert example_conversation_succinct.creator == CONVERSATION_SUCCINCT_DICT.get('creator')
-    assert example_conversation_succinct.canvas_empty == CONVERSATION_SUCCINCT_DICT.get('properties').get('canvas').get('is_empty')
-    assert example_conversation_succinct.canvas_id == CONVERSATION_SUCCINCT_DICT.get('properties').get('canvas').get('file_id')
+    assert (example_conversation_succinct.canvas_empty == CONVERSATION_SUCCINCT_DICT.get('properties').get('canvas')
+            .get('is_empty'))
+    assert (example_conversation_succinct.canvas_id == CONVERSATION_SUCCINCT_DICT.get('properties').get('canvas')
+            .get('file_id'))
 
 
 def test_conversation_missing_fields(example_conversation_missing_fields):
