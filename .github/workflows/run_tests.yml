@@ -22,12 +22,11 @@ jobs:
           poetry install --with dev
       - name: Analysing the code with pylint
         run: |
-          pylint $(git ls-files '*.py')
+          poetry run pylint $(git ls-files '*.py')
         continue-on-error: true
       - name: Test with pytest
         run: |
-          pip install coverage
-          coverage run -m pytest  -v -s
+          poetry run coverage run -m pytest  -v -s
       - name: Generate Coverage Report
         run: |  
-          coverage report -m
+          poetry run coverage report -m
