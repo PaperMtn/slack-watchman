@@ -17,7 +17,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           load: true
-          tags: myimage:latest
+          tags: ${{ env.TEST_TAG }}
 
       - name: Inspect
         run: |
