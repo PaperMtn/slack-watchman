@@ -1,4 +1,4 @@
-## [4.3.0] - 2024-10-x
+## [4.3.0] - 2024-10-27
 ### Changed
 - Timestamps are now in UTC across all logging for consistency
 - Refactor some commonly used functions into a utils module
@@ -10,7 +10,6 @@
 ### Added
 - GitHub actions for Python tests and Docker build and run testing
 - Implemented unit tests for models
-
 
 ## [4.2.0] - 2024-09-27
 ### Added
