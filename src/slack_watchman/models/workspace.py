@@ -1,24 +1,5 @@
-import time
 from dataclasses import dataclass
 from typing import Optional, Dict
-
-
-def _convert_timestamp(timestamp: str or int) -> str or None:
-    """ Converts epoch timestamp into human-readable time
-
-    Args:
-        timestamp: epoch timestamp in seconds
-    Returns:
-        String time in the format YYYY-mm-dd hh:mm:ss
-    """
-
-    if timestamp:
-        if isinstance(timestamp, str):
-            timestamp = timestamp.split('.', 1)[0]
-
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(timestamp)))
-    else:
-        return None
 
 
 @dataclass(slots=True)
@@ -36,6 +17,18 @@ class Workspace(object):
     enterprise_id: Optional[str] = None
     enterprise_domain: Optional[str] = None
     enterprise_name: Optional[str] = None
+
+    def __post_init__(self):
+        if self.id and not isinstance(self.id, str):
+            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
+        if self.name and not isinstance(self.name, str):
+            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
+        if self.domain and not isinstance(self.domain, str):
+            raise TypeError(f'Expected `domain` to be of type str, received {type(self.name).__name__}')
+        if self.url and not isinstance(self.url, str):
+            raise TypeError(f'Expected `url` to be of type str, received {type(self.name).__name__}')
+        if self.email_domain and not isinstance(self.email_domain, str):
+            raise TypeError(f'Expected `email_domain` to be of type str, received {type(self.name).__name__}')
 
 
 def create_from_dict(workspace_dict: Dict) -> Workspace:
