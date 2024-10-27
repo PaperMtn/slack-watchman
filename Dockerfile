@@ -1,23 +1,4 @@
 # syntax=docker/dockerfile:1
-
-#FROM python:3.12-slim-bullseye
-#WORKDIR /opt/slack-watchman
-#COPY . /opt/slack-watchman
-#RUN pip install poetry
-#ENV PYTHONPATH=/opt/slack-watchman \
-#    SLACK_WATCHMAN_TOKEN="" \
-#    SLACK_WATCHMAN_COOKIE="" \
-#    SLACK_WATCHMAN_URL=""
-#RUN poetry config virtualenvs.create false && \
-#    poetry install --no-dev && \
-#    chmod -R 700 . && \
-#    poetry build && \
-#    pip install dist/*.whl
-#STOPSIGNAL SIGINT
-#WORKDIR /opt/slack-watchman
-#ENTRYPOINT ["slack-watchman"]
-
-# syntax=docker/dockerfile:1
 FROM python:3.12-slim-bullseye AS builder
 WORKDIR /opt/slack-watchman
 COPY . .
