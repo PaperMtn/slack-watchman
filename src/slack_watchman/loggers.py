@@ -12,6 +12,8 @@ from logging import Logger
 from typing import Any, Dict, List, ClassVar, Protocol
 from colorama import Fore, Back, Style, init
 
+from slack_watchman.utils import EnhancedJSONEncoder
+
 
 class StdoutLogger:
     def __init__(self, **kwargs):
@@ -236,13 +238,6 @@ class StdoutLogger:
         print('  ')
         print(Style.BRIGHT + '   by PaperMtn - GNU General Public License')
         print(' '.ljust(79) + Fore.GREEN)
-
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
 
 
 class JSONLogger(Logger):

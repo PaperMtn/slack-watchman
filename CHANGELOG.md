@@ -1,3 +1,10 @@
+## [4.3.0] - 2024-10-x
+### Changed
+- Timestamps are now in UTC across all logging for consistency
+
+### Fixed
+- Fixed a few bugs with models for User, Workspace and Messages not picking up all values
+
 ## [4.2.0] - 2024-09-27
 ### Added
 - Added enumeration of conversations with populated Canvases attached. These can contain sensitive information, and are worth reviewing.

@@ -8,8 +8,8 @@ from typing import List
 
 import yaml
 
-from slack_watchman.sw_logger import JSONLogger, StdoutLogger
-from slack_watchman.models.signature import Signature, TestCases
+from slack_watchman.loggers import JSONLogger, StdoutLogger
+from slack_watchman.models.signature import Signature, create_from_dict
 
 SIGNATURE_URL = 'https://github.com/PaperMtn/watchman-signatures/archive/main.zip'
 
@@ -61,7 +61,8 @@ class SignatureDownloader:
             self.logger.log('DEBUG', traceback.format_exc())
             sys.exit(1)
 
-    def _process_signature(self, signature_data: bytes) -> List[Signature]:
+    @staticmethod
+    def _process_signature(signature_data: bytes) -> List[Signature]:
         """ Process a signature data bytes object into a list of Signature objects.
 
         This function takes a bytes object containing signature data, parses it into a dictionary,
@@ -77,22 +78,5 @@ class SignatureDownloader:
         output = []
         for sig in signature_dict.get('signatures'):
             if 'slack_std' in sig.get('watchman_apps') and sig.get('status') == 'enabled':
-                output.append(Signature(
-                    name=sig.get('name'),
-                    status=sig.get('status'),
-                    author=sig.get('author'),
-                    date=sig.get('date'),
-                    version=sig.get('version'),
-                    description=sig.get('description'),
-                    severity=sig.get('severity'),
-                    watchman_apps=sig.get('watchman_apps'),
-                    category=sig.get('watchman_apps').get('slack_std').get('category'),
-                    scope=sig.get('watchman_apps').get('slack_std').get('scope'),
-                    file_types=sig.get('watchman_apps').get('slack_std').get('file_types'),
-                    test_cases=TestCases(
-                        match_cases=sig.get('test_cases').get('match_cases'),
-                        fail_cases=sig.get('test_cases').get('fail_cases')
-                    ),
-                    search_strings=sig.get('watchman_apps').get('slack_std').get('search_strings'),
-                    patterns=sig.get('patterns')))
+                output.append(create_from_dict(sig))
         return output

@@ -23,6 +23,11 @@ pyyaml = "^6.0.2"
 requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+coverage = "^7.2.3"
+pylint = "^3.3.1"
+
 [tool.poetry.scripts]
 slack-watchman = "slack_watchman:main"
 
