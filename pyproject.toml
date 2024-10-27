@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "slack-watchman"
-version = "4.2.0"
+version = "4.3.0"
 description = "Monitoring and enumerating Slack for exposed secrets"
 authors = ["PaperMtn <papermtn@protonmail.com>"]
 license = "GPL-3.0"
