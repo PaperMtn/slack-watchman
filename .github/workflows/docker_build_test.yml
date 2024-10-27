@@ -21,7 +21,7 @@ jobs:
 
       - name: Inspect
         run: |
-          docker image inspect myimage:latest
+          docker image inspect ${{ env.TEST_TAG }}
 
       - name: Test
         run: |
