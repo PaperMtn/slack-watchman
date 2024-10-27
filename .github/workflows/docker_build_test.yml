@@ -1,0 +1,29 @@
+name: Build and Test Docker Image
+
+on:
+  push:
+
+env:
+  TEST_TAG: papermountain/slack-watchman:test
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          load: true
+          tags: myimage:latest
+
+      - name: Inspect
+        run: |
+          docker image inspect myimage:latest
+
+      - name: Test
+        run: |
+          docker run --rm ${{ env.TEST_TAG }} --version
+          docker run --rm ${{ env.TEST_TAG }} --help

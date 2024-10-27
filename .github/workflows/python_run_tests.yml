@@ -1,6 +1,7 @@
 name: Run Unit Test via Pytest
 
-on: [push]
+on:
+  push:
 
 jobs:
   build:
