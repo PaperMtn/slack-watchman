@@ -1,7 +1,8 @@
 import pytest
 
 from slack_watchman.models import (
-    signature
+    signature,
+    auth_vars
 )
 
 
@@ -41,7 +42,20 @@ class SlackMockData:
         ]
     }
 
+    AUTH_VARS_DICT = {
+        'token': 'xoxp-1234',
+        'cookie': 'xoxd-1234',
+        'url': 'https://slack.com',
+        'disabled_signatures': ['tokens_generic_access_tokens', 'tokens_generic_bearer_tokens'],
+        'cookie_auth': True
+    }
+
 
 @pytest.fixture
 def mock_signature():
     return signature.create_from_dict(SlackMockData.SIGNATURE_DICT)
+
+
+@pytest.fixture
+def mock_auth_vars():
+    return auth_vars.AuthVars(**SlackMockData.AUTH_VARS_DICT)
