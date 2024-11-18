@@ -1,8 +1,9 @@
-## [4.4.0] - 2024-11-12
+## [4.4.0] - 2024-11-x
 ### Added
 - Ability to disable signatures by their ID in the `watchman.conf` config file.
   - These signatures will not be used when running Slack Watchman
   - Signature IDs for each signature can be found in the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
+- App manifest JSON file for creating the Slack Watchman Slack application.
 
 ### Fixed
 - Bug where variables were not being imported from watchman.conf config file

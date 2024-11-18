@@ -1,0 +1,29 @@
+{
+    "display_information": {
+        "name": "Slack Watchman",
+        "description": "Slack Watchman Slack App",
+        "background_color": "#5d227d"
+    },
+    "oauth_config": {
+        "scopes": {
+            "user": [
+                "channels:read",
+                "files:read",
+                "groups:read",
+                "im:read",
+                "links:read",
+                "mpim:read",
+                "remote_files:read",
+                "search:read",
+                "team:read",
+                "users:read",
+                "users:read.email"
+            ]
+        }
+    },
+    "settings": {
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": false,
+        "token_rotation_enabled": false
+    }
+}
