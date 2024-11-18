@@ -22,6 +22,7 @@ class Signature:
     They also contain regex patterns to validate data that is found"""
 
     name: str
+    id: str
     status: str
     author: str
     date: str | datetime.date | datetime.datetime
@@ -39,6 +40,8 @@ class Signature:
     def __post_init__(self):
         if self.name and not isinstance(self.name, str):
             raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
+        if self.id and not isinstance(self.id, str):
+            raise TypeError(f'Expected `id` to be of type str, received {type(self.id).__name__}')
         if self.status and not isinstance(self.status, str):
             raise TypeError(f'Expected `status` to be of type str, received {type(self.status).__name__}')
         if self.author and not isinstance(self.author, str):
@@ -82,6 +85,7 @@ def create_from_dict(signature_dict: Dict[str, Any]) -> Signature:
 
     return Signature(
         name=signature_dict.get('name'),
+        id=(signature_dict.get('id')),
         status=signature_dict.get('status'),
         author=signature_dict.get('author'),
         date=signature_dict.get('date'),

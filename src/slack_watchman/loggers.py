@@ -345,3 +345,19 @@ def export_csv(csv_name: str, export_data: List[IsDataclass]) -> None:
         f.close()
     except Exception as e:
         print(e)
+
+
+def init_logger(logging_type: str, debug: bool) -> JSONLogger | StdoutLogger:
+    """ Create a logger object. Defaults to stdout if no option is given
+
+    Args:
+        logging_type: Type of logging to use
+        debug: Whether to use debug level logging or not
+    Returns:
+        Logger object
+    """
+
+    if not logging_type or logging_type == 'stdout':
+        return StdoutLogger(debug=debug)
+    else:
+        return JSONLogger(debug=debug)
