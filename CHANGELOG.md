@@ -1,3 +1,12 @@
+## [4.4.0] - 2024-11-12
+### Added
+- Ability to disable signatures by their ID in the `watchman.conf` config file.
+  - These signatures will not be used when running Slack Watchman
+  - Signature IDs for each signature can be found in the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
+
+### Fixed
+- Bug where variables were not being imported from watchman.conf config file
+
 ## [4.3.0] - 2024-10-27
 ### Changed
 - Timestamps are now in UTC across all logging for consistency
