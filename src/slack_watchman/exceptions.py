@@ -8,6 +8,17 @@ class MissingEnvVarError(Exception):
         super().__init__(self.message)
 
 
+class MissingCookieEnvVarError(Exception):
+    """ Exception raised when a cookie environment variable is missing.
+    """
+
+    def __init__(self, env_var):
+        self.env_var = env_var
+        self.message = (f'Cookie authentication has been selected, but missing'
+                        f'required environment variable: {self.env_var}')
+        super().__init__(self.message)
+
+
 class MisconfiguredConfFileError(Exception):
     """ Exception raised when the config file watchman.conf is missing.
     """
