@@ -4,6 +4,8 @@
   - These signatures will not be used when running Slack Watchman
   - Signature IDs for each signature can be found in the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
 - App manifest JSON file for creating the Slack Watchman Slack application.
+- Pylint configuration and implement fixes and recommendations based on findings
+  - Added Pylint checks in GitHub actions
 
 ### Fixed
 - Bug where variables were not being imported from watchman.conf config file
