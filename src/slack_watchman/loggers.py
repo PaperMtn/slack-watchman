@@ -1,15 +1,16 @@
-import json
-import dataclasses
-import logging
-import os
-import sys
-import logging.handlers
-import re
-import traceback
 import csv
+import dataclasses
+import json
+import logging
+import logging.handlers
+import os
+import re
+import sys
+import traceback
 from collections.abc import Mapping
 from logging import Logger
 from typing import Any, Dict, List, ClassVar, Protocol
+
 from colorama import Fore, Back, Style, init
 
 from slack_watchman.utils import EnhancedJSONEncoder
@@ -92,10 +93,10 @@ class StdoutLogger:
                     user = message.get('message').get('user')
 
                 message = 'POST_TYPE: Message' \
-                          f'    POSTED_BY: {user}' \
                           f'    POSTED_ON: {message.get("message").get("created")} \n' \
+                          f'    POSTED_BY: {user} \n' \
                           f'    CONVERSATION: {message.get("message").get("conversation").get("name")}' \
-                          f'    CONVERSATION_TYPE: {conversation_type}' \
+                          f'    CONVERSATION_TYPE: {conversation_type}\n' \
                           f'    URL: {message.get("message").get("permalink")} \n' \
                           f'    POTENTIAL_SECRET: {message.get("match_string")} \n' \
                           f'    -----'
