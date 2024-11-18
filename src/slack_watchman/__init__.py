@@ -6,6 +6,7 @@ import time
 import traceback
 from importlib import metadata
 from importlib.metadata import PackageMetadata
+from typing import List
 
 import yaml
 
@@ -97,6 +98,19 @@ def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
             else:
                 raise exceptions.MissingCookieEnvVarError(e.args[0])
     return auth_info
+
+
+def supress_disabled_signatures(signatures: List[signature.Signature],
+                                disabled_signatures: List[str]) -> List[signature.Signature]:
+    """ Supress signatures that are disabled in the config file
+    Args:
+        signatures: List of signatures to filter
+        disabled_signatures: List of signatures to disable
+    Returns:
+        List of signatures with disabled signatures removed
+    """
+
+    return [sig for sig in signatures if sig.id not in disabled_signatures]
 
 
 def search(slack_connection: SlackClient,
@@ -282,6 +296,9 @@ def main():
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
         OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
         signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
+        signature_list = supress_disabled_signatures(signature_list, auth_info.disabled_signatures)
+        if auth_info.disabled_signatures:
+            OUTPUT_LOGGER.log('INFO', f'The following signatures have been suppressed: {auth_info.disabled_signatures}')
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')
         if cookie:
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
