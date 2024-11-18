@@ -69,22 +69,22 @@ def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
     # Check if config file exists
     if os.path.exists(path):
         try:
-            with open(path) as yaml_file:
+            with open(path, encoding='utf-8') as yaml_file:
                 conf_details = yaml.safe_load(yaml_file)['slack_watchman']
                 auth_info.disabled_signatures = conf_details.get('disabled_signatures')
-        except Exception:
-            raise exceptions.MisconfiguredConfFileError
+        except Exception as e:
+            raise exceptions.MisconfiguredConfFileError from e
 
     if not cookie_auth:
         # First try SLACK_WATCHMAN_TOKEN env var
         try:
             auth_info.token = os.environ['SLACK_WATCHMAN_TOKEN']
-        except KeyError:
+        except KeyError as e:
             # Failing that, try to get SLACK_WATCHMAN_TOKEN from config
             if conf_details.get('token'):
                 auth_info.token = conf_details.get('token')
             else:
-                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_TOKEN')
+                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_TOKEN') from e
     else:
         # First try SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL env vars
         try:
@@ -203,6 +203,8 @@ def unauthenticated_probe(workspace_domain: str,
         sys.exit(1)
 
 
+# pylint: disable=too-many-locals, missing-function-docstring, global-variable-undefined
+# pylint: disable=too-many-branches, disable=too-many-statements, global-statement
 def main():
     global OUTPUT_LOGGER
     try:
@@ -291,7 +293,7 @@ def main():
 
         OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
         OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
-        OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
+        OUTPUT_LOGGER.log('INFO', 'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
         OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
@@ -346,31 +348,31 @@ def main():
                                       notify_type='canvas')
         if everything or not pii and not secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
-            for signature in signature_list:
-                for scope in signature.scope:
+            for signature_object in signature_list:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)
         elif secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for Secrets')
-            for signature in [sig for sig in signature_list if sig.category == 'secrets']:
-                for scope in signature.scope:
+            for signature_object in [sig for sig in signature_list if sig.category == 'secrets']:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)
         else:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII')
-            for signature in [sig for sig in signature_list if sig.category == 'pii']:
-                for scope in signature.scope:
+            for signature_object in [sig for sig in signature_list if sig.category == 'pii']:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)

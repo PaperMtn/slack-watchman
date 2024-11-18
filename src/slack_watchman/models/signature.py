@@ -5,6 +5,9 @@ from typing import List, Dict, Any
 
 @dataclass(frozen=True, slots=True)
 class TestCases:
+    """ Class that handles loaded test cases objects. These
+    are used to validate whether regex patterns are valid"""
+
     match_cases: List[str]
     fail_cases: List[str]
 
@@ -15,6 +18,7 @@ class TestCases:
             raise TypeError(f'Expected `fail_cases` to be of type list, received {type(self.fail_cases).__name__}')
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(frozen=True, slots=True)
 class Signature:
     """ Class that handles loaded signature objects. Signatures
@@ -37,6 +41,7 @@ class Signature:
     search_strings: List[str]
     patterns: List[str]
 
+    # pylint: disable=too-many-branches
     def __post_init__(self):
         if self.name and not isinstance(self.name, str):
             raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
@@ -46,15 +51,13 @@ class Signature:
             raise TypeError(f'Expected `status` to be of type str, received {type(self.status).__name__}')
         if self.author and not isinstance(self.author, str):
             raise TypeError(f'Expected `author` to be of type str, received {type(self.author).__name__}')
-        if self.date and not (isinstance(self.date, datetime.date)
-                              or isinstance(self.date, str)
-                              or isinstance(self.date, datetime.datetime)):
+        if self.date and not isinstance(self.date, (datetime.date, datetime.datetime, str)):
             raise TypeError(f'Expected `date` to be of type str, received {type(self.date).__name__}')
         if self.version and not isinstance(self.version, str):
             raise TypeError(f'Expected `version` to be of type str, received {type(self.version).__name__}')
         if self.description and not isinstance(self.description, str):
             raise TypeError(f'Expected `description` to be of type str, received {type(self.description).__name__}')
-        if self.severity and not (isinstance(self.severity, int) or isinstance(self.severity, str)):
+        if self.severity and not isinstance(self.severity, (int, str)):
             raise TypeError(f'Expected `severity` to be of type int or str, received {type(self.severity).__name__}')
         if self.watchman_apps and not isinstance(self.watchman_apps, dict):
             raise TypeError(

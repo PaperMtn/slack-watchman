@@ -3,8 +3,8 @@ import os
 import sys
 import traceback
 import zipfile
-from urllib.request import urlopen
 from typing import List
+from urllib.request import urlopen
 
 import yaml
 
@@ -15,49 +15,50 @@ SIGNATURE_URL = 'https://github.com/PaperMtn/watchman-signatures/archive/main.zi
 
 
 class SignatureDownloader:
-    def __init__(self, logger: JSONLogger or StdoutLogger):
-        """ Initializes a SignatureDownloader object.
+    """A class for downloading and processing signature files from a GitHub repository."""
+
+    def __init__(self, logger: JSONLogger | StdoutLogger):
+        """
+        Initializes a SignatureDownloader object.
 
         Args:
-            logger (JSONLogger or StdoutLogger): The logger object to use for logging.
-        Returns:
-            None
+            logger (Union[JSONLogger, StdoutLogger]): The logger object to use for logging.
         """
         self.logger = logger
 
     def download_signatures(self) -> List[Signature]:
-        """ Download signatures from GitHub repository
+        """
+        Downloads and processes signature files from a GitHub repository.
 
         Returns:
-            List of downloaded Signature objects
+            List[Signature]: A list of processed Signature objects.
         """
-
         try:
-            response = urlopen(SIGNATURE_URL)
-            signatures_zip_file = zipfile.ZipFile(io.BytesIO(response.read()))
-            signature_files = {}
-            signature_objects = []
-            for file_path in signatures_zip_file.namelist():
-                if file_path.endswith('/'):
-                    continue
+            with urlopen(SIGNATURE_URL) as response:
+                with zipfile.ZipFile(io.BytesIO(response.read())) as signatures_zip_file:
+                    signature_objects = []
 
-                signature_name = os.path.basename(file_path)
-                self.logger.log('DEBUG', f'Processing {file_path} ...')
+                    for file_path in signatures_zip_file.namelist():
+                        if file_path.endswith('/'):  # Skip directories
+                            continue
 
-                with signatures_zip_file.open(file_path) as source:
-                    signature_files[signature_name] = source.read()
+                        signature_name = os.path.basename(file_path)
+                        self.logger.log('DEBUG', f'Processing {file_path}...')
 
-                if file_path.endswith('.yaml'):
-                    signature_objects.append(self._process_signature(signature_files[signature_name]))
-                    self.logger.log('SUCCESS', f'Downloaded signature file: {signature_name}')
-                else:
-                    self.logger.log('DEBUG', f'Skipping unrecognized file: {file_path}')
+                        with signatures_zip_file.open(file_path) as source:
+                            file_content = source.read()
 
-            return [item for sublist in signature_objects for item in sublist]
+                        if file_path.endswith('.yaml'):
+                            processed_signatures = self._process_signature(file_content)
+                            signature_objects.extend(processed_signatures)
+                            self.logger.log('INFO', f'Downloaded and processed signature file: {signature_name}')
+                        else:
+                            self.logger.log('DEBUG', f'Skipping unrecognized file: {file_path}')
+
+                    return signature_objects
 
         except Exception as e:
-            self.logger.log('CRITICAL', f'Error while processing the signature'
-                                        f' files from the download package: {e}')
+            self.logger.log('CRITICAL', f"Error processing signature files: {e}")
             self.logger.log('DEBUG', traceback.format_exc())
             sys.exit(1)
 

@@ -3,7 +3,7 @@ from typing import Optional, Dict
 
 
 @dataclass(slots=True)
-class Workspace(object):
+class Workspace:
     """ Class that defines Workspaces objects. Workspaces are collections
     of conversations in a Slack Enterprise Organisation"""
 

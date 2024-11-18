@@ -4,8 +4,9 @@ from typing import Dict
 from slack_watchman.utils import convert_timestamp
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(slots=True)
-class User(object):
+class User:
     """ Class that defines User objects for Slack users"""
 
     id: str
@@ -31,6 +32,7 @@ class User(object):
     updated: int or float or str
     has_2fa: bool
 
+    # pylint: disable=too-many-branches
     def __post_init__(self):
         if self.id and not isinstance(self.id, str):
             raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
@@ -56,7 +58,7 @@ class User(object):
             raise TypeError(f'Expected `tz` to be of type str, received {type(self.name).__name__}')
         if self.tz_label and not isinstance(self.tz_label, str):
             raise TypeError(f'Expected `tz_label` to be of type str, received {type(self.name).__name__}')
-        if self.tz_offset and not (isinstance(self.tz_offset, str) or isinstance(self.tz_offset, int)):
+        if self.tz_offset and not isinstance(self.tz_offset, (int, str)):
             raise TypeError(f'Expected `tz_offset` to be of type str or int, received {type(self.name).__name__}')
         if self.title and not isinstance(self.title, str):
             raise TypeError(f'Expected `title` to be of type str, received {type(self.name).__name__}')
@@ -72,16 +74,14 @@ class User(object):
             raise TypeError(f'Expected `is_ultra_restricted` to be of type bool, received {type(self.name).__name__}')
         if self.is_bot and not isinstance(self.is_bot, bool):
             raise TypeError(f'Expected `is_bot` to be of type bool, received {type(self.name).__name__}')
-        if self.updated and not (isinstance(self.updated, int) or
-                                 isinstance(self.updated, float) or
-                                 isinstance(self.updated, str)):
+        if self.updated and not isinstance(self.updated, (float, int, str)):
             raise TypeError(f'Expected `updated` to be of type int, float or str, received {type(self.name).__name__}')
         if self.has_2fa and not isinstance(self.has_2fa, bool):
             raise TypeError(f'Expected `has_2fa` to be of type bool, received {type(self.name).__name__}')
 
 
 @dataclass(slots=True)
-class UserSuccinct(object):
+class UserSuccinct:
     """ Class that defines User objects for Slack users"""
 
     id: str

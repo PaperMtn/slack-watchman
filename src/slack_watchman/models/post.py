@@ -5,8 +5,10 @@ from slack_watchman.models import conversation, user
 from slack_watchman.utils import convert_timestamp
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(slots=True)
-class File(object):
+class File:
+    """ Slack File object """
     id: str
     created: int or float or str
     user: user.User or user.UserSuccinct or str
@@ -26,18 +28,16 @@ class File(object):
     permalink_public: str
     shares: Dict[Any, Any]
 
+    # pylint: disable=too-many-branches
     def __post_init__(self):
         if self.id and not isinstance(self.id, str):
             raise TypeError(f'Expected `id` to be of type str, received {type(self.id).__name__}')
-        if self.created and not (
-                isinstance(self.created, str) or isinstance(self.created, int) or isinstance(self.created, float)):
+        if self.created and not isinstance(self.created, (float, int, str)):
             raise TypeError(
                 f'Expected `created` to be of type str or int or float, received {type(self.created).__name__}')
-        if self.user and not (
-                isinstance(self.user, user.User) or isinstance(self.user, user.UserSuccinct) or isinstance(self.user,
-                                                                                                           str)):
-            raise TypeError(
-                f'Expected `user` to be of type User or UserSuccinct or str, received {type(self.user).__name__}')
+        if self.user and not isinstance(self.user, (str, user.User, user.UserSuccinct)):
+            raise TypeError(f'Expected `user` to be of type User or '
+                            f'UserSuccinct or str, received {type(self.user).__name__}')
         if self.name and not isinstance(self.name, str):
             raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
         if self.title and not isinstance(self.title, str):
@@ -50,7 +50,7 @@ class File(object):
             raise TypeError(f'Expected `pretty_type` to be of type str, received {type(self.pretty_type).__name__}')
         if self.editable and not isinstance(self.editable, bool):
             raise TypeError(f'Expected `editable` to be of type bool, received {type(self.editable).__name__}')
-        if self.size and not (isinstance(self.size, str) or isinstance(self.size, int) or isinstance(self.size, float)):
+        if self.size and not isinstance(self.size, (float, int, str)):
             raise TypeError(f'Expected `size` to be of type str or int or float, received {type(self.size).__name__}')
         if self.mode and not isinstance(self.mode, str):
             raise TypeError(f'Expected `mode` to be of type str, received {type(self.mode).__name__}')
@@ -63,7 +63,8 @@ class File(object):
             raise TypeError(f'Expected `url_private` to be of type str, received {type(self.url_private).__name__}')
         if self.url_private_download and not isinstance(self.url_private_download, str):
             raise TypeError(
-                f'Expected `url_private_download` to be of type str, received {type(self.url_private_download).__name__}')
+                f'Expected `url_private_download` to be of type str, '
+                f'received {type(self.url_private_download).__name__}')
         if self.permalink and not isinstance(self.permalink, str):
             raise TypeError(f'Expected `permalink` to be of type str, received {type(self.permalink).__name__}')
         if self.permalink_public and not isinstance(self.permalink_public, str):
@@ -72,8 +73,10 @@ class File(object):
         if self.shares and not isinstance(self.shares, dict):
             raise TypeError(f'Expected `shares` to be of type dict, received {type(self.shares).__name__}')
 
+
 @dataclass(slots=True)
-class Message(object):
+class Message:
+    """ Slack Message object """
     id: str
     team: str
     created: int or float or str
@@ -90,13 +93,10 @@ class Message(object):
             raise TypeError(f'Expected `id` to be of type str, received {type(self.id).__name__}')
         if self.team and not isinstance(self.team, str):
             raise TypeError(f'Expected `team` to be of type str, received {type(self.team).__name__}')
-        if self.created and not (
-                isinstance(self.created, str) or isinstance(self.created, int) or isinstance(self.created, float)):
+        if self.created and not isinstance(self.created, (float, int, str)):
             raise TypeError(
                 f'Expected `created` to be of type str or int or float, received {type(self.created).__name__}')
-        if self.user and not (
-                isinstance(self.user, user.User) or isinstance(self.user, user.UserSuccinct) or isinstance(self.user,
-                                                                                                           str)):
+        if self.user and not isinstance(self.user, (str, user.User, user.UserSuccinct)):
             raise TypeError(
                 f'Expected `user` to be of type User or UserSuccinct or str, received {type(self.user).__name__}')
         if self.text and not isinstance(self.text, str):
@@ -107,16 +107,14 @@ class Message(object):
             raise TypeError(f'Expected `permalink` to be of type str, received {type(self.permalink).__name__}')
         if self.blocks and not isinstance(self.blocks, list):
             raise TypeError(f'Expected `blocks` to be of type list, received {type(self.blocks).__name__}')
-        if self.timestamp and not (
-                isinstance(self.timestamp, str) or isinstance(self.timestamp, int) or isinstance(self.timestamp,
-                                                                                                 float)):
+        if self.timestamp and not isinstance(self.timestamp, (float, int, str)):
             raise TypeError(
                 f'Expected `timestamp` to be of type str or int or float, received {type(self.timestamp).__name__}')
-        if self.conversation and not (
-                isinstance(self.conversation, conversation.Conversation) or isinstance(self.conversation,
-                                                                                       conversation.ConversationSuccinct)):
+        if self.conversation and not isinstance(self.conversation,
+                                                (conversation.Conversation, conversation.ConversationSuccinct)):
             raise TypeError(
-                f'Expected `conversation` to be of type Conversation or ConversationSuccinct, received {type(self.conversation).__name__}')
+                f'Expected `conversation` to be of type Conversation or '
+                f'ConversationSuccinct, received {type(self.conversation).__name__}')
 
 
 def create_message_from_dict(message_dict: Dict) -> Message:

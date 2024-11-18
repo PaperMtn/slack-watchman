@@ -126,11 +126,11 @@ def find_messages(slack: SlackClient,
             return results
         else:
             logger.log('INFO', 'No matches found after filtering')
-
     except Exception as e:
         logger.log('CRITICAL', e)
 
 
+# pylint: disable=too-many-locals
 def _multipro_message_worker(slack: SlackClient,
                              sig: signature.Signature,
                              query: str,
@@ -290,7 +290,7 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
         A dictionary with results or None if no results
     """
 
-    response = requests.get(domain_url)
+    response = requests.get(domain_url, timeout=60)
     soup = BeautifulSoup(response.text, 'html.parser')
     props_node = soup.find('div', {'id': 'props_node'})
 

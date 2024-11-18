@@ -4,8 +4,9 @@ from typing import List, Dict, Optional
 from slack_watchman.utils import convert_timestamp
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(slots=True)
-class Conversation(object):
+class Conversation:
     """ Class that defines Conversation objects. Conversations
     could be:
         - Direct messages
@@ -38,13 +39,15 @@ class Conversation(object):
     is_group: bool
     is_channel: bool
 
+# pylint: disable=too-many-branches
     def __post_init__(self):
         if self.id and not isinstance(self.id, str):
             raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
         if self.name and not isinstance(self.name, str):
             raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
-        if self.created and not (isinstance(self.created, str) or isinstance(self.created, int) or isinstance(self.created, float)):
-            raise TypeError(f'Expected `created` to be of type str or int or float, received {type(self.name).__name__}')
+        if self.created and not isinstance(self.created, (float, int, str)):
+            raise TypeError(f'Expected `created` to be of type str or int or '
+                            f'float, received {type(self.name).__name__}')
         if self.is_private and not isinstance(self.is_private, bool):
             raise TypeError(f'Expected `is_private` to be of type bool, received {type(self.name).__name__}')
         if self.is_im and not isinstance(self.is_im, bool):
@@ -88,7 +91,7 @@ class Conversation(object):
 
 
 @dataclass(slots=True)
-class ConversationSuccinct(object):
+class ConversationSuccinct:
     """ Class that defines Conversation objects. Conversations
     could be:
         - Direct messages

@@ -23,7 +23,7 @@ jobs:
           poetry install --with dev
       - name: Analysing the code with pylint
         run: |
-          poetry run pylint $(git ls-files '*.py')
+          poetry run pylint ./src
         continue-on-error: true
       - name: Test with pytest
         run: |

@@ -1,18 +1,25 @@
 import json
 import re
-import requests
 import time
 import urllib.parse
 from typing import List, Dict
 
+import requests
+from requests.adapters import HTTPAdapter
 from requests.exceptions import HTTPError
 from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 
 from slack_watchman import exceptions
 
 
-class SlackClient(object):
+class SlackClient:
+    """ Class to interact with the Slack API
+
+    Attributes:
+        token: Slack API token
+        cookie: Slack API cookie
+        url: Slack workspace URL
+    """
 
     def __init__(self,
                  token: str = None,
@@ -58,16 +65,15 @@ class SlackClient(object):
 
     def _get_session_token(self) -> str:
 
-        r = requests.get(self.url, cookies=self.cookie_dict).text
+        r = requests.get(self.url, cookies=self.cookie_dict, timeout=60).text
         regex = '(xox[a-zA-Z]-[a-zA-Z0-9-]+)'
 
         try:
             return re.search(regex, r)[0]
-        except TypeError:
-            raise exceptions.InvalidCookieError(self.url)
-        except:
-            raise
+        except (re.error, IndexError, TypeError) as e:
+            raise exceptions.InvalidCookieError(self.url) from e
 
+    # pylint: disable=too-many-positional-arguments
     def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True):
         try:
             relative_url = '/'.join((self.base_url, url))
@@ -101,9 +107,9 @@ class SlackClient(object):
                     verify=verify_ssl,
                     timeout=30)
             else:
-                raise HTTPError(f'HTTPError: {http_error}')
-        except:
-            raise
+                raise HTTPError(f'HTTPError: {http_error}') from http_error
+        except Exception as e:
+            raise e
 
     def _get_pages(self, url, scope, params):
         first_page = self._make_request(url, params).json()
