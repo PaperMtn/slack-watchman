@@ -4,8 +4,8 @@ from typing import Optional, Dict
 
 @dataclass(slots=True)
 class Workspace:
-    """ Class that defines Workspaces objects. Workspaces are collections
-    of conversations in a Slack Enterprise Organisation"""
+    """Class that defines Workspace objects. Workspaces are collections
+    of conversations in a Slack Enterprise Organisation."""
 
     id: str
     name: str
@@ -19,17 +19,27 @@ class Workspace:
     enterprise_name: Optional[str] = None
 
     def __post_init__(self):
-        if self.id and not isinstance(self.id, str):
-            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
-        if self.name and not isinstance(self.name, str):
-            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
-        if self.domain and not isinstance(self.domain, str):
-            raise TypeError(f'Expected `domain` to be of type str, received {type(self.name).__name__}')
-        if self.url and not isinstance(self.url, str):
-            raise TypeError(f'Expected `url` to be of type str, received {type(self.name).__name__}')
-        if self.email_domain and not isinstance(self.email_domain, str):
-            raise TypeError(f'Expected `email_domain` to be of type str, received {type(self.name).__name__}')
+        """Validate types of fields after initialisation."""
+        expected_types = {
+            'id': str,
+            'name': str,
+            'domain': str,
+            'url': str,
+            'email_domain': str,
+            'is_verified': (bool, type(None)),
+            'discoverable': (bool, type(None)),
+            'enterprise_id': (str, type(None)),
+            'enterprise_domain': (str, type(None)),
+            'enterprise_name': (str, type(None)),
+        }
 
+        for field_name, expected_type in expected_types.items():
+            value = getattr(self, field_name)
+            if value is not None and not isinstance(value, expected_type):
+                raise TypeError(
+                    f'Expected `{field_name}` to be of type {expected_type}, '
+                    f'received {type(value).__name__}'
+                )
 
 def create_from_dict(workspace_dict: Dict) -> Workspace:
     """ Return a Workspace object based off an input dictionary
