@@ -31,6 +31,7 @@ class TestCases:
                     f'received {type(value).__name__}')
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(frozen=True, slots=True)
 class Signature:
     """Class that handles loaded signature objects. Signatures

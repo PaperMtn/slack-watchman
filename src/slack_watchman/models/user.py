@@ -4,6 +4,7 @@ from typing import Union, Dict
 from slack_watchman.utils import convert_timestamp
 
 
+# pylint: disable=too-many-instance-attributes
 @dataclass(slots=True)
 class User:
     """Class that defines User objects for Slack users"""
