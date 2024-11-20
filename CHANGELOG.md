@@ -3,7 +3,7 @@
 - Ability to disable signatures by their ID in the `watchman.conf` config file.
   - These signatures will not be used when running Slack Watchman
   - Signature IDs for each signature can be found in the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
-- App manifest JSON file for creating the Slack Watchman Slack application.
+- App manifest JSON file for creating the Slack Watchman Slack application added in `docs/app_manifest.json`
 - Pylint configuration and implement fixes and recommendations based on findings
   - Added Pylint checks in GitHub actions
 - Additional tests added:
