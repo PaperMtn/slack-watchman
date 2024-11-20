@@ -47,6 +47,45 @@ disable = [
     "duplicate-code",
 ]
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+]
+
+[tool.coverage.run]
+source = [
+    "src",
+    "slack_watchman"
+]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "*/__main__.py",
+    "*/setup.py",
+    "*/manage.py",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+sort = "Cover"
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "import pbd",
+    "pdb.set_trace()",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+show_contexts = true
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

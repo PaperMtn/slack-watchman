@@ -34,7 +34,7 @@ from slack_watchman.models import (
 OUTPUT_LOGGER: JSONLogger
 
 
-def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
+def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
     """ Validates configuration and authentication settings for Slack Watchman from either
         a config file or environment variables.
         Authentication tokens from Environment Variables take precedence over those
@@ -42,7 +42,6 @@ def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
         Additional configuration settings, such as suppressed signatures, are loaded from the config file.
 
     Args:
-        path: Path for the .config file
         cookie_auth: Whether session:cookie auth is being used
     Returns:
         AuthVars object containing the authentication details
@@ -53,6 +52,7 @@ def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
     """
 
     # Check for legacy config file and rename if necessary
+    path = f'{os.path.expanduser("~")}/watchman.conf'
     legacy_path = f'{os.path.expanduser("~")}/slack_watchman.conf'
     if os.path.exists(legacy_path):
         OUTPUT_LOGGER.log('WARNING', 'Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
@@ -100,9 +100,9 @@ def validate_conf(path: str, cookie_auth: bool) -> auth_vars.AuthVars:
     return auth_info
 
 
-def supress_disabled_signatures(signatures: List[signature.Signature],
-                                disabled_signatures: List[str]) -> List[signature.Signature]:
-    """ Supress signatures that are disabled in the config file
+def suppress_disabled_signatures(signatures: List[signature.Signature],
+                                 disabled_signatures: List[str]) -> List[signature.Signature]:
+    """ Suppress signatures that are disabled in the config file
     Args:
         signatures: List of signatures to filter
         disabled_signatures: List of signatures to disable
@@ -281,8 +281,7 @@ def main():
         if probe_domain:
             unauthenticated_probe(probe_domain, project_metadata)
 
-        conf_path = f'{os.path.expanduser("~")}/watchman.conf'
-        auth_info = validate_conf(conf_path, cookie)
+        auth_info = validate_conf(cookie)
         slack_con = watchman_processor.initiate_slack_connection(auth_info)
 
         auth_data = slack_con.get_auth_test()
@@ -298,7 +297,7 @@ def main():
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
         OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
         signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
-        signature_list = supress_disabled_signatures(signature_list, auth_info.disabled_signatures)
+        signature_list = suppress_disabled_signatures(signature_list, auth_info.disabled_signatures)
         if auth_info.disabled_signatures:
             OUTPUT_LOGGER.log('INFO', f'The following signatures have been suppressed: {auth_info.disabled_signatures}')
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')

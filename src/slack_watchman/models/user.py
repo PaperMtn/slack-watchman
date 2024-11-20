@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Union, Dict
 
 from slack_watchman.utils import convert_timestamp
 
@@ -7,7 +7,7 @@ from slack_watchman.utils import convert_timestamp
 # pylint: disable=too-many-instance-attributes
 @dataclass(slots=True)
 class User:
-    """ Class that defines User objects for Slack users"""
+    """Class that defines User objects for Slack users"""
 
     id: str
     name: str
@@ -21,7 +21,7 @@ class User:
     display_name: str
     tz: str
     tz_label: str
-    tz_offset: str or int
+    tz_offset: Union[str, int]
     title: str
     is_admin: bool
     is_owner: bool
@@ -29,81 +29,74 @@ class User:
     is_restricted: bool
     is_ultra_restricted: bool
     is_bot: bool
-    updated: int or float or str
+    updated: Union[int, float, str]
     has_2fa: bool
 
-    # pylint: disable=too-many-branches
     def __post_init__(self):
-        if self.id and not isinstance(self.id, str):
-            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
-        if self.name and not isinstance(self.name, str):
-            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
-        if self.email and not isinstance(self.email, str):
-            raise TypeError(f'Expected `email` to be of type str, received {type(self.name).__name__}')
-        if self.deleted and not isinstance(self.deleted, bool):
-            raise TypeError(f'Expected `deleted` to be of type bool, received {type(self.name).__name__}')
-        if self.real_name and not isinstance(self.real_name, str):
-            raise TypeError(f'Expected `real_name` to be of type str, received {type(self.name).__name__}')
-        if self.first_name and not isinstance(self.first_name, str):
-            raise TypeError(f'Expected `first_name` to be of type str, received {type(self.name).__name__}')
-        if self.last_name and not isinstance(self.last_name, str):
-            raise TypeError(f'Expected `last_name` to be of type str, received {type(self.name).__name__}')
-        if self.phone and not isinstance(self.phone, str):
-            raise TypeError(f'Expected `phone` to be of type str, received {type(self.name).__name__}')
-        if self.skype and not isinstance(self.skype, str):
-            raise TypeError(f'Expected `skype` to be of type str, received {type(self.name).__name__}')
-        if self.display_name and not isinstance(self.display_name, str):
-            raise TypeError(f'Expected `display_name` to be of type str, received {type(self.name).__name__}')
-        if self.tz and not isinstance(self.tz, str):
-            raise TypeError(f'Expected `tz` to be of type str, received {type(self.name).__name__}')
-        if self.tz_label and not isinstance(self.tz_label, str):
-            raise TypeError(f'Expected `tz_label` to be of type str, received {type(self.name).__name__}')
-        if self.tz_offset and not isinstance(self.tz_offset, (int, str)):
-            raise TypeError(f'Expected `tz_offset` to be of type str or int, received {type(self.name).__name__}')
-        if self.title and not isinstance(self.title, str):
-            raise TypeError(f'Expected `title` to be of type str, received {type(self.name).__name__}')
-        if self.is_admin and not isinstance(self.is_admin, bool):
-            raise TypeError(f'Expected `is_admin` to be of type bool, received {type(self.name).__name__}')
-        if self.is_owner and not isinstance(self.is_owner, bool):
-            raise TypeError(f'Expected `is_owner` to be of type bool, received {type(self.name).__name__}')
-        if self.is_primary_owner and not isinstance(self.is_primary_owner, bool):
-            raise TypeError(f'Expected `is_primary_owner` to be of type bool, received {type(self.name).__name__}')
-        if self.is_restricted and not isinstance(self.is_restricted, bool):
-            raise TypeError(f'Expected `is_restricted` to be of type bool, received {type(self.name).__name__}')
-        if self.is_ultra_restricted and not isinstance(self.is_ultra_restricted, bool):
-            raise TypeError(f'Expected `is_ultra_restricted` to be of type bool, received {type(self.name).__name__}')
-        if self.is_bot and not isinstance(self.is_bot, bool):
-            raise TypeError(f'Expected `is_bot` to be of type bool, received {type(self.name).__name__}')
-        if self.updated and not isinstance(self.updated, (float, int, str)):
-            raise TypeError(f'Expected `updated` to be of type int, float or str, received {type(self.name).__name__}')
-        if self.has_2fa and not isinstance(self.has_2fa, bool):
-            raise TypeError(f'Expected `has_2fa` to be of type bool, received {type(self.name).__name__}')
+        """Validates the types of fields after initialization."""
+
+        expected_types = {
+            'id': str,
+            'name': str,
+            'email': str,
+            'deleted': bool,
+            'real_name': str,
+            'first_name': str,
+            'last_name': str,
+            'phone': str,
+            'skype': str,
+            'display_name': str,
+            'tz': str,
+            'tz_label': str,
+            'tz_offset': (str, int),
+            'title': str,
+            'is_admin': bool,
+            'is_owner': bool,
+            'is_primary_owner': bool,
+            'is_restricted': bool,
+            'is_ultra_restricted': bool,
+            'is_bot': bool,
+            'updated': (int, float, str),
+            'has_2fa': bool,
+        }
+
+        for field_name, expected_type in expected_types.items():
+            value = getattr(self, field_name)
+            if value is not None and not isinstance(value, expected_type):
+                raise TypeError(
+                    f'Expected `{field_name}` to be of type {expected_type}, '
+                    f'received {type(value).__name__}')
 
 
 @dataclass(slots=True)
 class UserSuccinct:
-    """ Class that defines User objects for Slack users"""
+    """Class that defines User objects for Slack users"""
 
     id: str
     name: str
     email: str
     display_name: str
     has_2fa: bool
-    is_admin: str
+    is_admin: bool
 
     def __post_init__(self):
-        if self.id and not isinstance(self.id, str):
-            raise TypeError(f'Expected `id` to be of type str, received {type(self.name).__name__}')
-        if self.name and not isinstance(self.name, str):
-            raise TypeError(f'Expected `name` to be of type str, received {type(self.name).__name__}')
-        if self.email and not isinstance(self.email, str):
-            raise TypeError(f'Expected `email` to be of type str, received {type(self.name).__name__}')
-        if self.display_name and not isinstance(self.display_name, str):
-            raise TypeError(f'Expected `display_name` to be of type str, received {type(self.name).__name__}')
-        if self.has_2fa and not isinstance(self.has_2fa, bool):
-            raise TypeError(f'Expected `has_2fa` to be of type bool, received {type(self.name).__name__}')
-        if self.is_admin and not isinstance(self.is_admin, bool):
-            raise TypeError(f'Expected `is_admin` to be of type bool, received {type(self.name).__name__}')
+        """Validate types of fields after initialization."""
+        expected_types = {
+            'id': str,
+            'name': str,
+            'email': str,
+            'display_name': str,
+            'has_2fa': bool,
+            'is_admin': bool,
+        }
+
+        # Loop through attributes and validate types
+        for field_name, expected_type in expected_types.items():
+            value = getattr(self, field_name)
+            if value is not None and not isinstance(value, expected_type):
+                raise TypeError(
+                    f'Expected `{field_name}` to be of type {expected_type.__name__}, '
+                    f'received {type(value).__name__}')
 
 
 def create_from_dict(user_dict: Dict,
