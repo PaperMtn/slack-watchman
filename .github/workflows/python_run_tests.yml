@@ -1,4 +1,4 @@
-name: Run Unit Test via Pytest
+name: Run Unit Tests and Pylint
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
@@ -23,11 +23,11 @@ jobs:
           poetry install --with dev
       - name: Analysing the code with pylint
         run: |
-          poetry run pylint $(git ls-files '*.py')
+          poetry run pylint ./src
         continue-on-error: true
       - name: Test with pytest
         run: |
-          poetry run coverage run -m pytest  -v -s
+          poetry run coverage run -m pytest tests/unit -v -s
       - name: Generate Coverage Report
         run: |  
           poetry run coverage report -m

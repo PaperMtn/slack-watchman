@@ -78,6 +78,21 @@ slack-watchman --probe https://domain.slack.com
 ### Signatures
 Slack Watchman uses custom YAML signatures to detect matches in Slack. These signatures are pulled from the central [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures). Slack Watchman automatically updates its signature base at runtime to ensure its using the latest signatures to detect secrets.
 
+#### Suppressing Signatures
+You can define signatures that you want to disable when running Slack Watchman by adding their IDs to the `disabled_signatures` section of the `watchman.conf` file. For example:
+
+```yaml
+slack_watchman:
+  token: ...
+  cookie: ...
+  url: ...
+  disabled_signatures:
+    - tokens_generic_bearer_tokens
+    - tokens_generic_access_tokens
+```
+
+You can find the ID of a signature in the individual YAML files in [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures).
+
 ### Logging
 
 Slack Watchman gives the following logging options:
@@ -113,6 +128,9 @@ users:read.email
 ```
 **Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private conversations and chats.
 
+#### App Manifest
+Slack apps can be created from JSON manifests which define the details of the application and the scopes to approve. The app manifest for Slack Watchman can be found in [docs/app_manifest.json](/docs/app_manifest.json), you can use this to speed up creating your Slack app.
+
 ### Cookie Authentication
 Alternatively, Slack Watchman can also authenticate to Slack using a user `d` cookie, which is stored in the browser of each user logged into a workspace.
 
@@ -127,13 +145,16 @@ Slack Watchman will first try to get the Slack token (plus the cookie token and 
 
 If this fails it will try to load the token(s) from `.conf` file (see below).
 
-#### .conf file
+#### watchman.conf file
 Configuration options can be passed in a file named `watchman.conf` which must be stored in your home directory. The file should follow the YAML format, and should look like below:
 ```yaml
 slack_watchman:
   token: xoxp-xxxxxxxx
   cookie: xoxd-%2xxxxx
   url: https://xxxxx.slack.com
+  disabled_signatures:
+    - tokens_generic_bearer_tokens
+    - tokens_generic_access_tokens
 ```
 Slack Watchman will look for this file at runtime, and use the configuration options from here. If you are not using cookie auth, leave `cookie` and `url` blank.
 

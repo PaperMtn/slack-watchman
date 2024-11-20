@@ -6,6 +6,7 @@ import time
 import traceback
 from importlib import metadata
 from importlib.metadata import PackageMetadata
+from typing import List
 
 import yaml
 
@@ -14,77 +15,102 @@ from slack_watchman import (
     exceptions,
     watchman_processor
 )
+from slack_watchman.clients.slack_client import SlackClient
+from slack_watchman.loggers import (
+    StdoutLogger,
+    JSONLogger,
+    export_csv,
+    init_logger
+)
 from slack_watchman.models import (
     signature,
     user,
     workspace,
     post,
-    conversation
+    conversation,
+    auth_vars
 )
-from slack_watchman.loggers import StdoutLogger, JSONLogger, export_csv
-from slack_watchman.clients.slack_client import SlackClient
 
 OUTPUT_LOGGER: JSONLogger
 
 
-def validate_conf(path: str, cookie: bool) -> bool:
-    """ Check the file slack_watchman.conf exists
+def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
+    """ Validates configuration and authentication settings for Slack Watchman from either
+        a config file or environment variables.
+        Authentication tokens from Environment Variables take precedence over those
+        from the config file.
+        Additional configuration settings, such as suppressed signatures, are loaded from the config file.
 
     Args:
-        path: Path for the .config file
-        cookie: Whether session:cookie auth is being used
+        cookie_auth: Whether session:cookie auth is being used
     Returns:
-        True if the required config settings are present, False if not
+        AuthVars object containing the authentication details
+    Raises:
+        MissingEnvVarError: If a required environment variable is not set
+        MissingCookieEnvVarError: If required variables for cookie auth aren't set
+        MisconfiguredConfFileError: If the config file is not valid
     """
 
-    if not cookie:
-        if not os.environ.get('SLACK_WATCHMAN_TOKEN'):
-            if os.path.exists(f'{os.path.expanduser("~")}/slack_watchman.conf'):
-                OUTPUT_LOGGER.log('WARNING', 'Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
-                os.rename(rf'{os.path.expanduser("~")}/slack_watchman.conf',
-                          rf'{os.path.expanduser("~")}/watchman.conf')
-                try:
-                    with open(path) as yaml_file:
-                        return yaml.safe_load(yaml_file)['slack_watchman']
-                except:
-                    raise exceptions.MisconfiguredConfFileError
-            elif os.path.exists(path):
-                try:
-                    with open(path) as yaml_file:
-                        return yaml.safe_load(yaml_file)['slack_watchman']
-                except:
-                    raise exceptions.MisconfiguredConfFileError
-            else:
-                try:
-                    os.environ['SLACK_WATCHMAN_TOKEN']
-                except:
-                    raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_TOKEN')
-    else:
-        if os.path.exists(f'{os.path.expanduser("~")}/slack_watchman.conf'):
-            OUTPUT_LOGGER.log('WARNING', 'Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
-            os.rename(rf'{os.path.expanduser("~")}/slack_watchman.conf',
-                      rf'{os.path.expanduser("~")}/watchman.conf')
-            try:
-                with open(path) as yaml_file:
-                    return yaml.safe_load(yaml_file)['slack_watchman']
-            except:
-                raise exceptions.MisconfiguredConfFileError
-        elif os.path.exists(path):
-            try:
-                with open(path) as yaml_file:
-                    return yaml.safe_load(yaml_file)['slack_watchman']
-            except:
-                raise exceptions.MisconfiguredConfFileError
-        else:
-            try:
-                os.environ['SLACK_WATCHMAN_COOKIE']
-            except:
-                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_COOKIE')
+    # Check for legacy config file and rename if necessary
+    path = f'{os.path.expanduser("~")}/watchman.conf'
+    legacy_path = f'{os.path.expanduser("~")}/slack_watchman.conf'
+    if os.path.exists(legacy_path):
+        OUTPUT_LOGGER.log('WARNING', 'Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
+        os.rename(legacy_path, path)
 
-            try:
-                os.environ['SLACK_WATCHMAN_URL']
-            except:
-                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_URL')
+    auth_info = auth_vars.AuthVars(
+        token=None,
+        cookie=None,
+        url=None,
+        disabled_signatures=None,
+        cookie_auth=cookie_auth
+    )
+
+    # Check if config file exists
+    if os.path.exists(path):
+        try:
+            with open(path, encoding='utf-8') as yaml_file:
+                conf_details = yaml.safe_load(yaml_file)['slack_watchman']
+                auth_info.disabled_signatures = conf_details.get('disabled_signatures')
+        except Exception as e:
+            raise exceptions.MisconfiguredConfFileError from e
+
+    if not cookie_auth:
+        # First try SLACK_WATCHMAN_TOKEN env var
+        try:
+            auth_info.token = os.environ['SLACK_WATCHMAN_TOKEN']
+        except KeyError as e:
+            # Failing that, try to get SLACK_WATCHMAN_TOKEN from config
+            if conf_details.get('token'):
+                auth_info.token = conf_details.get('token')
+            else:
+                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_TOKEN') from e
+    else:
+        # First try SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL env vars
+        try:
+            auth_info.cookie = os.environ['SLACK_WATCHMAN_COOKIE']
+            auth_info.url = os.environ['SLACK_WATCHMAN_URL']
+        except KeyError as e:
+            # Failing that, try to get SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL from config
+            if conf_details.get('cookie') and conf_details.get('url'):
+                auth_info.cookie = conf_details.get('cookie')
+                auth_info.url = conf_details.get('url')
+            else:
+                raise exceptions.MissingCookieEnvVarError(e.args[0])
+    return auth_info
+
+
+def suppress_disabled_signatures(signatures: List[signature.Signature],
+                                 disabled_signatures: List[str]) -> List[signature.Signature]:
+    """ Suppress signatures that are disabled in the config file
+    Args:
+        signatures: List of signatures to filter
+        disabled_signatures: List of signatures to disable
+    Returns:
+        List of signatures with disabled signatures removed
+    """
+
+    return [sig for sig in signatures if sig.id not in disabled_signatures]
 
 
 def search(slack_connection: SlackClient,
@@ -177,22 +203,8 @@ def unauthenticated_probe(workspace_domain: str,
         sys.exit(1)
 
 
-def init_logger(logging_type: str, debug: bool) -> JSONLogger | StdoutLogger:
-    """ Create a logger object. Defaults to stdout if no option is given
-
-    Args:
-        logging_type: Type of logging to use
-        debug: Whether to use debug level logging or not
-    Returns:
-        Logger object
-    """
-
-    if not logging_type or logging_type == 'stdout':
-        return StdoutLogger(debug=debug)
-    else:
-        return JSONLogger(debug=debug)
-
-
+# pylint: disable=too-many-locals, missing-function-docstring, global-variable-undefined
+# pylint: disable=too-many-branches, disable=too-many-statements, global-statement
 def main():
     global OUTPUT_LOGGER
     try:
@@ -269,9 +281,8 @@ def main():
         if probe_domain:
             unauthenticated_probe(probe_domain, project_metadata)
 
-        conf_path = f'{os.path.expanduser("~")}/watchman.conf'
-        validate_conf(conf_path, cookie)
-        slack_con = watchman_processor.initiate_slack_connection(cookie)
+        auth_info = validate_conf(cookie)
+        slack_con = watchman_processor.initiate_slack_connection(auth_info)
 
         auth_data = slack_con.get_auth_test()
         calling_user = user.create_from_dict(
@@ -281,11 +292,14 @@ def main():
 
         OUTPUT_LOGGER.log('SUCCESS', 'Slack Watchman started execution')
         OUTPUT_LOGGER.log('INFO', f'Version: {project_metadata.get("version")}')
-        OUTPUT_LOGGER.log('INFO', f'Created by: PaperMtn <papermtn@protonmail.com>')
+        OUTPUT_LOGGER.log('INFO', 'Created by: PaperMtn <papermtn@protonmail.com>')
         OUTPUT_LOGGER.log('INFO', f'Searching workspace: {workspace_information.name}')
         OUTPUT_LOGGER.log('INFO', f'Workspace URL: {workspace_information.url}')
         OUTPUT_LOGGER.log('INFO', 'Downloading and importing signatures...')
         signature_list = signature_downloader.SignatureDownloader(OUTPUT_LOGGER).download_signatures()
+        signature_list = suppress_disabled_signatures(signature_list, auth_info.disabled_signatures)
+        if auth_info.disabled_signatures:
+            OUTPUT_LOGGER.log('INFO', f'The following signatures have been suppressed: {auth_info.disabled_signatures}')
         OUTPUT_LOGGER.log('SUCCESS', f'{len(signature_list)} signatures loaded')
         if cookie:
             OUTPUT_LOGGER.log('SUCCESS', 'Successfully authenticated using cookie')
@@ -333,31 +347,31 @@ def main():
                                       notify_type='canvas')
         if everything or not pii and not secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
-            for signature in signature_list:
-                for scope in signature.scope:
+            for signature_object in signature_list:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)
         elif secrets:
             OUTPUT_LOGGER.log('INFO', 'Searching for Secrets')
-            for signature in [sig for sig in signature_list if sig.category == 'secrets']:
-                for scope in signature.scope:
+            for signature_object in [sig for sig in signature_list if sig.category == 'secrets']:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)
         else:
             OUTPUT_LOGGER.log('INFO', 'Searching for PII')
-            for signature in [sig for sig in signature_list if sig.category == 'pii']:
-                for scope in signature.scope:
+            for signature_object in [sig for sig in signature_list if sig.category == 'pii']:
+                for scope in signature_object.scope:
                     search(
                         slack_con,
-                        signature,
+                        signature_object,
                         timeframe,
                         scope,
                         verbose)

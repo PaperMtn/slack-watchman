@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "slack-watchman"
-version = "4.3.0"
+version = "4.4.0"
 description = "Monitoring and enumerating Slack for exposed secrets"
 authors = ["PaperMtn <papermtn@protonmail.com>"]
 license = "GPL-3.0"
@@ -30,6 +30,61 @@ pylint = "^3.3.1"
 
 [tool.poetry.scripts]
 slack-watchman = "slack_watchman:main"
+
+[tool.pylint.messages_control]
+max-line-length = 120
+max-attributes = 10
+max-args = 10
+disable = [
+    "missing-module-docstring",
+    "too-few-public-methods",
+    "arguments-differ",
+    "logging-fstring-interpolation",
+    "no-else-return",
+    "no-else-raise",
+    "inconsistent-return-statements",
+    "broad-exception-caught",
+    "duplicate-code",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+]
+
+[tool.coverage.run]
+source = [
+    "src",
+    "slack_watchman"
+]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "*/__main__.py",
+    "*/setup.py",
+    "*/manage.py",
+    "*/env/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+sort = "Cover"
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "import pbd",
+    "pdb.set_trace()",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+show_contexts = true
+
+[tool.coverage.xml]
+output = "coverage.xml"
 
 [build-system]
 requires = ["poetry-core"]

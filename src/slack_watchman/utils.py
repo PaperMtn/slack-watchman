@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
-import json
 import dataclasses
+import json
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
+    """ JSON Encoder that handles dataclass objects"""
     def default(self, o):
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)

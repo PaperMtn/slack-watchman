@@ -1,28 +1,26 @@
+import dataclasses
 import hashlib
 import json
 import multiprocessing
-import os
 import re
-import requests
-import dataclasses
-import yaml
 from typing import List, Dict
 
+import requests
 from bs4 import BeautifulSoup
 
-from slack_watchman import exceptions
-from slack_watchman.utils import deduplicate_results
+from slack_watchman.clients.slack_client import SlackClient
 from slack_watchman.loggers import StdoutLogger, JSONLogger
 from slack_watchman.models import (
     signature,
     user,
     post,
-    conversation
+    conversation,
+    auth_vars
 )
-from slack_watchman.clients.slack_client import SlackClient
+from slack_watchman.utils import deduplicate_results
 
 
-def initiate_slack_connection(cookie: bool) -> SlackClient:
+def initiate_slack_connection(auth_info: auth_vars.AuthVars) -> SlackClient:
     """ Create a Slack API object to use for interacting with the Slack API
     First tries to get the API token from the environment variable(s):
         SLACK_WATCHMAN_TOKEN
@@ -30,38 +28,14 @@ def initiate_slack_connection(cookie: bool) -> SlackClient:
         SLACK_WATCHMAN_URL
 
     Args:
-        cookie: Whether cookie auth is being used
+        auth_info: Authentication details object
     Returns:
         Slack API object
     """
 
-    if not cookie:
-        try:
-            token = os.environ['SLACK_WATCHMAN_TOKEN']
-        except KeyError:
-            with open(f'{os.path.expanduser("~")}/watchman.conf') as yaml_file:
-                config = yaml.safe_load(yaml_file)
-            try:
-                token = config['slack_watchman']['token']
-            except:
-                raise exceptions.MissingConfigVariable('token')
-        return SlackClient(token=token)
-    else:
-        try:
-            cookie = os.environ['SLACK_WATCHMAN_COOKIE']
-            url = os.environ['SLACK_WATCHMAN_URL']
-        except KeyError:
-            with open(f'{os.path.expanduser("~")}/watchman.conf') as yaml_file:
-                config = yaml.safe_load(yaml_file)
-            try:
-                cookie = config['slack_watchman']['cookie']
-            except:
-                raise exceptions.MissingConfigVariable('cookie')
-            try:
-                url = config['slack_watchman']['url']
-            except:
-                raise exceptions.MissingConfigVariable('url')
-        return SlackClient(cookie=cookie, url=url)
+    if auth_info.cookie_auth:
+        return SlackClient(cookie=auth_info.cookie, url=auth_info.url)
+    return SlackClient(token=auth_info.token)
 
 
 def get_users(slack: SlackClient, verbose: bool) -> List[user.User]:
@@ -74,13 +48,9 @@ def get_users(slack: SlackClient, verbose: bool) -> List[user.User]:
         List of User objects
     """
 
-    results = []
     users = slack.cursor_api_search('users.list', 'members')
-    for value in users:
-        if not value.get('deleted'):
-            results.append(user.create_from_dict(value, verbose))
 
-    return results
+    return [user.create_from_dict(u, verbose) for u in users if not u.get('deleted')]
 
 
 def get_channels(slack: SlackClient,
@@ -152,11 +122,11 @@ def find_messages(slack: SlackClient,
             return results
         else:
             logger.log('INFO', 'No matches found after filtering')
-
     except Exception as e:
         logger.log('CRITICAL', e)
 
 
+# pylint: disable=too-many-locals
 def _multipro_message_worker(slack: SlackClient,
                              sig: signature.Signature,
                              query: str,
@@ -269,7 +239,6 @@ def _multipro_file_worker(slack: SlackClient,
             for file_type in sig.file_types:
                 if query.replace('\"', '').lower() in file_dict.get('name').lower() \
                         and file_type.lower() in file_dict.get('filetype').lower():
-
                     if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
                         user_dict = slack.get_user_info(file_dict.get('user')).get('user')
                         u = user.create_from_dict(user_dict, verbose)
@@ -316,7 +285,7 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
         A dictionary with results or None if no results
     """
 
-    response = requests.get(domain_url)
+    response = requests.get(domain_url, timeout=60)
     soup = BeautifulSoup(response.text, 'html.parser')
     props_node = soup.find('div', {'id': 'props_node'})
 

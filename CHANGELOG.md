@@ -1,3 +1,18 @@
+## [4.4.0] - 2024-11-20
+### Added
+- Ability to disable signatures by their ID in the `watchman.conf` config file.
+  - These signatures will not be used when running Slack Watchman
+  - Signature IDs for each signature can be found in the [Watchman Signatures repository](https://github.com/PaperMtn/watchman-signatures)
+- App manifest JSON file for creating the Slack Watchman Slack application added in `docs/app_manifest.json`
+- Pylint configuration and implement fixes and recommendations based on findings
+  - Added Pylint checks in GitHub actions
+- Additional tests added:
+  - Unit tests for remaining non-model modules
+  - Integration tests for slack_client.py
+
+### Fixed
+- Bug where variables were not being imported from watchman.conf config file
+
 ## [4.3.0] - 2024-10-27
 ### Changed
 - Timestamps are now in UTC across all logging for consistency

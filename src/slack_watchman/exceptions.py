@@ -8,12 +8,23 @@ class MissingEnvVarError(Exception):
         super().__init__(self.message)
 
 
+class MissingCookieEnvVarError(Exception):
+    """ Exception raised when a cookie environment variable is missing.
+    """
+
+    def __init__(self, env_var):
+        self.env_var = env_var
+        self.message = (f'Cookie authentication has been selected, but missing'
+                        f'required environment variable: {self.env_var}')
+        super().__init__(self.message)
+
+
 class MisconfiguredConfFileError(Exception):
     """ Exception raised when the config file watchman.conf is missing.
     """
 
     def __init__(self):
-        self.message = f"The file watchman.conf doesn't contain config details for Slack Watchman"
+        self.message = "The file watchman.conf doesn't contain config details for Slack Watchman"
         super().__init__(self.message)
 
 
@@ -63,5 +74,5 @@ class SlackAPIRateLimit(Exception):
     """
 
     def __init__(self):
-        self.message = f'Slack API rate limit reached - cooling off'
+        self.message = 'Slack API rate limit reached - cooling off'
         super().__init__(self.message)
