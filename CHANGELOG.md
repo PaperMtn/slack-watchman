@@ -1,4 +1,4 @@
-## [4.4.0] - 2024-11-x
+## [4.4.0] - 2024-11-20
 ### Added
 - Ability to disable signatures by their ID in the `watchman.conf` config file.
   - These signatures will not be used when running Slack Watchman
