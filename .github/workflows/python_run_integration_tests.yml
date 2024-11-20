@@ -32,9 +32,10 @@ jobs:
           pip install poetry
           poetry install --with dev
       - name: Run Integration Tests
-        run: pytest tests/integration
+        run: |
+          poetry run coverage run -m pytest tests/integration -v -s
       # Run all tests and generate coverage report
-      - name: Test with pytest
+      - name: Run all Tests
         run: |
           poetry run coverage run -m pytest tests/unit -v -s
       - name: Generate Coverage Report
