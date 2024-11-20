@@ -48,13 +48,9 @@ def get_users(slack: SlackClient, verbose: bool) -> List[user.User]:
         List of User objects
     """
 
-    results = []
     users = slack.cursor_api_search('users.list', 'members')
-    for value in users:
-        if not value.get('deleted'):
-            results.append(user.create_from_dict(value, verbose))
 
-    return results
+    return [user.create_from_dict(u, verbose) for u in users if not u.get('deleted')]
 
 
 def get_channels(slack: SlackClient,
@@ -243,7 +239,6 @@ def _multipro_file_worker(slack: SlackClient,
             for file_type in sig.file_types:
                 if query.replace('\"', '').lower() in file_dict.get('name').lower() \
                         and file_type.lower() in file_dict.get('filetype').lower():
-
                     if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
                         user_dict = slack.get_user_info(file_dict.get('user')).get('user')
                         u = user.create_from_dict(user_dict, verbose)
