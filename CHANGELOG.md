@@ -6,6 +6,9 @@
 - App manifest JSON file for creating the Slack Watchman Slack application.
 - Pylint configuration and implement fixes and recommendations based on findings
   - Added Pylint checks in GitHub actions
+- Additional tests added:
+  - Unit tests for remaining non-model modules
+  - Integration tests for slack_client.py
 
 ### Fixed
 - Bug where variables were not being imported from watchman.conf config file
