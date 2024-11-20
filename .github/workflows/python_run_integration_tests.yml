@@ -1,0 +1,42 @@
+name: Run Integration Tests
+
+on:
+    push:
+        branches: [ develop, main, master, release/**, hotfix/** ]
+    pull_request:
+        branches: [ develop, main, master, release/**, hotfix/** ]
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.12" ]
+    env:
+      INT_TEST_SLACK_API_TOKEN: ${{ secrets.INT_TEST_SLACK_API_TOKEN }}
+      INT_TEST_SLACK_WORKSPACE_URL: ${{ secrets.INT_TEST_SLACK_WORKSPACE_URL }}
+      INT_TEST_SLACK_API_COOKIE: ${{ secrets.INT_TEST_SLACK_API_COOKIE }}
+      INT_TEST_SLACK_TEST_USER_ID: ${{ secrets.INT_TEST_SLACK_TEST_USER_ID }}
+      INT_TEST_SLACK_TEST_CONVERSATION_ID: ${{ secrets.INT_TEST_SLACK_TEST_CONVERSATION_ID }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install --with dev
+      - name: Run Integration Tests
+        run: pytest tests/integration
+      # Run all tests and generate coverage report
+      - name: Test with pytest
+        run: |
+          poetry run coverage run -m pytest tests/unit -v -s
+      - name: Generate Coverage Report
+        run: |
+          poetry run coverage report -m
