@@ -129,7 +129,7 @@ users:read.email
 **Note**: User tokens act on behalf of the user who authorises them, so I would suggest you create this app and authorise it using a service account, otherwise the app will have access to your private conversations and chats.
 
 #### App Manifest
-Slack apps can be created from JSON manifests which define the details of the application and the scopes to approve. The app manifest for Slack Watchman can be found [here](/docs/app_manifest.json), you can use this to speed up creating your Slack app.
+Slack apps can be created from JSON manifests which define the details of the application and the scopes to approve. The app manifest for Slack Watchman can be found in [docs/app_manifest.json](/docs/app_manifest.json), you can use this to speed up creating your Slack app.
 
 ### Cookie Authentication
 Alternatively, Slack Watchman can also authenticate to Slack using a user `d` cookie, which is stored in the browser of each user logged into a workspace.
