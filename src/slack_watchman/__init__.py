@@ -109,8 +109,10 @@ def suppress_disabled_signatures(signatures: List[signature.Signature],
     Returns:
         List of signatures with disabled signatures removed
     """
-
-    return [sig for sig in signatures if sig.id not in disabled_signatures]
+    try:
+        return [sig for sig in signatures if sig.id not in disabled_signatures]
+    except TypeError:
+        return signatures
 
 
 def search(slack_connection: SlackClient,

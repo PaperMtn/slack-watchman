@@ -1,3 +1,8 @@
+## [4.4.1] - 2024-12-18
+### Fixed
+- Fixed a bug where an exception was raised when no suppressed signatures were passed
+  - Fixes [Issue #66](https://github.com/PaperMtn/slack-watchman/issues/66)
+
 ## [4.4.0] - 2024-11-20
 ### Added
 - Ability to disable signatures by their ID in the `watchman.conf` config file.
