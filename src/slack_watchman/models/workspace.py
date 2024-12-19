@@ -26,8 +26,8 @@ class Workspace:
             'domain': str,
             'url': str,
             'email_domain': str,
-            'is_verified': (bool, type(None)),
-            'discoverable': (bool, type(None)),
+            'is_verified': (bool, str, type(None)),
+            'discoverable': (bool, str, type(None)),
             'enterprise_id': (str, type(None)),
             'enterprise_domain': (str, type(None)),
             'enterprise_name': (str, type(None)),
@@ -40,6 +40,7 @@ class Workspace:
                     f'Expected `{field_name}` to be of type {expected_type}, '
                     f'received {type(value).__name__}'
                 )
+
 
 def create_from_dict(workspace_dict: Dict) -> Workspace:
     """ Return a Workspace object based off an input dictionary
