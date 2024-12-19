@@ -24,9 +24,9 @@ class MissingCookieAuthError(Exception):
     """
 
     def __init__(self):
-        self.message = (f'Cookie authentication has been selected, but missing no authentication data '
-                        f'has been provided. Please set the environment variables SLACK_WATCHMAN_COOKIE and '
-                        f'SLACK_WATCHMAN_URL')
+        self.message = ('Cookie authentication has been selected, but missing no authentication data '
+                        'has been provided. Please set the environment variables SLACK_WATCHMAN_COOKIE and '
+                        'SLACK_WATCHMAN_URL')
         super().__init__(self.message)
 
 
