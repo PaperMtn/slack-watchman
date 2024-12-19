@@ -14,8 +14,19 @@ class MissingCookieEnvVarError(Exception):
 
     def __init__(self, env_var):
         self.env_var = env_var
-        self.message = (f'Cookie authentication has been selected, but missing'
+        self.message = (f'Cookie authentication has been selected, but missing '
                         f'required environment variable: {self.env_var}')
+        super().__init__(self.message)
+
+
+class MissingCookieAuthError(Exception):
+    """ Exception raised when a cookie auth is selected, but no cookie is set.
+    """
+
+    def __init__(self):
+        self.message = ('Cookie authentication has been selected, but missing no authentication data '
+                        'has been provided. Please set the environment variables SLACK_WATCHMAN_COOKIE and '
+                        'SLACK_WATCHMAN_URL')
         super().__init__(self.message)
 
 

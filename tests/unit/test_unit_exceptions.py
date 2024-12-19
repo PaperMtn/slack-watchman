@@ -9,6 +9,7 @@ from slack_watchman.exceptions import (
     SlackScopeError,
     SlackAPIError,
     SlackAPIRateLimit,
+    MissingCookieAuthError
 )
 
 
@@ -26,7 +27,7 @@ def test_missing_cookie_env_var_error():
     exc = MissingCookieEnvVarError(env_var)
     assert exc.env_var == env_var
     assert exc.message == (
-        f'Cookie authentication has been selected, but missing'
+        f'Cookie authentication has been selected, but missing '
         f'required environment variable: {env_var}'
     )
     with pytest.raises(MissingCookieEnvVarError, match=f'Cookie authentication has been selected, but missing'):
@@ -82,4 +83,15 @@ def test_slack_api_rate_limit():
     exc = SlackAPIRateLimit()
     assert exc.message == 'Slack API rate limit reached - cooling off'
     with pytest.raises(SlackAPIRateLimit, match='Slack API rate limit reached - cooling off'):
+        raise exc
+
+
+def test_missing_cookie_auth_error():
+    exc = MissingCookieAuthError()
+    assert exc.message == (
+        'Cookie authentication has been selected, but missing no authentication data '
+        'has been provided. Please set the environment variables SLACK_WATCHMAN_COOKIE and '
+        'SLACK_WATCHMAN_URL'
+    )
+    with pytest.raises(MissingCookieAuthError, match='Cookie authentication has been selected, but missing'):
         raise exc

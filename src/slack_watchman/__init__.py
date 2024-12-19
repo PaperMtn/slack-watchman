@@ -35,11 +35,8 @@ OUTPUT_LOGGER: JSONLogger
 
 
 def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
-    """ Validates configuration and authentication settings for Slack Watchman from either
-        a config file or environment variables.
-        Authentication tokens from Environment Variables take precedence over those
-        from the config file.
-        Additional configuration settings, such as suppressed signatures, are loaded from the config file.
+    """ Validates configuration and authentication settings for Slack Watchman.
+    Authentication tokens from environment variables take precedence over config file values.
 
     Args:
         cookie_auth: Whether session:cookie auth is being used
@@ -50,12 +47,16 @@ def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
         MissingCookieEnvVarError: If required variables for cookie auth aren't set
         MisconfiguredConfFileError: If the config file is not valid
     """
+    home_dir = os.path.expanduser("~")
+    path = f"{home_dir}/watchman.conf"
+    legacy_path = f"{home_dir}/slack_watchman.conf"
 
-    # Check for legacy config file and rename if necessary
-    path = f'{os.path.expanduser("~")}/watchman.conf'
-    legacy_path = f'{os.path.expanduser("~")}/slack_watchman.conf'
+    # Handle legacy config file renaming
     if os.path.exists(legacy_path):
-        OUTPUT_LOGGER.log('WARNING', 'Legacy slack_watchman.conf file detected. Renaming to watchman.conf')
+        OUTPUT_LOGGER.log(
+            "WARNING",
+            "Legacy slack_watchman.conf file detected. Renaming to watchman.conf"
+        )
         os.rename(legacy_path, path)
 
     auth_info = auth_vars.AuthVars(
@@ -66,37 +67,32 @@ def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
         cookie_auth=cookie_auth
     )
 
-    # Check if config file exists
+    conf_details = {}
     if os.path.exists(path):
         try:
-            with open(path, encoding='utf-8') as yaml_file:
-                conf_details = yaml.safe_load(yaml_file)['slack_watchman']
-                auth_info.disabled_signatures = conf_details.get('disabled_signatures')
+            with open(path, encoding="utf-8") as yaml_file:
+                conf_details = yaml.safe_load(yaml_file).get("slack_watchman", {})
+                auth_info.disabled_signatures = conf_details.get("disabled_signatures")
         except Exception as e:
             raise exceptions.MisconfiguredConfFileError from e
 
+    def get_env_or_conf(key: str, conf_key: str = None) -> str:
+        """ Retrieve value from environment or config."""
+        return os.environ.get(key) or conf_details.get(conf_key or key.lower())
+
     if not cookie_auth:
-        # First try SLACK_WATCHMAN_TOKEN env var
-        try:
-            auth_info.token = os.environ['SLACK_WATCHMAN_TOKEN']
-        except KeyError as e:
-            # Failing that, try to get SLACK_WATCHMAN_TOKEN from config
-            if conf_details.get('token'):
-                auth_info.token = conf_details.get('token')
-            else:
-                raise exceptions.MissingEnvVarError('SLACK_WATCHMAN_TOKEN') from e
+        auth_info.token = get_env_or_conf("SLACK_WATCHMAN_TOKEN", 'token')
+        if not auth_info.token:
+            raise exceptions.MissingEnvVarError("SLACK_WATCHMAN_TOKEN")
     else:
-        # First try SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL env vars
-        try:
-            auth_info.cookie = os.environ['SLACK_WATCHMAN_COOKIE']
-            auth_info.url = os.environ['SLACK_WATCHMAN_URL']
-        except KeyError as e:
-            # Failing that, try to get SLACK_WATCHMAN_COOKIE and SLACK_WATCHMAN_URL from config
-            if conf_details.get('cookie') and conf_details.get('url'):
-                auth_info.cookie = conf_details.get('cookie')
-                auth_info.url = conf_details.get('url')
-            else:
-                raise exceptions.MissingCookieEnvVarError(e.args[0])
+        auth_info.cookie = get_env_or_conf("SLACK_WATCHMAN_COOKIE", "cookie")
+        auth_info.url = get_env_or_conf("SLACK_WATCHMAN_URL", "url")
+
+        if not auth_info.cookie:
+            raise exceptions.MissingCookieEnvVarError("SLACK_WATCHMAN_COOKIE")
+        if not auth_info.url:
+            raise exceptions.MissingCookieEnvVarError("SLACK_WATCHMAN_URL")
+
     return auth_info
 
 
@@ -109,8 +105,10 @@ def suppress_disabled_signatures(signatures: List[signature.Signature],
     Returns:
         List of signatures with disabled signatures removed
     """
-
-    return [sig for sig in signatures if sig.id not in disabled_signatures]
+    try:
+        return [sig for sig in signatures if sig.id not in disabled_signatures]
+    except TypeError:
+        return signatures
 
 
 def search(slack_connection: SlackClient,
