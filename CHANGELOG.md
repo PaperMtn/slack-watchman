@@ -1,3 +1,9 @@
+## [4.4.1] - 2024-12-18
+### Fixed
+- Fixed a bug where an exception was raised when no suppressed signatures were passed. Fixes [#66](https://github.com/PaperMtn/slack-watchman/issues/66)
+- Fixed error when creating a Workspace object using the response from the Slack API. Validation was expecting a `bool`, but in some instances, a string was being returned. Fixes [#68](https://github.com/PaperMtn/slack-watchman/issues/68)
+- Fixed bug where the incorrect error message was being passed when environment variables were not set. Fixes [#67](https://github.com/PaperMtn/slack-watchman/issues/67)
+
 ## [4.4.0] - 2024-11-20
 ### Added
 - Ability to disable signatures by their ID in the `watchman.conf` config file.
