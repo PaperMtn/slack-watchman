@@ -19,14 +19,15 @@ def downloader(mock_logger):
     return SignatureDownloader(logger=mock_logger)
 
 
-@patch('slack_watchman.signature_downloader.urlopen')
+@patch('slack_watchman.signature_downloader.requests.get')
 @patch('slack_watchman.signature_downloader.zipfile.ZipFile')
-def test_download_signatures(mock_zipfile, mock_urlopen, downloader, mock_logger):
+def test_download_signatures(mock_zipfile, mock_get, downloader, mock_logger):
     """Test the download_signatures method."""
-    # Mock response from urlopen
+    # Set up mock response
     mock_response = MagicMock()
-    mock_response.read.return_value = b'mock_zip_content'
-    mock_urlopen.return_value.__enter__.return_value = mock_response
+    mock_response.status_code = 200
+    mock_response.content = b'zipfile-bytes'
+    mock_get.return_value = mock_response
 
     # Mock a zip file structure
     mock_zip = MagicMock()
@@ -116,8 +117,8 @@ def test_process_signature():
     })
 
 
-@patch('slack_watchman.signature_downloader.urlopen', side_effect=Exception('Mocked Exception'))
-def test_download_signatures_exception(mock_urlopen, downloader, mock_logger):
+@patch('slack_watchman.signature_downloader.requests.get', side_effect=Exception('Mocked Exception'))
+def test_download_signatures_exception(downloader, mock_logger):
     """Test that download_signatures handles exceptions correctly."""
     with pytest.raises(SystemExit):  # sys.exit(1) triggers SystemExit
         downloader.download_signatures()
