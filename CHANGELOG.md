@@ -1,3 +1,9 @@
+## [4.4.2] - 2025-xx-xx
+### Added
+- Added `.github/dependabot.yml` with configuration for Dependabot:
+  - Use `develop` as target branch
+  - Update both `pyproject.toml` and `poetry.lock`
+
 ## [4.4.1] - 2024-12-18
 ### Fixed
 - Fixed a bug where an exception was raised when no suppressed signatures were passed. Fixes [#66](https://github.com/PaperMtn/slack-watchman/issues/66)

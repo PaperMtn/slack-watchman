@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    commit-message:
+      prefix: "fix"
+    allow:
+      - dependency-type: "direct"
+    insecure-external-code-execution: "deny"
+    ignore:
+      - dependency-name: "*"
+    security-updates-only: true
+    versioning-strategy: increase
