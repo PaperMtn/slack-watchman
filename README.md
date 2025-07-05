@@ -165,16 +165,24 @@ An example file is in `docs/example.conf`
 **Note**: Cookie and URL values are optional, and not required if not using cookie authentication.
 
 ## Installation
-You can install the latest stable version via pip:
 
-```commandline
+The recommended way to install Slack Watchman is via [`pipx`](https://pypa.github.io/pipx/), which installs the app in an isolated environment and makes it available on your system `PATH`:
+
+```bash
+pipx install slack-watchman
+```
+
+**Alternative: Install via pip**
+
+You can also install Slack Watchman using pip:
+```bash
 python3 -m pip install slack-watchman
 ```
 
-Or build from source yourself:
+**Alternative: Build from Source**
 
-Download the release source files, then from the top level repository run:
-```commandline
+Download the release source files, then from the top-level directory of the repository, run:
+```bash
 python3 -m pip build
 python3 -m pip install --force-reinstall dist/*.whl
 ```
