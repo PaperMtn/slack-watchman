@@ -4,9 +4,9 @@ import sys
 import traceback
 import zipfile
 from typing import List
-from urllib.request import urlopen
 
 import yaml
+import requests
 
 from slack_watchman.loggers import JSONLogger, StdoutLogger
 from slack_watchman.models.signature import Signature, create_from_dict
@@ -34,28 +34,29 @@ class SignatureDownloader:
             List[Signature]: A list of processed Signature objects.
         """
         try:
-            with urlopen(SIGNATURE_URL) as response:
-                with zipfile.ZipFile(io.BytesIO(response.read())) as signatures_zip_file:
-                    signature_objects = []
+            response = requests.get(SIGNATURE_URL, stream=True, timeout=10)
+            response.raise_for_status()
+            with zipfile.ZipFile(io.BytesIO(response.content)) as signatures_zip_file:
+                signature_objects = []
 
-                    for file_path in signatures_zip_file.namelist():
-                        if file_path.endswith('/'):  # Skip directories
-                            continue
+                for file_path in signatures_zip_file.namelist():
+                    if file_path.endswith('/'):  # Skip directories
+                        continue
 
-                        signature_name = os.path.basename(file_path)
-                        self.logger.log('DEBUG', f'Processing {file_path}...')
+                    signature_name = os.path.basename(file_path)
+                    self.logger.log('DEBUG', f'Processing {file_path}...')
 
-                        with signatures_zip_file.open(file_path) as source:
-                            file_content = source.read()
+                    with signatures_zip_file.open(file_path) as source:
+                        file_content = source.read()
 
-                        if file_path.endswith('.yaml'):
-                            processed_signatures = self._process_signature(file_content)
-                            signature_objects.extend(processed_signatures)
-                            self.logger.log('INFO', f'Downloaded and processed signature file: {signature_name}')
-                        else:
-                            self.logger.log('DEBUG', f'Skipping unrecognized file: {file_path}')
+                    if file_path.endswith('.yaml'):
+                        processed_signatures = self._process_signature(file_content)
+                        signature_objects.extend(processed_signatures)
+                        self.logger.log('INFO', f'Downloaded and processed signature file: {signature_name}')
+                    else:
+                        self.logger.log('DEBUG', f'Skipping unrecognized file: {file_path}')
 
-                    return signature_objects
+                return signature_objects
 
         except Exception as e:
             self.logger.log('CRITICAL', f"Error processing signature files: {e}")
