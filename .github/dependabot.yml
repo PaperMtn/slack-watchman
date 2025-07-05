@@ -12,5 +12,4 @@ updates:
     insecure-external-code-execution: "deny"
     ignore:
       - dependency-name: "*"
-    security-updates-only: true
     versioning-strategy: increase
