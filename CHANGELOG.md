@@ -4,6 +4,15 @@
   - Use `develop` as target branch
   - Update both `pyproject.toml` and `poetry.lock`
 
+### Fixed
+- Fixed issue with Poetry build arguments in Dockerfile, which was causing the build to fail.
+
+### Changed
+- Modified signature download process to use `requests` instead of `urllib`, which is more robust and provides better SSL handling. This addresses the issue raised in [#74](https://github.com/PaperMtn/slack-watchman/issues/74)
+- Dependabot updates
+  - `urllib3` updated to `2.5.0`
+  - `requests` updated to `2.32.4`
+
 ## [4.4.1] - 2024-12-18
 ### Fixed
 - Fixed a bug where an exception was raised when no suppressed signatures were passed. Fixes [#66](https://github.com/PaperMtn/slack-watchman/issues/66)
