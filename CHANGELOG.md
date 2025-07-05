@@ -1,8 +1,9 @@
-## [4.4.2] - 2025-xx-xx
+## [4.4.2] - 2025-07-05
 ### Added
 - Added `.github/dependabot.yml` with configuration for Dependabot:
   - Use `develop` as target branch
   - Update both `pyproject.toml` and `poetry.lock`
+- README updated to recommend using `pipx` for installation
 
 ### Fixed
 - Fixed issue with Poetry build arguments in Dockerfile, which was causing the build to fail.
