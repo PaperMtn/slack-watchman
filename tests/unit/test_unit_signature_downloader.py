@@ -118,7 +118,7 @@ def test_process_signature():
 
 
 @patch('slack_watchman.signature_downloader.requests.get', side_effect=Exception('Mocked Exception'))
-def test_download_signatures_exception(downloader, mock_logger):
+def test_download_signatures_exception(mock_get, downloader, mock_logger):
     """Test that download_signatures handles exceptions correctly."""
     with pytest.raises(SystemExit):  # sys.exit(1) triggers SystemExit
         downloader.download_signatures()
