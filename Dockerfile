@@ -4,7 +4,7 @@ WORKDIR /opt/slack-watchman
 COPY . .
 RUN pip install poetry
 RUN poetry config virtualenvs.create false && \
-    poetry install --no-dev && \
+    poetry install --only main && \
     poetry build
 
 FROM python:3.12-slim-bullseye
