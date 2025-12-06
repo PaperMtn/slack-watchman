@@ -1,3 +1,8 @@
+## [4.4.3] - 2025-12-06
+### Changed
+- Dependabot updates
+  - `urllib3` updated to `2.6.0`
+
 ## [4.4.2] - 2025-07-05
 ### Added
 - Added `.github/dependabot.yml` with configuration for Dependabot:
