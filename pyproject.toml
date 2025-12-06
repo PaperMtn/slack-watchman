@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "slack-watchman"
-version = "4.4.2"
+version = "4.4.3"
 description = "Monitoring and enumerating Slack for exposed secrets"
-authors = ["PaperMtn <papermtn@protonmail.com>"]
+authors = ["PaperMtn <me@papermtn.co.uk>"]
 license = "GPL-3.0"
 readme = "README.md"
 homepage = "https://github.com/PaperMtn/slack-watchman"
@@ -14,7 +14,7 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
-"Blog" = "https://papermtn.co.uk/category/tools/slack-watchman/"
+"Blog" = "https://papermtn.co.uk/tag/slack-watchman/"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
