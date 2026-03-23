@@ -136,7 +136,7 @@ Alternatively, Slack Watchman can also authenticate to Slack using a user `d` co
 
 To use cookie authentication, you will need to provide the `d` cookie, and the URL of the target workspace. Then you will need to use the `--cookie` flag when running Slack Watchman
 
-More information on cookie authentication can be found [on my blog](https://papermtn.co.uk/category/tools/slack-watchman/)
+More information on cookie authentication can be found [on my blog](https://www.papermtn.co.uk/retrieving-and-using-slack-cookies-for-authentication/)
 #### Providing tokens
 Slack Watchman will first try to get the Slack token (plus the cookie token and URL if selected) from the environment variables 
 - `SLACK_WATCHMAN_TOKEN`
