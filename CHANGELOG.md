@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Dependabot updates
   - `requests` updated to `2.33.0`
+- Update GitHub Actions that use Node.js 20 to the latest versions to support Node.js 24
 
 ### Fixed
 - Fixed broken link to Slack Cookie Authentication blog post in README (raised in [#82] by @emilstahl)
