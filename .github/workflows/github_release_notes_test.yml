@@ -1,4 +1,4 @@
-name: Create GitHub Release
+name: Test GitHub Release Tag and Notes Extraction
 
 on:
   push:
@@ -17,6 +17,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install flake8 poetry
+          poetry install
+      - name: Install
+        run: |
+          poetry build
+          python3 -m pip install dist/*.whl
       - name: Extract release notes
         id: extract-release-notes
         uses: ffurrer2/extract-release-notes@v1
