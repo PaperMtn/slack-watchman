@@ -1,8 +1,8 @@
-name: Create GitHub Release
+name: Test GitHub Release Tag and Notes Extraction
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ release/**, hotfix/** ]
 
 jobs:
   build:
@@ -21,12 +21,6 @@ jobs:
         run: |
           pip install flake8 poetry
           poetry install
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Install
         run: |
           poetry build
@@ -40,10 +34,8 @@ jobs:
         run: |
           echo "TAG_NAME=$(slack-watchman -v | awk '{match($0, /[0-9]+\.[0-9]+\.[0-9]+/); print substr($0, RSTART, RLENGTH)}')" >> $GITHUB_OUTPUT
         id: version
-      - name: Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "dist/*.tar.gz"
-          body: ${{ steps.extract-release-notes.outputs.release_notes }}
-          tag: ${{ steps.version.outputs.TAG_NAME }}
-          name: Slack Watchman - ${{ steps.version.outputs.TAG_NAME }}
+      - name: Test tag and release notes
+        # This step prints the tag and release notes to the console for verification before creating the release.
+        run: |
+          echo "Tag: ${{ steps.version.outputs.TAG_NAME }}"
+          echo "Release Notes: ${{ steps.extract-release-notes.outputs.release_notes }}"
