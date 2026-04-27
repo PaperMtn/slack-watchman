@@ -10,6 +10,5 @@ updates:
     allow:
       - dependency-type: "direct"
     insecure-external-code-execution: "deny"
-    ignore:
-      - dependency-name: "*"
+    security-updates-only: true
     versioning-strategy: increase
