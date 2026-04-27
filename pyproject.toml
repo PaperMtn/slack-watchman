@@ -20,11 +20,11 @@ classifiers = [
 python = ">=3.10"
 colorama = "^0.4.6"
 pyyaml = "^6.0.3"
-requests = "^2.33.0"
+requests = "^2.33.1"
 beautifulsoup4 = "^4.14.3"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.0.2"
+pytest = "^9.0.3"
 coverage = "^7.13.5"
 pylint = "^4.0.5"
 
