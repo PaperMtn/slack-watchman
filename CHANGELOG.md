@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.5.0] - 2026-04-28
 ### Fixed
 - Canvas results in `StdoutLogger` were rendered with the red `USER` colour scheme because `msg_level` was set to `'USER'` instead of `'CANVAS'`. Added a dedicated `CANVAS` style branch in `log_to_stdout`. Fixes [#90](https://github.com/PaperMtn/slack-watchman/issues/90)
 - Fixed `AttributeError` crash in `StdoutLogger` when logging file results with no resolved user. The user dict is now coerced via `(message.get('user') or {})` before reading `display_name`/`email`. Fixes [#91](https://github.com/PaperMtn/slack-watchman/issues/91)
