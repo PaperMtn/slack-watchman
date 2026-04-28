@@ -249,6 +249,14 @@ def test_export_csv(mock_dict_writer, mock_open_file):
     assert export_csv('test', mock_data) is True
 
 
+def test_export_csv_empty_input_returns_false_and_writes_nothing():
+    """Empty export_data must not crash on export_data[0] and must not open a file."""
+    with patch('builtins.open', new_callable=mock_open) as mock_open_file:
+        result = export_csv('empty', [])
+    assert result is False
+    mock_open_file.assert_not_called()
+
+
 def test_export_csv_returns_false_on_write_failure():
     """When the underlying open() raises, export_csv must signal failure rather than silently swallow."""
     import dataclasses as _dc

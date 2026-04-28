@@ -300,8 +300,12 @@ def export_csv(csv_name: str, export_data: List[IsDataclass]) -> bool:
         csv_name: Name of the CSV file to create
         export_data: Dataclass object to create CSV from
     Returns:
-        True if the file was written successfully, False otherwise.
+        True if the file was written successfully, False otherwise
+        (including when there is no data to export).
     """
+    if not export_data:
+        print(f'No data to export to {csv_name}.csv')
+        return False
     try:
         headers = dataclasses.asdict(export_data[0]).keys()
         with open(f'{os.path.join(os.getcwd(), csv_name)}.csv', 'w', encoding='utf-8') as f:
