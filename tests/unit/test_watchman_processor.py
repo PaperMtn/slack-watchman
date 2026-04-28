@@ -74,6 +74,18 @@ def test_get_channels(mock_slack_client):
     mock_slack.cursor_api_search.assert_called_once_with('conversations.list', 'channels')
 
 
+def _mock_manager_lists(mock_manager, results=None, potential_matches=None, errors=None):
+    """Wire a `with multiprocessing.Manager() as m:` mock so `m.list()` returns
+    the supplied lists in order (results, potential_matches, errors)."""
+    inner = mock_manager.return_value.__enter__.return_value
+    inner.list.side_effect = [
+        [] if results is None else results,
+        [] if potential_matches is None else potential_matches,
+        [] if errors is None else errors,
+    ]
+    return inner
+
+
 @patch('slack_watchman.watchman_processor.multiprocessing.Process')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
 def test_find_messages(mock_manager, mock_process):
@@ -83,7 +95,7 @@ def test_find_messages(mock_manager, mock_process):
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
-    mock_manager.return_value.list.return_value = []
+    _mock_manager_lists(mock_manager)
 
     find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
@@ -100,16 +112,11 @@ def test_find_messages_logs_worker_errors(mock_manager, mock_process):
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
-    results_list = []
-    potential_matches_list = []
-    errors_list = [{
+    _mock_manager_lists(mock_manager, errors=[{
         'signature': 'test_sig',
         'query': 'test_query',
         'error': "RuntimeError('upstream blew up')"
-    }]
-    mock_manager.return_value.list.side_effect = [
-        results_list, potential_matches_list, errors_list
-    ]
+    }])
 
     find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
@@ -124,6 +131,26 @@ def test_find_messages_logs_worker_errors(mock_manager, mock_process):
 
 @patch('slack_watchman.watchman_processor.multiprocessing.Process')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages_uses_single_manager_context(mock_manager, mock_process):
+    """find_messages opens exactly one Manager context (and exits it) per call,
+    rather than spawning a separate Manager subprocess per shared list."""
+    mock_logger = MagicMock()
+    mock_slack = MagicMock()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    _mock_manager_lists(mock_manager)
+
+    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    mock_process.assert_called_once()
+    assert mock_manager.call_count == 1
+    assert mock_manager.return_value.__enter__.call_count == 1
+    assert mock_manager.return_value.__exit__.call_count == 1
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
 def test_find_files(mock_manager, mock_process):
     """Test find_files function."""
     mock_logger = MagicMock()
@@ -131,7 +158,7 @@ def test_find_files(mock_manager, mock_process):
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
-    mock_manager.return_value.list.return_value = []
+    _mock_manager_lists(mock_manager)
 
     find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
@@ -148,16 +175,11 @@ def test_find_files_logs_worker_errors(mock_manager, mock_process):
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
-    results_list = []
-    potential_matches_list = []
-    errors_list = [{
+    _mock_manager_lists(mock_manager, errors=[{
         'signature': 'test_sig',
         'query': 'test_query',
         'error': "RuntimeError('upstream blew up')"
-    }]
-    mock_manager.return_value.list.side_effect = [
-        results_list, potential_matches_list, errors_list
-    ]
+    }])
 
     find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
@@ -168,6 +190,25 @@ def test_find_files_logs_worker_errors(mock_manager, mock_process):
     assert 'test_sig' in msg
     assert 'test_query' in msg
     assert 'upstream blew up' in msg
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_uses_single_manager_context(mock_manager, mock_process):
+    """find_files opens exactly one Manager context (and exits it) per call."""
+    mock_logger = MagicMock()
+    mock_slack = MagicMock()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    _mock_manager_lists(mock_manager)
+
+    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    mock_process.assert_called_once()
+    assert mock_manager.call_count == 1
+    assert mock_manager.return_value.__enter__.call_count == 1
+    assert mock_manager.return_value.__exit__.call_count == 1
 
 
 @patch('requests.get')

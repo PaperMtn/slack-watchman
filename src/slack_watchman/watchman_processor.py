@@ -87,51 +87,51 @@ def find_messages(slack: SlackClient,
     """
 
     try:
-        results = multiprocessing.Manager().list()
-        potential_matches = multiprocessing.Manager().list()
-        errors = multiprocessing.Manager().list()
+        with multiprocessing.Manager() as manager:
+            results = manager.list()
+            potential_matches = manager.list()
+            errors = manager.list()
 
-        processes = []
+            processes = []
 
-        for query in sig.search_strings:
-            p = multiprocessing.Process(
-                target=_multipro_message_worker,
-                args=(
-                    slack,
-                    sig,
-                    query,
-                    verbose,
-                    timeframe
-                ),
-                kwargs={
-                    'results': results,
-                    'potential_matches': potential_matches,
-                    'errors': errors
-                }
-            )
-            processes.append(p)
-            p.start()
+            for query in sig.search_strings:
+                p = multiprocessing.Process(
+                    target=_multipro_message_worker,
+                    args=(
+                        slack,
+                        sig,
+                        query,
+                        verbose,
+                        timeframe
+                    ),
+                    kwargs={
+                        'results': results,
+                        'potential_matches': potential_matches,
+                        'errors': errors
+                    }
+                )
+                processes.append(p)
+                p.start()
 
-        for process in processes:
-            process.join()
+            for process in processes:
+                process.join()
 
-        for err in errors:
-            logger.log(
-                'ERROR',
-                f"Worker failed for signature '{err.get('signature')}' "
-                f"query '{err.get('query')}': {err.get('error')}"
-            )
+            for err in errors:
+                logger.log(
+                    'ERROR',
+                    f"Worker failed for signature '{err.get('signature')}' "
+                    f"query '{err.get('query')}': {err.get('error')}"
+                )
 
-        if potential_matches:
-            logger.log('INFO', f'{sum(potential_matches)} potential matches found')
+            if potential_matches:
+                logger.log('INFO', f'{sum(potential_matches)} potential matches found')
 
-        if results:
-            results = deduplicate_results(results)
-            logger.log('SUCCESS', f'{len(results)} total matches found after filtering')
-            return results
-        else:
+            if results:
+                results = deduplicate_results(results)
+                logger.log('SUCCESS', f'{len(results)} total matches found after filtering')
+                return results
             logger.log('INFO', 'No matches found after filtering')
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         logger.log('CRITICAL', e)
 
 
@@ -207,52 +207,52 @@ def find_files(slack: SlackClient,
     """
 
     try:
-        results = multiprocessing.Manager().list()
-        potential_matches = multiprocessing.Manager().list()
-        errors = multiprocessing.Manager().list()
+        with multiprocessing.Manager() as manager:
+            results = manager.list()
+            potential_matches = manager.list()
+            errors = manager.list()
 
-        processes = []
+            processes = []
 
-        for query in sig.search_strings:
-            p = multiprocessing.Process(
-                target=_multipro_file_worker,
-                args=(
-                    slack,
-                    sig,
-                    query,
-                    verbose,
-                    timeframe
-                ),
-                kwargs={
-                    'results': results,
-                    'potential_matches': potential_matches,
-                    'errors': errors
-                }
-            )
-            processes.append(p)
-            p.start()
+            for query in sig.search_strings:
+                p = multiprocessing.Process(
+                    target=_multipro_file_worker,
+                    args=(
+                        slack,
+                        sig,
+                        query,
+                        verbose,
+                        timeframe
+                    ),
+                    kwargs={
+                        'results': results,
+                        'potential_matches': potential_matches,
+                        'errors': errors
+                    }
+                )
+                processes.append(p)
+                p.start()
 
-        for process in processes:
-            process.join()
+            for process in processes:
+                process.join()
 
-        for err in errors:
-            logger.log(
-                'ERROR',
-                f"Worker failed for signature '{err.get('signature')}' "
-                f"query '{err.get('query')}': {err.get('error')}"
-            )
+            for err in errors:
+                logger.log(
+                    'ERROR',
+                    f"Worker failed for signature '{err.get('signature')}' "
+                    f"query '{err.get('query')}': {err.get('error')}"
+                )
 
-        if potential_matches:
-            logger.log('INFO', f'{sum(potential_matches)} potential matches found')
+            if potential_matches:
+                logger.log('INFO', f'{sum(potential_matches)} potential matches found')
 
-        if results:
-            results = deduplicate_results(results)
-            logger.log('SUCCESS', f'{len(results)} total files found after filtering')
-            return results
-        else:
+            if results:
+                results = deduplicate_results(results)
+                logger.log('SUCCESS', f'{len(results)} total files found after filtering')
+                return results
             logger.log('INFO', 'No files found after filtering')
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         logger.log('CRITICAL', e)
 
 
