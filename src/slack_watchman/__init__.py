@@ -206,7 +206,7 @@ def unauthenticated_probe(workspace_domain: str,
 def main():
     global OUTPUT_LOGGER
     try:
-        OUTPUT_LOGGER = ''
+        OUTPUT_LOGGER = None
         start_time = time.time()
         project_metadata = metadata.metadata('slack-watchman')
         parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
@@ -380,11 +380,17 @@ def main():
                                      f' {str(datetime.timedelta(seconds=time.time() - start_time))}')
 
     except TimeoutError as e:
-        OUTPUT_LOGGER.log('ERROR', e)
-        OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
-    except Exception as e:
-        OUTPUT_LOGGER.log('CRITICAL', e)
-        OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        if OUTPUT_LOGGER is not None:
+            OUTPUT_LOGGER.log('ERROR', e)
+            OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        else:
+            traceback.print_exc()
+    except Exception as e:  # pylint: disable=broad-except
+        if OUTPUT_LOGGER is not None:
+            OUTPUT_LOGGER.log('CRITICAL', e)
+            OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        else:
+            traceback.print_exc()
         sys.exit(1)
 
 
