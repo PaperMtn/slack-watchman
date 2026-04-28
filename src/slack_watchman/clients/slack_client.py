@@ -11,6 +11,29 @@ from urllib3.util import Retry
 
 from slack_watchman import exceptions
 
+_RATE_LIMIT_DEFAULT_BACKOFF = 90
+_RATE_LIMIT_MAX_RETRIES = 5
+
+
+def _parse_retry_after(value, default: int = _RATE_LIMIT_DEFAULT_BACKOFF) -> int:
+    """ Parse a `Retry-After` header value into a number of seconds to wait.
+
+    Slack returns the value as an integer number of seconds. Fall back to
+    `default` when the header is missing or not parseable as an integer.
+
+    Args:
+        value: Raw header value, or None
+        default: Fallback to use when the header is missing/unparseable
+    Returns:
+        Number of seconds to wait before retrying
+    """
+    if value is None:
+        return default
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return default
+
 
 class SlackClient:
     """ Class to interact with the Slack API
@@ -74,7 +97,9 @@ class SlackClient:
             raise exceptions.InvalidCookieError(self.url) from e
 
     # pylint: disable=too-many-positional-arguments
-    def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True):
+    def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True, *,
+                      _retries: int = _RATE_LIMIT_MAX_RETRIES):
+        response = None
         try:
             relative_url = '/'.join((self.base_url, url))
             response = self.session.request(
@@ -95,19 +120,23 @@ class SlackClient:
                 return response
 
         except HTTPError as http_error:
-            if response.status_code == 429:
-                print('WARNING', 'Slack API rate limit reached - cooling off')
-                time.sleep(90)
-                return self.session.request(
-                    method,
-                    relative_url,
+            if response is not None and response.status_code == 429:
+                if _retries <= 0:
+                    raise HTTPError(
+                        f'HTTPError: rate limit retries exhausted: {http_error}'
+                    ) from http_error
+                retry_after = _parse_retry_after(response.headers.get('Retry-After'))
+                print('WARNING', f'Slack API rate limit reached - cooling off for {retry_after}s')
+                time.sleep(retry_after)
+                return self._make_request(
+                    url,
                     params=params,
                     data=data,
-                    cookies=self.cookie_dict,
-                    verify=verify_ssl,
-                    timeout=30)
-            else:
-                raise HTTPError(f'HTTPError: {http_error}') from http_error
+                    method=method,
+                    verify_ssl=verify_ssl,
+                    _retries=_retries - 1,
+                )
+            raise HTTPError(f'HTTPError: {http_error}') from http_error
         except Exception as e:
             raise e
 

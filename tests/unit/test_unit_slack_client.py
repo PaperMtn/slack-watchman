@@ -4,7 +4,26 @@ import pytest
 import requests
 
 from slack_watchman import exceptions
-from slack_watchman.clients.slack_client import SlackClient
+from slack_watchman.clients.slack_client import SlackClient, _parse_retry_after
+
+
+def _make_429_response(retry_after=None):
+    """Helper to build a mock 429 response that triggers raise_for_status."""
+    response = MagicMock()
+    response.status_code = 429
+    response.headers = {'Retry-After': retry_after} if retry_after is not None else {}
+    response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        '429 Too Many Requests'
+    )
+    return response
+
+
+def _make_ok_response(payload=None):
+    """Helper to build a mock 200 response with an `ok: True` JSON body."""
+    response = MagicMock()
+    response.status_code = 200
+    response.json.return_value = payload or {'ok': True}
+    return response
 
 
 @patch('slack_watchman.clients.slack_client.requests.get')
@@ -80,6 +99,97 @@ def test_make_request_rate_limit(mock_request):
             assert response.status_code == 200
         except exceptions.SlackAPIError as e:
             assert 'rate_limited' in str(e)
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (None, 90),
+        ('30', 30),
+        ('0', 0),
+        ('not-a-number', 90),
+        ('-5', 0),  # Negative values clamped to 0
+        (15, 15),   # Already an int
+    ],
+)
+def test_parse_retry_after(value, expected):
+    """`_parse_retry_after` handles the value forms Slack and naive callers send."""
+    assert _parse_retry_after(value) == expected
+
+
+@patch('slack_watchman.clients.slack_client.requests.Session.request')
+def test_make_request_429_honours_retry_after(mock_request):
+    """A 429 response with `Retry-After` set should sleep for that many seconds and retry."""
+    mock_request.side_effect = [
+        _make_429_response(retry_after='5'),
+        _make_ok_response(),
+    ]
+
+    client = SlackClient(token='mock_token')
+
+    with patch('slack_watchman.clients.slack_client.time.sleep') as mock_sleep:
+        response = client._make_request('test_endpoint')
+
+    assert response.status_code == 200
+    mock_sleep.assert_called_once_with(5)
+    assert mock_request.call_count == 2
+
+
+@patch('slack_watchman.clients.slack_client.requests.Session.request')
+def test_make_request_429_falls_back_when_retry_after_missing(mock_request):
+    """No `Retry-After` header → fall back to the configured default (90s)."""
+    mock_request.side_effect = [
+        _make_429_response(retry_after=None),
+        _make_ok_response(),
+    ]
+
+    client = SlackClient(token='mock_token')
+
+    with patch('slack_watchman.clients.slack_client.time.sleep') as mock_sleep:
+        response = client._make_request('test_endpoint')
+
+    assert response.status_code == 200
+    mock_sleep.assert_called_once_with(90)
+
+
+@patch('slack_watchman.clients.slack_client.requests.Session.request')
+def test_make_request_429_then_429_then_success(mock_request):
+    """A second consecutive 429 must also be retried, not raised as HTTPError.
+
+    Previously the retry path bypassed `_make_request` and called
+    `self.session.request(...)` inline, so a second 429 propagated as an
+    HTTPError and the result was lost.
+    """
+    mock_request.side_effect = [
+        _make_429_response(retry_after='1'),
+        _make_429_response(retry_after='2'),
+        _make_ok_response(),
+    ]
+
+    client = SlackClient(token='mock_token')
+
+    with patch('slack_watchman.clients.slack_client.time.sleep') as mock_sleep:
+        response = client._make_request('test_endpoint')
+
+    assert response.status_code == 200
+    assert mock_request.call_count == 3
+    assert mock_sleep.call_args_list[0].args == (1,)
+    assert mock_sleep.call_args_list[1].args == (2,)
+
+
+@patch('slack_watchman.clients.slack_client.requests.Session.request')
+def test_make_request_429_retries_exhausted(mock_request):
+    """Persistent 429s should eventually raise an informative HTTPError."""
+    # Always return 429 — should exhaust retries.
+    mock_request.side_effect = [_make_429_response(retry_after='1') for _ in range(10)]
+
+    client = SlackClient(token='mock_token')
+
+    with patch('slack_watchman.clients.slack_client.time.sleep'):
+        with pytest.raises(requests.exceptions.HTTPError) as excinfo:
+            client._make_request('test_endpoint')
+
+    assert 'retries exhausted' in str(excinfo.value)
 
 
 @patch('slack_watchman.clients.slack_client.SlackClient._make_request')
