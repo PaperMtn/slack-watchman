@@ -39,6 +39,25 @@ def test_stdout_logger_canvas_uses_canvas_level(mock_stdout_logger):
         assert msg_level == 'CANVAS'
 
 
+def test_stdout_logger_file_result_with_no_user(mock_stdout_logger):
+    """File results where 'user' is None must not crash with AttributeError."""
+    file_result = {
+        'file': {
+            'created': '2026-04-28',
+            'name': 'secret.txt',
+            'url_private_download': 'https://example.slack.com/files/private',
+            'permalink_public': 'https://example.slack.com/files/public',
+        },
+        'user': None,
+        'match_string': 'AKIAxxxx',
+    }
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', file_result, notify_type='result')
+        mock_log_to_stdout.assert_called_once()
+        formatted_message, _ = mock_log_to_stdout.call_args[0]
+        assert 'POST_TYPE: File' in formatted_message
+
+
 def test_json_logger_log(mock_json_logger):
     """Test logging functionality of JSONLogger."""
     with patch.object(mock_json_logger.logger, 'info') as mock_info:
