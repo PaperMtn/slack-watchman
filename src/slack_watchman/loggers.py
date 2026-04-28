@@ -261,6 +261,16 @@ class JSONLogger:
             level: str,
             msg: str or Dict,
             **kwargs):
+        """ Emit a JSON log line at the given level
+
+        Args:
+            level: Logical level label written to the JSON envelope
+                (e.g. 'INFO', 'NOTIFY', 'WORKSPACE_PROBE', 'WARNING').
+            msg: Either a plain string or a dataclass/dict that will be
+                serialised into the JSON envelope by `_JSONFormatter`.
+            **kwargs: For NOTIFY records, accepts `scope`, `severity`,
+                and `detect_type` to populate the detection fields.
+        """
         level_upper = level.upper()
         if level_upper == 'NOTIFY':
             self.logger.info(
