@@ -293,12 +293,14 @@ class IsDataclass(Protocol):
     __dataclass_fields__: ClassVar[Dict]
 
 
-def export_csv(csv_name: str, export_data: List[IsDataclass]) -> None:
+def export_csv(csv_name: str, export_data: List[IsDataclass]) -> bool:
     """ Export the data passed in a dataclass to CSV file
 
     Args:
         csv_name: Name of the CSV file to create
         export_data: Dataclass object to create CSV from
+    Returns:
+        True if the file was written successfully, False otherwise.
     """
     try:
         headers = dataclasses.asdict(export_data[0]).keys()
@@ -308,8 +310,10 @@ def export_csv(csv_name: str, export_data: List[IsDataclass]) -> None:
             for item in export_data:
                 writer.writerow(dataclasses.asdict(item))
         f.close()
+        return True
     except Exception as e:
         print(e)
+        return False
 
 
 def init_logger(logging_type: str, debug: bool) -> JSONLogger | StdoutLogger:

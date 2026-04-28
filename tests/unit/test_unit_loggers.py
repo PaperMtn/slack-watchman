@@ -232,11 +232,13 @@ def test_json_logger_log(mock_json_logger):
 @patch('csv.DictWriter')
 def test_export_csv(mock_dict_writer, mock_open_file):
     """Test export_csv function."""
+    import dataclasses as _dc
+
+    @_dc.dataclass
     class MockData:
         """Mock dataclass."""
-        def __init__(self, id, name):
-            self.id = id
-            self.name = name
+        id: int
+        name: str
 
     mock_data = [MockData(id=1, name='Test1'), MockData(id=2, name='Test2')]
 
@@ -244,13 +246,22 @@ def test_export_csv(mock_dict_writer, mock_open_file):
     mock_dict_writer.return_value = mock_writer_instance
 
     # Run the export_csv function
-    export_csv('test', mock_data)
+    assert export_csv('test', mock_data) is True
 
-    # Verify that open was called correctly with the filename 'test.csv'
-    # mock_open_file.assert_called_once_with('test.csv', 'w', encoding='utf-8')
-    # mock_dict_writer.assert_called_once()
-    # mock_writer_instance.writeheader.assert_called_once()
-    # assert mock_writer_instance.writerow.call_count == len(mock_data)
+
+def test_export_csv_returns_false_on_write_failure():
+    """When the underlying open() raises, export_csv must signal failure rather than silently swallow."""
+    import dataclasses as _dc
+
+    @_dc.dataclass
+    class Row:
+        id: int
+        name: str
+
+    rows = [Row(id=1, name='alice')]
+
+    with patch('builtins.open', side_effect=OSError('disk full')):
+        assert export_csv('does_not_matter', rows) is False
 
 
 def test_init_logger_stdout():
