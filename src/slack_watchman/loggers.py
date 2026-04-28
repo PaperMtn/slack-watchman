@@ -8,7 +8,6 @@ import re
 import sys
 import traceback
 from collections.abc import Mapping
-from logging import Logger
 from typing import Any, Dict, List, ClassVar, Protocol
 
 from colorama import Fore, Back, Style, init
@@ -211,11 +210,11 @@ class StdoutLogger:
         print(' '.ljust(79) + Fore.GREEN)
 
 
-class JSONLogger(Logger):
+class JSONLogger:
     """ Custom logger class for JSON logging"""
 
     def __init__(self, name: str = 'Slack Watchman', **kwargs):
-        super().__init__(name)
+        self.name = name
         self.notify_format = logging.Formatter(
             '{"timestamp": "%(asctime)s", "level": "NOTIFY", "scope": "%(scope)s", "severity": '
             '"%(severity)s", "detection_type": "%(type)s", "detection_data": %(message)s}')
@@ -235,14 +234,17 @@ class JSONLogger(Logger):
             '{"timestamp": "%(asctime)s", "level": "CANVAS", "message": %(message)s}')
         self.logger = logging.getLogger(self.name)
         self.handler = logging.StreamHandler(sys.stdout)
-        self.logger.addHandler(self.handler)
+        # logging.getLogger() returns a process-wide singleton, so guard
+        # addHandler to avoid stacking duplicate handlers when JSONLogger
+        # is instantiated more than once in the same process.
+        if not self.logger.handlers:
+            self.logger.addHandler(self.handler)
+        else:
+            self.handler = self.logger.handlers[0]
         if kwargs.get('debug'):
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
-
-    # def bind(self):
-    #     pass
 
     def log(self,
             level: str,

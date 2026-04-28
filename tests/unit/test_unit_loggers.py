@@ -157,6 +157,26 @@ def test_stdout_logger_file_result_with_no_user(mock_stdout_logger):
         assert 'POST_TYPE: File' in formatted_message
 
 
+def test_json_logger_does_not_inherit_from_logger():
+    """JSONLogger should not subclass logging.Logger; it composes one via self.logger."""
+    import logging as _logging
+    assert not issubclass(JSONLogger, _logging.Logger)
+
+
+def test_json_logger_does_not_stack_handlers_across_instances():
+    """Re-instantiating JSONLogger must not add duplicate handlers to the singleton logger."""
+    import logging as _logging
+    # Reset shared singleton to a clean baseline for the test.
+    shared = _logging.getLogger('Slack Watchman')
+    shared.handlers.clear()
+
+    first = JSONLogger(debug=False)
+    second = JSONLogger(debug=False)
+
+    assert first.logger is second.logger
+    assert len(first.logger.handlers) == 1
+
+
 def test_json_logger_log(mock_json_logger):
     """Test logging functionality of JSONLogger."""
     with patch.object(mock_json_logger.logger, 'info') as mock_info:
