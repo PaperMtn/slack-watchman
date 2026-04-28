@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - `_multipro_message_worker` and `_multipro_file_worker` now wrap their bodies in `try`/`except` and append failures to a shared `errors` Manager list. Previously, an exception inside a worker (e.g. an exhausted rate-limit retry, malformed search payload, or `AttributeError` on a missing field) would silently kill the child process — `join()` would return cleanly and the parent would lose results for that signature/query with no log output. `find_messages` and `find_files` now log an `ERROR` line per captured failure after `join()`. Fixes [#108](https://github.com/PaperMtn/slack-watchman/issues/108)
+- `_multipro_message_worker` no longer crashes with `AttributeError` when a search result has no `channel` field or the channel id is `None`. The previous `message.get('channel').get('id')` chain failed for DMs, tombstoned messages, and certain bot/system messages; the lookup is now `(message.get('channel') or {}).get('id')`, which falls through to `c = None` instead of taking down the worker. Fixes [#109](https://github.com/PaperMtn/slack-watchman/issues/109)
 
 ## [4.5.0] - 2026-04-28
 ### Fixed

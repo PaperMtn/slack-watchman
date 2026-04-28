@@ -268,6 +268,61 @@ def test_multipro_message_worker(mock_post, mock_conversation, mock_user):
     assert result['watchman_id'] == expected_watchman_id
 
 
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
+@pytest.mark.parametrize(
+    "channel_value",
+    [
+        None,                # channel is explicitly None
+        {},                  # channel is present but empty
+        {'id': None},        # channel.id is None
+    ],
+    ids=['channel_is_none', 'channel_is_empty', 'channel_id_is_none']
+)
+def test_multipro_message_worker_handles_missing_channel(
+    mock_post, mock_conversation, mock_user, channel_value
+):
+    """Worker does not crash when 'channel' is missing/None or 'id' is None.
+
+    Without the guard, `message.get('channel').get('id')` raises AttributeError,
+    which (combined with the worker's outer try/except) would silently drop the
+    rest of the worker's matches.
+    """
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'secret']
+
+    mock_slack.page_api_search.return_value = [
+        {'text': 'This contains a secret', 'user': 'U123', 'channel': channel_value},
+    ]
+
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1234567890')
+
+    results = []
+    potential_matches = []
+    errors = []
+
+    _multipro_message_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='test_query',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=potential_matches,
+        errors=errors,
+    )
+
+    assert errors == []
+    assert len(results) == 1
+    # No conversation should be resolved when channel id is unavailable
+    mock_conversation.create_from_dict.assert_not_called()
+    mock_slack.get_conversation_info.assert_not_called()
+
+
 def test_multipro_message_worker_captures_exception():
     """Worker exceptions are appended to the shared errors list rather than propagating."""
     mock_slack = MagicMock(spec=SlackClient)

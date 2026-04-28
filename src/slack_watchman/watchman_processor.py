@@ -156,8 +156,9 @@ def _multipro_message_worker(slack: SlackClient,
                     else:
                         u = message.get('username')
 
-                    if message.get('channel').get('id'):
-                        channel_dict = slack.get_conversation_info(message.get('channel').get('id')).get('channel')
+                    channel_id = (message.get('channel') or {}).get('id')
+                    if channel_id:
+                        channel_dict = slack.get_conversation_info(channel_id).get('channel')
                         c = conversation.create_from_dict(channel_dict, verbose)
                     else:
                         c = None
