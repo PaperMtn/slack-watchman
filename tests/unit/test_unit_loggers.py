@@ -1,4 +1,6 @@
+import dataclasses
 import json
+import logging
 from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
@@ -6,6 +8,16 @@ import pytest
 from colorama import Fore
 
 from slack_watchman.loggers import StdoutLogger, JSONLogger, export_csv, init_logger
+
+
+@pytest.fixture(autouse=True)
+def _reset_slack_watchman_logger():
+    """Clear the process-wide 'Slack Watchman' logger between tests so handler
+    state set up by one JSONLogger instance does not leak into the next."""
+    shared = logging.getLogger('Slack Watchman')
+    shared.handlers.clear()
+    yield
+    shared.handlers.clear()
 
 
 @pytest.fixture
@@ -27,6 +39,109 @@ def test_stdout_logger_log(mock_write, mock_stdout_logger):
     # Extract the formatted output for assertion
     formatted_call = next(call for call in mock_write.mock_calls if 'Test Message' in str(call))
     assert 'Test Message' in str(formatted_call)
+
+
+def test_stdout_logger_skips_debug_when_not_debug_mode():
+    """StdoutLogger.log must short-circuit on DEBUG when self.debug is False."""
+    logger = StdoutLogger(debug=False)
+    with patch.object(logger, 'log_to_stdout') as mock_log_to_stdout:
+        logger.log('DEBUG', 'should not appear')
+        mock_log_to_stdout.assert_not_called()
+
+
+def test_stdout_logger_converts_dataclass_message(mock_stdout_logger):
+    """A dataclass passed as `message` should be converted to a dict before formatting."""
+    @dataclasses.dataclass
+    class Payload:
+        id: str
+        name: str
+        domain: str
+        url: str
+
+    payload = Payload(id='T1', name='Acme', domain='acme', url='https://acme.slack.com')
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', payload, notify_type='workspace')
+        mock_log_to_stdout.assert_called_once()
+        formatted_message, _ = mock_log_to_stdout.call_args[0]
+        # Workspace formatter pulls fields by .get(), which only works on a dict.
+        # If the dataclass→dict conversion didn't happen we'd see "None" for every field.
+        assert 'ID: T1' in formatted_message
+        assert 'NAME: Acme' in formatted_message
+
+
+def test_stdout_logger_result_message_with_mapping_user(mock_stdout_logger):
+    """`notify_type='result'` with a message body and a Mapping user should render display_name + email."""
+    result = {
+        'message': {
+            'created': '2026-04-28',
+            'permalink': 'https://example.slack.com/archives/C1/p1',
+            'conversation': {
+                'is_im': False,
+                'is_private': True,
+                'name': 'engineering',
+            },
+            'user': {'display_name': 'alice', 'email': 'alice@acme.com'},
+        },
+        'match_string': 'AKIAxxxx',
+    }
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', result, notify_type='result')
+        formatted_message, msg_level = mock_log_to_stdout.call_args[0]
+    assert msg_level == 'RESULT'
+    assert 'POST_TYPE: Message' in formatted_message
+    assert 'POSTED_BY: alice - alice@acme.com' in formatted_message
+    assert 'CONVERSATION_TYPE: Private Channel' in formatted_message
+
+
+def test_stdout_logger_result_message_in_public_channel(mock_stdout_logger):
+    """A result message that is neither an IM nor private should be labelled 'Public Channel'."""
+    result = {
+        'message': {
+            'created': '2026-04-28',
+            'permalink': 'https://example.slack.com/archives/C1/p1',
+            'conversation': {'is_im': False, 'is_private': False, 'name': 'general'},
+            'user': {'display_name': 'alice', 'email': 'alice@acme.com'},
+        },
+        'match_string': 'AKIAxxxx',
+    }
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', result, notify_type='result')
+        formatted_message, _ = mock_log_to_stdout.call_args[0]
+    assert 'CONVERSATION_TYPE: Public Channel' in formatted_message
+
+
+def test_stdout_logger_result_with_neither_message_nor_file(mock_stdout_logger):
+    """A 'result' notify_type with neither a 'message' nor 'file' key should still emit at RESULT level."""
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', {'something_else': True}, notify_type='result')
+        _, msg_level = mock_log_to_stdout.call_args[0]
+    assert msg_level == 'RESULT'
+
+
+def test_stdout_logger_result_message_with_string_user(mock_stdout_logger):
+    """When the message user is a plain string (not a Mapping) it should be rendered verbatim."""
+    result = {
+        'message': {
+            'created': '2026-04-28',
+            'permalink': 'https://example.slack.com/archives/C1/p1',
+            'conversation': {'is_im': True, 'is_private': False, 'name': 'dm'},
+            'user': 'U-LEGACY',
+        },
+        'match_string': 'AKIAxxxx',
+    }
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', result, notify_type='result')
+        formatted_message, _ = mock_log_to_stdout.call_args[0]
+    assert 'POSTED_BY: U-LEGACY' in formatted_message
+    assert 'CONVERSATION_TYPE: Direct Message' in formatted_message
+
+
+def test_stdout_logger_log_swallows_log_to_stdout_failure(mock_stdout_logger, capsys):
+    """If log_to_stdout raises, .log() should print a contextual error and not propagate."""
+    with patch.object(mock_stdout_logger, 'log_to_stdout', side_effect=RuntimeError('boom')):
+        mock_stdout_logger.log('INFO', 'message')  # must not raise
+    captured = capsys.readouterr()
+    assert 'failed to log message' in captured.out
 
 
 @pytest.mark.parametrize(
@@ -126,6 +241,20 @@ def test_stdout_logger_formatting_error_does_not_exit_in_debug(mock_stdout_logge
         mock_exit.assert_not_called()
 
 
+def test_stdout_logger_formatting_error_in_non_debug_mode_prints_fallback(capsys):
+    """When debug is off, a formatting failure should print 'Formatting error' and continue."""
+    logger = StdoutLogger(debug=False)
+    capsys.readouterr()  # discard the header banner so it doesn't pollute the assertion
+    logger.log_to_stdout('payload', None)  # msg_level=None triggers AttributeError on .lower()
+    captured = capsys.readouterr()
+    assert 'Formatting error' in captured.out
+
+
+def test_print_header_does_not_raise():
+    """Smoke test: print_header should run without raising."""
+    StdoutLogger.print_header()
+
+
 def test_stdout_logger_canvas_uses_canvas_level(mock_stdout_logger):
     """Canvas notify_type must dispatch to log_to_stdout with msg_level='CANVAS', not 'USER'."""
     canvas_payload = {
@@ -160,17 +289,11 @@ def test_stdout_logger_file_result_with_no_user(mock_stdout_logger):
 
 def test_json_logger_does_not_inherit_from_logger():
     """JSONLogger should not subclass logging.Logger; it composes one via self.logger."""
-    import logging as _logging
-    assert not issubclass(JSONLogger, _logging.Logger)
+    assert not issubclass(JSONLogger, logging.Logger)
 
 
 def test_json_logger_does_not_stack_handlers_across_instances():
     """Re-instantiating JSONLogger must not add duplicate handlers to the singleton logger."""
-    import logging as _logging
-    # Reset shared singleton to a clean baseline for the test.
-    shared = _logging.getLogger('Slack Watchman')
-    shared.handlers.clear()
-
     first = JSONLogger(debug=False)
     second = JSONLogger(debug=False)
 
@@ -228,36 +351,101 @@ def test_json_logger_log(mock_json_logger):
         assert 'Test JSON' in logged_message
 
 
+def test_json_logger_debug_routes_to_logger_debug(mock_json_logger):
+    """DEBUG level must go through self.logger.debug, not .info."""
+    with patch.object(mock_json_logger.logger, 'debug') as mock_debug, \
+         patch.object(mock_json_logger.logger, 'info') as mock_info:
+        mock_json_logger.log('DEBUG', 'debugging')
+        mock_debug.assert_called_once()
+        assert mock_debug.call_args[0][0] == 'debugging'
+        mock_info.assert_not_called()
+
+
+def test_json_logger_notify_envelope_has_detection_fields(mock_json_logger):
+    """A NOTIFY emission must produce a JSON envelope with scope/severity/detection_type/detection_data."""
+    payload = {'match_string': 'AKIAxxxx', 'signature_id': 'aws_keys'}
+    with patch.object(mock_json_logger.handler.stream, 'write') as mock_write:
+        mock_json_logger.log(
+            'NOTIFY',
+            payload,
+            scope='messages',
+            severity='HIGH',
+            detect_type='aws_keys',
+        )
+    output = ''.join(call.args[0] for call in mock_write.mock_calls if call.args)
+    parsed = json.loads(output.strip())
+    assert parsed['level'] == 'NOTIFY'
+    assert parsed['scope'] == 'messages'
+    assert parsed['severity'] == 'HIGH'
+    assert parsed['detection_type'] == 'aws_keys'
+    assert parsed['detection_data'] == payload
+    assert 'message' not in parsed
+
+
+def test_json_logger_reuses_existing_handler_when_already_configured():
+    """If the singleton logger already has a handler, JSONLogger should adopt it instead of stacking."""
+    shared = logging.getLogger('Slack Watchman')
+    pre_existing = logging.StreamHandler()
+    shared.addHandler(pre_existing)
+
+    instance = JSONLogger(debug=False)
+
+    assert instance.handler is pre_existing
+    assert shared.handlers == [pre_existing]
+    # The shared handler must have the new formatter installed.
+    assert pre_existing.formatter is instance.formatter
+
+
+def test_json_logger_debug_kwarg_sets_level(mock_json_logger):
+    """debug=True should put the underlying logger at DEBUG level."""
+    assert mock_json_logger.logger.level == logging.DEBUG
+
+
+def test_json_logger_default_level_is_info():
+    """debug=False (the default) should put the underlying logger at INFO level."""
+    instance = JSONLogger(debug=False)
+    assert instance.logger.level == logging.INFO
+
+
+@dataclasses.dataclass
+class _CsvRow:
+    """Reusable dataclass row for export_csv tests."""
+    id: int
+    name: str
+
+
 @patch('builtins.open', new_callable=mock_open)
 @patch('csv.DictWriter')
-def test_export_csv(mock_dict_writer, mock_open_file):
-    """Test export_csv function."""
-    import dataclasses as _dc
+def test_export_csv_writes_header_and_rows_in_order(mock_dict_writer, mock_open_file):
+    """export_csv must open the file, write a header, and write each row in input order."""
+    rows = [_CsvRow(id=1, name='Test1'), _CsvRow(id=2, name='Test2')]
+    writer_mock = MagicMock()
+    mock_dict_writer.return_value = writer_mock
 
-    @_dc.dataclass
-    class MockData:
-        """Mock dataclass."""
-        id: int
-        name: str
+    assert export_csv('test', rows) is True
 
-    mock_data = [MockData(id=1, name='Test1'), MockData(id=2, name='Test2')]
+    mock_open_file.assert_called_once()
+    open_args, open_kwargs = mock_open_file.call_args
+    assert open_args[0].endswith('test.csv')
+    assert open_args[1] == 'w'
+    assert open_kwargs == {'encoding': 'utf-8'}
 
-    mock_writer_instance = MagicMock()
-    mock_dict_writer.return_value = mock_writer_instance
+    mock_dict_writer.assert_called_once()
+    _, dw_kwargs = mock_dict_writer.call_args
+    assert list(dw_kwargs['fieldnames']) == ['id', 'name']
 
-    # Run the export_csv function
-    assert export_csv('test', mock_data) is True
+    writer_mock.writeheader.assert_called_once()
+    assert writer_mock.writerow.call_count == len(rows)
+    written_rows = [call.args[0] for call in writer_mock.writerow.mock_calls]
+    assert written_rows == [
+        {'id': 1, 'name': 'Test1'},
+        {'id': 2, 'name': 'Test2'},
+    ]
 
 
 def test_export_csv_does_not_double_close_file():
     """The `with open(...)` block closes the file; export_csv must not call close() a second time."""
-    import dataclasses as _dc
-
-    @_dc.dataclass
-    class Row:
-        id: int
-
-    rows = [Row(id=1)]
+    rows = [_CsvRow(id=1, name='alice')]
     fake_file = MagicMock()
     fake_file.__enter__.return_value = fake_file
     fake_file.__exit__.return_value = False
@@ -280,15 +468,7 @@ def test_export_csv_empty_input_returns_false_and_writes_nothing():
 
 def test_export_csv_returns_false_on_write_failure():
     """When the underlying open() raises, export_csv must signal failure rather than silently swallow."""
-    import dataclasses as _dc
-
-    @_dc.dataclass
-    class Row:
-        id: int
-        name: str
-
-    rows = [Row(id=1, name='alice')]
-
+    rows = [_CsvRow(id=1, name='alice')]
     with patch('builtins.open', side_effect=OSError('disk full')):
         assert export_csv('does_not_matter', rows) is False
 
