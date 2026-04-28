@@ -437,6 +437,70 @@ def test_multipro_file_worker(mock_post, mock_user, file_types, expected_results
     assert result['watchman_id'] == expected_watchman_id
 
 
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.post')
+@pytest.mark.parametrize(
+    "file_dict, file_types",
+    [
+        ({'name': None, 'filetype': 'zip', 'user': 'U1'}, ['zip']),
+        ({'name': 'something.zip', 'filetype': None, 'user': 'U1'}, ['zip']),
+        ({'name': None, 'filetype': None, 'user': 'U1'}, ['zip']),
+        ({'name': None, 'filetype': 'zip', 'user': 'U1'}, None),
+        ({'filetype': 'zip', 'user': 'U1'}, ['zip']),  # 'name' key absent
+        ({'name': 'something.zip', 'user': 'U1'}, ['zip']),  # 'filetype' key absent
+    ],
+    ids=[
+        'name_none_with_filetypes',
+        'filetype_none_with_filetypes',
+        'both_none_with_filetypes',
+        'name_none_no_filetypes',
+        'name_missing_with_filetypes',
+        'filetype_missing_with_filetypes',
+    ]
+)
+def test_multipro_file_worker_handles_null_name_and_filetype(
+    mock_post, mock_user, file_dict, file_types
+):
+    """File worker does not crash when 'name' or 'filetype' is None or missing.
+
+    Slack files in deleted/redacted/tombstoned states can return null name
+    or filetype. Without the guard, calling `.lower()` on None raises
+    AttributeError, which (combined with the worker's outer try/except)
+    silently drops the rest of the worker's matches.
+    """
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.file_types = file_types
+
+    mock_slack.page_api_search.return_value = [file_dict]
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_post.create_file_from_dict.return_value = MagicMock(
+        created='2024-01-01', permalink_public='https://example.com/file'
+    )
+
+    results = []
+    potential_matches = []
+    errors = []
+
+    _multipro_file_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='zip',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=potential_matches,
+        errors=errors,
+    )
+
+    assert errors == []
+    assert potential_matches == [1]
+    # Files with null/missing name or filetype shouldn't match — but they also
+    # shouldn't crash the worker.
+    assert results == []
+
+
 def test_multipro_file_worker_captures_exception():
     """File worker exceptions are appended to the shared errors list rather than propagating."""
     mock_slack = MagicMock(spec=SlackClient)

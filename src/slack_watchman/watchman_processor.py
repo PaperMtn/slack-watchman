@@ -268,10 +268,12 @@ def _multipro_file_worker(slack: SlackClient,
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
         kwargs.get('potential_matches').append(len(message_list))
         for file_dict in message_list:
+            name = (file_dict.get('name') or '').lower()
+            filetype = (file_dict.get('filetype') or '').lower()
             if sig.file_types:
                 for file_type in sig.file_types:
-                    if query.replace('\"', '').lower() in file_dict.get('name').lower() \
-                            and file_type.lower() in file_dict.get('filetype').lower():
+                    if query.replace('\"', '').lower() in name \
+                            and file_type.lower() in filetype:
                         if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
                             user_dict = slack.get_user_info(file_dict.get('user')).get('user')
                             u = user.create_from_dict(user_dict, verbose)
@@ -287,7 +289,7 @@ def _multipro_file_worker(slack: SlackClient,
                         }
                         kwargs.get('results').append(results_dict)
             else:
-                if query.replace('\"', '').lower() in file_dict.get('name').lower():
+                if query.replace('\"', '').lower() in name:
                     if file_dict.get('user'):
                         user_dict = slack.get_user_info(file_dict.get('user')).get('user')
                         u = user.create_from_dict(user_dict, verbose)
