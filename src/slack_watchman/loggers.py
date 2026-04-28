@@ -85,7 +85,7 @@ class StdoutLogger:
             message = f'CANVAS: \n' \
                       f'    CHANNEL: {message.get("channel_name")}  \n' \
                       f'    CANVAS_URL: {message.get("canvas_url")}'
-            msg_level = 'USER'
+            msg_level = 'CANVAS'
         if notify_type == "result":
             if message.get('message'):
                 if message.get('message').get('conversation').get('is_im'):
@@ -180,6 +180,12 @@ class StdoutLogger:
                 base_color = Fore.RED
                 high_color = Fore.RED
                 key_color = Fore.RED
+                style = Style.NORMAL
+                msg_level = '+'
+            elif msg_level == 'CANVAS':
+                base_color = Fore.LIGHTMAGENTA_EX
+                high_color = Fore.LIGHTMAGENTA_EX
+                key_color = Fore.LIGHTMAGENTA_EX
                 style = Style.NORMAL
                 msg_level = '+'
             elif msg_level == 'WARNING':

@@ -26,6 +26,19 @@ def test_stdout_logger_log(mock_write, mock_stdout_logger):
     assert 'Test Message' in str(formatted_call)
 
 
+def test_stdout_logger_canvas_uses_canvas_level(mock_stdout_logger):
+    """Canvas notify_type must dispatch to log_to_stdout with msg_level='CANVAS', not 'USER'."""
+    canvas_payload = {
+        'channel_name': 'general',
+        'canvas_url': 'https://example.slack.com/canvases/abc',
+    }
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', canvas_payload, notify_type='canvas')
+        mock_log_to_stdout.assert_called_once()
+        _, msg_level = mock_log_to_stdout.call_args[0]
+        assert msg_level == 'CANVAS'
+
+
 def test_json_logger_log(mock_json_logger):
     """Test logging functionality of JSONLogger."""
     with patch.object(mock_json_logger.logger, 'info') as mock_info:
