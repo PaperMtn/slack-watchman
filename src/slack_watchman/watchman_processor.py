@@ -89,6 +89,7 @@ def find_messages(slack: SlackClient,
     try:
         results = multiprocessing.Manager().list()
         potential_matches = multiprocessing.Manager().list()
+        errors = multiprocessing.Manager().list()
 
         processes = []
 
@@ -104,7 +105,8 @@ def find_messages(slack: SlackClient,
                 ),
                 kwargs={
                     'results': results,
-                    'potential_matches': potential_matches
+                    'potential_matches': potential_matches,
+                    'errors': errors
                 }
             )
             processes.append(p)
@@ -112,6 +114,13 @@ def find_messages(slack: SlackClient,
 
         for process in processes:
             process.join()
+
+        for err in errors:
+            logger.log(
+                'ERROR',
+                f"Worker failed for signature '{err.get('signature')}' "
+                f"query '{err.get('query')}': {err.get('error')}"
+            )
 
         if potential_matches:
             logger.log('INFO', f'{sum(potential_matches)} potential matches found')
@@ -133,38 +142,49 @@ def _multipro_message_worker(slack: SlackClient,
                              verbose: bool,
                              timeframe: str,
                              **kwargs):
-    message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
-    kwargs.get('potential_matches').append(len(message_list))
-    for message in message_list:
-        for pattern in sig.patterns:
-            r = re.compile(pattern)
-            if r.search(str(message.get('text'))):
-                if message.get('user'):
-                    user_dict = slack.get_user_info(message.get('user')).get('user')
-                    u = user.create_from_dict(user_dict, verbose)
-                else:
-                    u = message.get('username')
+    errors = kwargs.get('errors')
+    try:
+        message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
+        kwargs.get('potential_matches').append(len(message_list))
+        for message in message_list:
+            for pattern in sig.patterns:
+                r = re.compile(pattern)
+                if r.search(str(message.get('text'))):
+                    if message.get('user'):
+                        user_dict = slack.get_user_info(message.get('user')).get('user')
+                        u = user.create_from_dict(user_dict, verbose)
+                    else:
+                        u = message.get('username')
 
-                if message.get('channel').get('id'):
-                    channel_dict = slack.get_conversation_info(message.get('channel').get('id')).get('channel')
-                    c = conversation.create_from_dict(channel_dict, verbose)
-                else:
-                    c = None
+                    if message.get('channel').get('id'):
+                        channel_dict = slack.get_conversation_info(message.get('channel').get('id')).get('channel')
+                        c = conversation.create_from_dict(channel_dict, verbose)
+                    else:
+                        c = None
 
-                message['user'] = u
-                message['conversation'] = c
-                match_string = r.search(str(message.get('text'))).group(0)
-                message = post.create_message_from_dict(message)
+                    message['user'] = u
+                    message['conversation'] = c
+                    match_string = r.search(str(message.get('text'))).group(0)
+                    message = post.create_message_from_dict(message)
 
-                watchman_id = hashlib.md5(f'{match_string}.{message.timestamp}'.encode()).hexdigest()
-                results_dict = {
-                    'match_string': match_string,
-                    'message': message,
-                    'watchman_id': watchman_id
-                }
+                    watchman_id = hashlib.md5(f'{match_string}.{message.timestamp}'.encode()).hexdigest()
+                    results_dict = {
+                        'match_string': match_string,
+                        'message': message,
+                        'watchman_id': watchman_id
+                    }
 
-                kwargs.get('results').append(results_dict)
-    return kwargs.get('results'), kwargs.get('potential_matches')
+                    kwargs.get('results').append(results_dict)
+        return kwargs.get('results'), kwargs.get('potential_matches')
+    except Exception as e:  # pylint: disable=broad-except
+        if errors is None:
+            raise
+        errors.append({
+            'signature': getattr(sig, 'name', None),
+            'query': query,
+            'error': repr(e)
+        })
+        return None
 
 
 def find_files(slack: SlackClient,
@@ -188,6 +208,7 @@ def find_files(slack: SlackClient,
     try:
         results = multiprocessing.Manager().list()
         potential_matches = multiprocessing.Manager().list()
+        errors = multiprocessing.Manager().list()
 
         processes = []
 
@@ -203,7 +224,8 @@ def find_files(slack: SlackClient,
                 ),
                 kwargs={
                     'results': results,
-                    'potential_matches': potential_matches
+                    'potential_matches': potential_matches,
+                    'errors': errors
                 }
             )
             processes.append(p)
@@ -211,6 +233,13 @@ def find_files(slack: SlackClient,
 
         for process in processes:
             process.join()
+
+        for err in errors:
+            logger.log(
+                'ERROR',
+                f"Worker failed for signature '{err.get('signature')}' "
+                f"query '{err.get('query')}': {err.get('error')}"
+            )
 
         if potential_matches:
             logger.log('INFO', f'{sum(potential_matches)} potential matches found')
@@ -226,20 +255,39 @@ def find_files(slack: SlackClient,
         logger.log('CRITICAL', e)
 
 
+# pylint: disable=too-many-nested-blocks
 def _multipro_file_worker(slack: SlackClient,
                           sig: signature.Signature,
                           query: str,
                           verbose: bool,
                           timeframe: str,
                           **kwargs):
-    message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
-    kwargs.get('potential_matches').append(len(message_list))
-    for file_dict in message_list:
-        if sig.file_types:
-            for file_type in sig.file_types:
-                if query.replace('\"', '').lower() in file_dict.get('name').lower() \
-                        and file_type.lower() in file_dict.get('filetype').lower():
-                    if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
+    errors = kwargs.get('errors')
+    try:
+        message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
+        kwargs.get('potential_matches').append(len(message_list))
+        for file_dict in message_list:
+            if sig.file_types:
+                for file_type in sig.file_types:
+                    if query.replace('\"', '').lower() in file_dict.get('name').lower() \
+                            and file_type.lower() in file_dict.get('filetype').lower():
+                        if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
+                            user_dict = slack.get_user_info(file_dict.get('user')).get('user')
+                            u = user.create_from_dict(user_dict, verbose)
+                        else:
+                            u = None
+
+                        f = post.create_file_from_dict(file_dict)
+                        watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
+                        results_dict = {
+                            'file': f,
+                            'user': u,
+                            'watchman_id': watchman_id
+                        }
+                        kwargs.get('results').append(results_dict)
+            else:
+                if query.replace('\"', '').lower() in file_dict.get('name').lower():
+                    if file_dict.get('user'):
                         user_dict = slack.get_user_info(file_dict.get('user')).get('user')
                         u = user.create_from_dict(user_dict, verbose)
                     else:
@@ -252,25 +300,18 @@ def _multipro_file_worker(slack: SlackClient,
                         'user': u,
                         'watchman_id': watchman_id
                     }
+
                     kwargs.get('results').append(results_dict)
-        else:
-            if query.replace('\"', '').lower() in file_dict.get('name').lower():
-                if file_dict.get('user'):
-                    user_dict = slack.get_user_info(file_dict.get('user')).get('user')
-                    u = user.create_from_dict(user_dict, verbose)
-                else:
-                    u = None
-
-                f = post.create_file_from_dict(file_dict)
-                watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
-                results_dict = {
-                    'file': f,
-                    'user': u,
-                    'watchman_id': watchman_id
-                }
-
-                kwargs.get('results').append(results_dict)
-    return kwargs.get('results'), kwargs.get('potential_matches')
+        return kwargs.get('results'), kwargs.get('potential_matches')
+    except Exception as e:  # pylint: disable=broad-except
+        if errors is None:
+            raise
+        errors.append({
+            'signature': getattr(sig, 'name', None),
+            'query': query,
+            'error': repr(e)
+        })
+        return None
 
 
 def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:

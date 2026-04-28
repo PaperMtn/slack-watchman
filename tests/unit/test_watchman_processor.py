@@ -93,6 +93,37 @@ def test_find_messages(mock_manager, mock_process):
 
 @patch('slack_watchman.watchman_processor.multiprocessing.Process')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages_logs_worker_errors(mock_manager, mock_process):
+    """find_messages logs an ERROR for each error captured by a worker."""
+    mock_logger = MagicMock()
+    mock_slack = MagicMock()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    results_list = []
+    potential_matches_list = []
+    errors_list = [{
+        'signature': 'test_sig',
+        'query': 'test_query',
+        'error': "RuntimeError('upstream blew up')"
+    }]
+    mock_manager.return_value.list.side_effect = [
+        results_list, potential_matches_list, errors_list
+    ]
+
+    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    mock_process.assert_called_once()
+    error_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'ERROR']
+    assert len(error_calls) == 1
+    msg = error_calls[0].args[1]
+    assert 'test_sig' in msg
+    assert 'test_query' in msg
+    assert 'upstream blew up' in msg
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
 def test_find_files(mock_manager, mock_process):
     """Test find_files function."""
     mock_logger = MagicMock()
@@ -106,6 +137,37 @@ def test_find_files(mock_manager, mock_process):
 
     mock_process.assert_called_once()
     mock_logger.log.assert_any_call('INFO', 'No files found after filtering')
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_logs_worker_errors(mock_manager, mock_process):
+    """find_files logs an ERROR for each error captured by a worker."""
+    mock_logger = MagicMock()
+    mock_slack = MagicMock()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    results_list = []
+    potential_matches_list = []
+    errors_list = [{
+        'signature': 'test_sig',
+        'query': 'test_query',
+        'error': "RuntimeError('upstream blew up')"
+    }]
+    mock_manager.return_value.list.side_effect = [
+        results_list, potential_matches_list, errors_list
+    ]
+
+    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    mock_process.assert_called_once()
+    error_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'ERROR']
+    assert len(error_calls) == 1
+    msg = error_calls[0].args[1]
+    assert 'test_sig' in msg
+    assert 'test_query' in msg
+    assert 'upstream blew up' in msg
 
 
 @patch('requests.get')
@@ -206,6 +268,54 @@ def test_multipro_message_worker(mock_post, mock_conversation, mock_user):
     assert result['watchman_id'] == expected_watchman_id
 
 
+def test_multipro_message_worker_captures_exception():
+    """Worker exceptions are appended to the shared errors list rather than propagating."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_slack.page_api_search.side_effect = RuntimeError('upstream blew up')
+
+    results = []
+    potential_matches = []
+    errors = []
+
+    _multipro_message_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='test_query',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=potential_matches,
+        errors=errors,
+    )
+
+    assert results == []
+    assert potential_matches == []
+    assert len(errors) == 1
+    assert errors[0]['signature'] == 'test_sig'
+    assert errors[0]['query'] == 'test_query'
+    assert 'upstream blew up' in errors[0]['error']
+
+
+def test_multipro_message_worker_reraises_when_no_errors_list():
+    """When no errors list is supplied (e.g. direct unit-test invocation), the exception propagates."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_slack.page_api_search.side_effect = RuntimeError('upstream blew up')
+
+    with pytest.raises(RuntimeError, match='upstream blew up'):
+        _multipro_message_worker(
+            slack=mock_slack,
+            sig=mock_sig,
+            query='test_query',
+            verbose=False,
+            timeframe='7d',
+            results=[],
+            potential_matches=[],
+        )
+
+
 @patch('slack_watchman.watchman_processor.user')
 @patch('slack_watchman.watchman_processor.post')
 @pytest.mark.parametrize(
@@ -270,3 +380,53 @@ def test_multipro_file_worker(mock_post, mock_user, file_types, expected_results
     # Verify that the correct watchman_id was created
     expected_watchman_id = hashlib.md5(f'2024-01-01.https://example.com/file'.encode()).hexdigest()
     assert result['watchman_id'] == expected_watchman_id
+
+
+def test_multipro_file_worker_captures_exception():
+    """File worker exceptions are appended to the shared errors list rather than propagating."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.file_types = None
+    mock_slack.page_api_search.side_effect = RuntimeError('upstream blew up')
+
+    results = []
+    potential_matches = []
+    errors = []
+
+    _multipro_file_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='test_query',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=potential_matches,
+        errors=errors,
+    )
+
+    assert results == []
+    assert potential_matches == []
+    assert len(errors) == 1
+    assert errors[0]['signature'] == 'test_sig'
+    assert errors[0]['query'] == 'test_query'
+    assert 'upstream blew up' in errors[0]['error']
+
+
+def test_multipro_file_worker_reraises_when_no_errors_list():
+    """When no errors list is supplied, the exception propagates."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.file_types = None
+    mock_slack.page_api_search.side_effect = RuntimeError('upstream blew up')
+
+    with pytest.raises(RuntimeError, match='upstream blew up'):
+        _multipro_file_worker(
+            slack=mock_slack,
+            sig=mock_sig,
+            query='test_query',
+            verbose=False,
+            timeframe='7d',
+            results=[],
+            potential_matches=[],
+        )

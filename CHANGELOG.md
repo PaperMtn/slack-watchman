@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+- `_multipro_message_worker` and `_multipro_file_worker` now wrap their bodies in `try`/`except` and append failures to a shared `errors` Manager list. Previously, an exception inside a worker (e.g. an exhausted rate-limit retry, malformed search payload, or `AttributeError` on a missing field) would silently kill the child process — `join()` would return cleanly and the parent would lose results for that signature/query with no log output. `find_messages` and `find_files` now log an `ERROR` line per captured failure after `join()`. Fixes [#108](https://github.com/PaperMtn/slack-watchman/issues/108)
+
 ## [4.5.0] - 2026-04-28
 ### Fixed
 - Canvas results in `StdoutLogger` were rendered with the red `USER` colour scheme because `msg_level` was set to `'USER'` instead of `'CANVAS'`. Added a dedicated `CANVAS` style branch in `log_to_stdout`. Fixes [#90](https://github.com/PaperMtn/slack-watchman/issues/90)
