@@ -177,6 +177,25 @@ def test_json_logger_does_not_stack_handlers_across_instances():
     assert len(first.logger.handlers) == 1
 
 
+@pytest.mark.parametrize(
+    "level, expected_method, other_methods",
+    [
+        ('WARNING', 'warning', ['error', 'critical']),
+        ('ERROR', 'error', ['warning', 'critical']),
+        ('CRITICAL', 'critical', ['warning', 'error']),
+    ],
+)
+def test_json_logger_severity_levels_route_to_matching_method(mock_json_logger, level, expected_method, other_methods):
+    """WARNING/ERROR/CRITICAL must call the matching logger method, not collapse to .critical()."""
+    with patch.object(mock_json_logger.logger, expected_method) as expected_mock, \
+         patch.object(mock_json_logger.logger, other_methods[0]) as other_a, \
+         patch.object(mock_json_logger.logger, other_methods[1]) as other_b:
+        mock_json_logger.log(level, 'something went wrong')
+        expected_mock.assert_called_once_with('something went wrong')
+        other_a.assert_not_called()
+        other_b.assert_not_called()
+
+
 def test_json_logger_workspace_probe_uses_probe_format(mock_json_logger):
     """WORKSPACE_PROBE level must route to the workspace_probe_format and logger.info, not the catch-all CRITICAL branch."""
     payload = {'team_name': 'Acme', 'team_id': 'T1'}

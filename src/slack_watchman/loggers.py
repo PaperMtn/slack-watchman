@@ -294,6 +294,15 @@ class JSONLogger:
         elif level.upper() == 'SUCCESS':
             self.handler.setFormatter(self.success_format)
             self.logger.info(msg)
+        elif level.upper() == 'WARNING':
+            self.handler.setFormatter(self.info_format)
+            self.logger.warning(msg)
+        elif level.upper() == 'ERROR':
+            self.handler.setFormatter(self.info_format)
+            self.logger.error(msg)
+        elif level.upper() == 'CRITICAL':
+            self.handler.setFormatter(self.info_format)
+            self.logger.critical(msg)
         else:
             self.handler.setFormatter(self.info_format)
             self.logger.critical(msg)
