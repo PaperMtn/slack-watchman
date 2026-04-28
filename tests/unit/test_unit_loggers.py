@@ -81,6 +81,15 @@ def test_stdout_logger_notify_type_routing(mock_stdout_logger, notify_type, payl
         assert msg_level == expected_level
 
 
+def test_stdout_logger_formatting_error_does_not_exit_in_debug(mock_stdout_logger):
+    """A formatting failure inside log_to_stdout must not terminate the process, even in debug mode."""
+    with patch('slack_watchman.loggers.sys.exit') as mock_exit:
+        # msg_level=None falls through every branch, then .lower() raises AttributeError
+        # inside the try/except, exercising the debug-mode failure path.
+        mock_stdout_logger.log_to_stdout('payload', None)
+        mock_exit.assert_not_called()
+
+
 def test_stdout_logger_canvas_uses_canvas_level(mock_stdout_logger):
     """Canvas notify_type must dispatch to log_to_stdout with msg_level='CANVAS', not 'USER'."""
     canvas_payload = {

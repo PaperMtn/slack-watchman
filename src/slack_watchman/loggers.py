@@ -237,7 +237,6 @@ class StdoutLogger:
         except Exception:
             if self.debug:
                 traceback.print_exc()
-                sys.exit(1)
             print('Formatting error')
 
     @staticmethod
