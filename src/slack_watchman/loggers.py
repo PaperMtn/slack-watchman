@@ -51,7 +51,7 @@ class StdoutLogger:
                       f'    DOMAIN: {message.get("domain")}  \n' \
                       f'    URL: {message.get("url")}'
             msg_level = 'WORKSPACE'
-        if notify_type == "workspace_auth":
+        elif notify_type == "workspace_auth":
             message = f'WORKSPACE_AUTH: \n' \
                       f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
                       f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
@@ -59,7 +59,7 @@ class StdoutLogger:
                       f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
                       f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
             msg_level = 'WORKSPACE_AUTH'
-        if notify_type == "workspace_probe":
+        elif notify_type == "workspace_probe":
             message = f'WORKSPACE_PROBE_INFORMATION: \n' \
                       f'    TEAM_NAME: {message.get("team_name")}  \n' \
                       f'    TEAM_ID: {message.get("team_id")}  \n' \
@@ -71,7 +71,7 @@ class StdoutLogger:
                       f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
                       f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
             msg_level = 'WORKSPACE_PROBE'
-        if notify_type == "user":
+        elif notify_type == "user":
             message = f'USER: \n' \
                       f'    ID: {message.get("id")}  \n' \
                       f'    NAME: {message.get("display_name")}  \n' \
@@ -81,12 +81,12 @@ class StdoutLogger:
                       f'    OWNER: {message.get("is_owner")} \n' \
                       f'    HAS_2FA: {message.get("has_2fa")}'
             msg_level = 'USER'
-        if notify_type == "canvas":
+        elif notify_type == "canvas":
             message = f'CANVAS: \n' \
                       f'    CHANNEL: {message.get("channel_name")}  \n' \
                       f'    CANVAS_URL: {message.get("canvas_url")}'
             msg_level = 'CANVAS'
-        if notify_type == "result":
+        elif notify_type == "result":
             if message.get('message'):
                 if message.get('message').get('conversation').get('is_im'):
                     conversation_type = 'Direct Message'

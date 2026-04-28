@@ -26,6 +26,61 @@ def test_stdout_logger_log(mock_write, mock_stdout_logger):
     assert 'Test Message' in str(formatted_call)
 
 
+@pytest.mark.parametrize(
+    "notify_type, payload, expected_level",
+    [
+        ("workspace", {"id": "T1", "name": "Acme", "domain": "acme", "url": "https://acme.slack.com"}, "WORKSPACE"),
+        (
+            "workspace_auth",
+            {
+                "formatted_email_domains": "acme.com",
+                "user_oauth": True,
+                "standard_auth_enabled": True,
+                "sso_enabled": False,
+                "two_factor_required": False,
+            },
+            "WORKSPACE_AUTH",
+        ),
+        (
+            "workspace_probe",
+            {
+                "team_name": "Acme",
+                "team_id": "T1",
+                "paid_team": True,
+                "formatted_email_domains": "acme.com",
+                "join_url": "https://acme.slack.com",
+                "user_oauth": True,
+                "standard_auth_enabled": True,
+                "sso_enabled": False,
+                "two_factor_required": False,
+            },
+            "WORKSPACE_PROBE",
+        ),
+        (
+            "user",
+            {
+                "id": "U1",
+                "display_name": "alice",
+                "email": "alice@acme.com",
+                "title": "Engineer",
+                "is_admin": False,
+                "is_owner": False,
+                "has_2fa": True,
+            },
+            "USER",
+        ),
+        ("canvas", {"channel_name": "general", "canvas_url": "https://acme.slack.com/canvases/abc"}, "CANVAS"),
+    ],
+)
+def test_stdout_logger_notify_type_routing(mock_stdout_logger, notify_type, payload, expected_level):
+    """Each notify_type must route to its own msg_level and not bleed into siblings."""
+    with patch.object(mock_stdout_logger, 'log_to_stdout') as mock_log_to_stdout:
+        mock_stdout_logger.log('NOTIFY', payload, notify_type=notify_type)
+        mock_log_to_stdout.assert_called_once()
+        _, msg_level = mock_log_to_stdout.call_args[0]
+        assert msg_level == expected_level
+
+
 def test_stdout_logger_canvas_uses_canvas_level(mock_stdout_logger):
     """Canvas notify_type must dispatch to log_to_stdout with msg_level='CANVAS', not 'USER'."""
     canvas_payload = {
