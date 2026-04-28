@@ -286,7 +286,7 @@ class JSONLogger:
             self.logger.info(json.dumps(
                 msg,
                 cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE_PROBE_INFORMATION':
+        elif level.upper() == 'WORKSPACE_PROBE':
             self.handler.setFormatter(self.workspace_probe_format)
             self.logger.info(json.dumps(
                 msg,

@@ -177,6 +177,18 @@ def test_json_logger_does_not_stack_handlers_across_instances():
     assert len(first.logger.handlers) == 1
 
 
+def test_json_logger_workspace_probe_uses_probe_format(mock_json_logger):
+    """WORKSPACE_PROBE level must route to the workspace_probe_format and logger.info, not the catch-all CRITICAL branch."""
+    payload = {'team_name': 'Acme', 'team_id': 'T1'}
+    with patch.object(mock_json_logger.handler, 'setFormatter') as mock_set_formatter, \
+         patch.object(mock_json_logger.logger, 'info') as mock_info, \
+         patch.object(mock_json_logger.logger, 'critical') as mock_critical:
+        mock_json_logger.log('WORKSPACE_PROBE', payload)
+        mock_set_formatter.assert_called_once_with(mock_json_logger.workspace_probe_format)
+        mock_info.assert_called_once()
+        mock_critical.assert_not_called()
+
+
 def test_json_logger_log(mock_json_logger):
     """Test logging functionality of JSONLogger."""
     with patch.object(mock_json_logger.logger, 'info') as mock_info:
