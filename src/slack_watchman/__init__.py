@@ -320,20 +320,22 @@ def main():
             user_list = watchman_processor.get_users(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(user_list)} users discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            export_csv('slack_users', user_list)
-            OUTPUT_LOGGER.log(
-                'SUCCESS',
-                f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_users.csv")}')
+            users_csv_path = os.path.join(os.getcwd(), "slack_users.csv")
+            if export_csv('slack_users', user_list):
+                OUTPUT_LOGGER.log('SUCCESS', f'Users output to CSV file: {users_csv_path}')
+            else:
+                OUTPUT_LOGGER.log('ERROR', f'Failed to write users CSV: {users_csv_path}')
 
         if channels:
             OUTPUT_LOGGER.log('INFO', 'Enumerating channels...')
             channel_list = watchman_processor.get_channels(slack_con, verbose)
             OUTPUT_LOGGER.log('SUCCESS', f'{len(channel_list)} channels discovered')
             OUTPUT_LOGGER.log('INFO', 'Writing to csv')
-            export_csv('slack_channels', channel_list)
-            OUTPUT_LOGGER.log(
-                'SUCCESS',
-                f'Users output to CSV file: {os.path.join(os.getcwd(), "slack_channels.csv")}')
+            channels_csv_path = os.path.join(os.getcwd(), "slack_channels.csv")
+            if export_csv('slack_channels', channel_list):
+                OUTPUT_LOGGER.log('SUCCESS', f'Channels output to CSV file: {channels_csv_path}')
+            else:
+                OUTPUT_LOGGER.log('ERROR', f'Failed to write channels CSV: {channels_csv_path}')
             OUTPUT_LOGGER.log('INFO', 'Finding public Canvases')
             for channel in channel_list:
                 if not channel.canvas_empty and channel.canvas_id:

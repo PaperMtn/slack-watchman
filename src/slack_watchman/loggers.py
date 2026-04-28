@@ -8,12 +8,32 @@ import re
 import sys
 import traceback
 from collections.abc import Mapping
-from logging import Logger
 from typing import Any, Dict, List, ClassVar, Protocol
 
 from colorama import Fore, Back, Style, init
 
 from slack_watchman.utils import EnhancedJSONEncoder
+
+_TYPE_COLORER = re.compile(r'([A-Z]{3,})', re.VERBOSE)
+_HEADER_WORDS = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
+
+# msg_level -> (color, style, symbol). symbol=None leaves msg_level untouched.
+_LEVEL_STYLES: Dict[str, tuple] = {
+    'NOTIFY': (Fore.CYAN, Style.NORMAL, None),
+    'INFO': (Fore.WHITE, Style.DIM, '-'),
+    'WORKSPACE': (Fore.LIGHTBLUE_EX, Style.NORMAL, '+'),
+    'WORKSPACE_AUTH': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+    'WORKSPACE_PROBE': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+    'USER': (Fore.RED, Style.NORMAL, '+'),
+    'CANVAS': (Fore.LIGHTMAGENTA_EX, Style.NORMAL, '+'),
+    'WARNING': (Fore.YELLOW, Style.NORMAL, '!'),
+    'SUCCESS': (Fore.LIGHTGREEN_EX, Style.NORMAL, '>>'),
+    'DEBUG': (Fore.WHITE, Style.DIM, '#'),
+    'ERROR': (Fore.MAGENTA, Style.NORMAL, None),
+    'CRITICAL': (Fore.RED, Style.NORMAL, None),
+    'RESULT': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+}
+_DEFAULT_LEVEL_STYLE = (Fore.WHITE, Style.NORMAL, None)
 
 
 class StdoutLogger:
@@ -51,7 +71,7 @@ class StdoutLogger:
                       f'    DOMAIN: {message.get("domain")}  \n' \
                       f'    URL: {message.get("url")}'
             msg_level = 'WORKSPACE'
-        if notify_type == "workspace_auth":
+        elif notify_type == "workspace_auth":
             message = f'WORKSPACE_AUTH: \n' \
                       f'    APPROVED_DOMAINS: {message.get("formatted_email_domains")}  \n' \
                       f'    OAUTH_PROVIDERS: {message.get("user_oauth")} \n' \
@@ -59,7 +79,7 @@ class StdoutLogger:
                       f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
                       f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
             msg_level = 'WORKSPACE_AUTH'
-        if notify_type == "workspace_probe":
+        elif notify_type == "workspace_probe":
             message = f'WORKSPACE_PROBE_INFORMATION: \n' \
                       f'    TEAM_NAME: {message.get("team_name")}  \n' \
                       f'    TEAM_ID: {message.get("team_id")}  \n' \
@@ -71,7 +91,7 @@ class StdoutLogger:
                       f'    SSO_ENABLED: {message.get("sso_enabled")} \n' \
                       f'    TWO_FACTOR_REQUIRED: {message.get("two_factor_required")}'
             msg_level = 'WORKSPACE_PROBE'
-        if notify_type == "user":
+        elif notify_type == "user":
             message = f'USER: \n' \
                       f'    ID: {message.get("id")}  \n' \
                       f'    NAME: {message.get("display_name")}  \n' \
@@ -81,12 +101,12 @@ class StdoutLogger:
                       f'    OWNER: {message.get("is_owner")} \n' \
                       f'    HAS_2FA: {message.get("has_2fa")}'
             msg_level = 'USER'
-        if notify_type == "canvas":
+        elif notify_type == "canvas":
             message = f'CANVAS: \n' \
                       f'    CHANNEL: {message.get("channel_name")}  \n' \
                       f'    CANVAS_URL: {message.get("canvas_url")}'
-            msg_level = 'USER'
-        if notify_type == "result":
+            msg_level = 'CANVAS'
+        elif notify_type == "result":
             if message.get('message'):
                 if message.get('message').get('conversation').get('is_im'):
                     conversation_type = 'Direct Message'
@@ -111,9 +131,10 @@ class StdoutLogger:
                           f'    -----'
 
             elif message.get('file'):
+                file_user = message.get('user') or {}
                 message = 'POST_TYPE: File' \
-                          f'    POSTED_BY: {message.get("user", {}).get("display_name")} ' \
-                          f'- {message.get("user").get("email")}' \
+                          f'    POSTED_BY: {file_user.get("display_name")} ' \
+                          f'- {file_user.get("email")}' \
                           f'    CREATED: {message.get("file").get("created")} \n' \
                           f'    FILE_NAME: {message.get("file").get("name")} \n' \
                           f'    PRIVATE_URL: {message.get("file").get("url_private_download")} \n' \
@@ -144,93 +165,19 @@ class StdoutLogger:
         try:
 
             reset_all = Style.NORMAL + Fore.RESET + Back.RESET
-            key_color = Fore.WHITE
-            base_color = Fore.WHITE
-            high_color = Fore.WHITE
-            style = Style.NORMAL
-
-            if msg_level == "NOTIFY":
-                base_color = Fore.CYAN
-                high_color = Fore.CYAN
-                key_color = Fore.CYAN
-                style = Style.NORMAL
-            elif msg_level == 'INFO':
-                base_color = Fore.WHITE
-                high_color = Fore.WHITE
-                key_color = Fore.WHITE
-                style = Style.DIM
-                msg_level = '-'
-            elif msg_level == 'WORKSPACE':
-                base_color = Fore.LIGHTBLUE_EX
-                high_color = Fore.LIGHTBLUE_EX
-                key_color = Fore.LIGHTBLUE_EX
-                style = Style.NORMAL
-                msg_level = '+'
-            elif msg_level == 'WORKSPACE_AUTH':
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == 'WORKSPACE_PROBE':
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == 'USER':
-                base_color = Fore.RED
-                high_color = Fore.RED
-                key_color = Fore.RED
-                style = Style.NORMAL
-                msg_level = '+'
-            elif msg_level == 'WARNING':
-                base_color = Fore.YELLOW
-                high_color = Fore.YELLOW
-                key_color = Fore.YELLOW
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == "SUCCESS":
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '>>'
-            elif msg_level == "DEBUG":
-                base_color = Fore.WHITE
-                high_color = Fore.WHITE
-                key_color = Fore.WHITE
-                style = Style.DIM
-                msg_level = '#'
-            elif msg_level == "ERROR":
-                base_color = Fore.MAGENTA
-                high_color = Fore.MAGENTA
-                key_color = Fore.MAGENTA
-                style = Style.NORMAL
-            elif msg_level == "CRITICAL":
-                base_color = Fore.RED
-                high_color = Fore.RED
-                key_color = Fore.RED
-                style = Style.NORMAL
-            elif msg_level == "RESULT":
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
+            color, style, symbol = _LEVEL_STYLES.get(msg_level, _DEFAULT_LEVEL_STYLE)
+            if symbol is not None:
+                msg_level = symbol
 
             # Make log level word/symbol coloured
-            type_colorer = re.compile(r'([A-Z]{3,})', re.VERBOSE)
-            msg_level = type_colorer.sub(high_color + r'\1' + base_color, msg_level.lower())
+            msg_level = _TYPE_COLORER.sub(color + r'\1' + color, msg_level.lower())
             # Make header words coloured
-            header_words = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
-            message = header_words.sub(key_color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
+            message = _HEADER_WORDS.sub(color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
             sys.stdout.write(
-                f"{reset_all}{style}[{base_color}{msg_level}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
+                f"{reset_all}{style}[{color}{msg_level}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
         except Exception:
             if self.debug:
                 traceback.print_exc()
-                sys.exit(1)
             print('Formatting error')
 
     @staticmethod
@@ -263,90 +210,92 @@ class StdoutLogger:
         print(' '.ljust(79) + Fore.GREEN)
 
 
-class JSONLogger(Logger):
+class _JSONFormatter(logging.Formatter):
+    """Single JSON-envelope formatter shared by every JSONLogger emission.
+
+    Reads the canonical level label from `record.log_level` (passed via
+    `extra`) so the handler keeps a single formatter regardless of the
+    incoming level. NOTIFY records additionally carry `scope`, `severity`,
+    and `detection_type` via `extra`, and emit the message as
+    `detection_data` instead of `message`.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        envelope: Dict[str, Any] = {
+            'timestamp': self.formatTime(record),
+            'level': getattr(record, 'log_level', record.levelname),
+        }
+        if hasattr(record, 'detection_type'):
+            envelope['scope'] = getattr(record, 'scope', '')
+            envelope['severity'] = getattr(record, 'severity', '')
+            envelope['detection_type'] = record.detection_type
+            envelope['detection_data'] = record.msg
+        else:
+            envelope['message'] = record.msg
+        return json.dumps(envelope, cls=EnhancedJSONEncoder)
+
+
+class JSONLogger:
     """ Custom logger class for JSON logging"""
 
     def __init__(self, name: str = 'Slack Watchman', **kwargs):
-        super().__init__(name)
-        self.notify_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "NOTIFY", "scope": "%(scope)s", "severity": '
-            '"%(severity)s", "detection_type": "%(type)s", "detection_data": %(message)s}')
-        self.info_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}')
-        self.success_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s"}')
-        self.user_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "USER", "message": %(message)s}')
-        self.workspace_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
-        self.workspace_auth_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_AUTH", "message": %(message)s}')
-        self.workspace_probe_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_PROBE", "message": %(message)s}')
-        self.canvas_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "CANVAS", "message": %(message)s}')
+        self.name = name
+        self.formatter = _JSONFormatter()
         self.logger = logging.getLogger(self.name)
-        self.handler = logging.StreamHandler(sys.stdout)
-        self.logger.addHandler(self.handler)
+        # logging.getLogger() returns a process-wide singleton, so guard
+        # addHandler to avoid stacking duplicate handlers when JSONLogger
+        # is instantiated more than once in the same process.
+        if not self.logger.handlers:
+            self.handler = logging.StreamHandler(sys.stdout)
+            self.handler.setFormatter(self.formatter)
+            self.logger.addHandler(self.handler)
+        else:
+            self.handler = self.logger.handlers[0]
+            self.handler.setFormatter(self.formatter)
         if kwargs.get('debug'):
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
 
-    # def bind(self):
-    #     pass
-
     def log(self,
             level: str,
             msg: str or Dict,
             **kwargs):
-        if level.upper() == 'NOTIFY':
-            self.handler.setFormatter(self.notify_format)
+        """ Emit a JSON log line at the given level
+
+        Args:
+            level: Logical level label written to the JSON envelope
+                (e.g. 'INFO', 'NOTIFY', 'WORKSPACE_PROBE', 'WARNING').
+            msg: Either a plain string or a dataclass/dict that will be
+                serialised into the JSON envelope by `_JSONFormatter`.
+            **kwargs: For NOTIFY records, accepts `scope`, `severity`,
+                and `detect_type` to populate the detection fields.
+        """
+        level_upper = level.upper()
+        if level_upper == 'NOTIFY':
             self.logger.info(
-                json.dumps(
-                    msg,
-                    cls=EnhancedJSONEncoder),
+                msg,
                 extra={
+                    'log_level': 'NOTIFY',
                     'scope': kwargs.get('scope', ''),
-                    'type': kwargs.get('detect_type', ''),
-                    'severity': kwargs.get('severity', '')})
-        elif level.upper() == 'INFO':
-            self.handler.setFormatter(self.info_format)
-            self.logger.info(msg)
-        elif level.upper() == 'DEBUG':
-            self.handler.setFormatter(self.info_format)
-            self.logger.debug(msg)
-        elif level.upper() == 'USER':
-            self.handler.setFormatter(self.user_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'CANVAS':
-            self.handler.setFormatter(self.canvas_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE':
-            self.handler.setFormatter(self.workspace_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE_AUTH':
-            self.handler.setFormatter(self.workspace_auth_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE_PROBE_INFORMATION':
-            self.handler.setFormatter(self.workspace_probe_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'SUCCESS':
-            self.handler.setFormatter(self.success_format)
-            self.logger.info(msg)
+                    'severity': kwargs.get('severity', ''),
+                    'detection_type': kwargs.get('detect_type', ''),
+                })
+            return
+        extra = {'log_level': level_upper}
+        if level_upper == 'DEBUG':
+            self.logger.debug(msg, extra=extra)
+        elif level_upper == 'WARNING':
+            self.logger.warning(msg, extra=extra)
+        elif level_upper == 'ERROR':
+            self.logger.error(msg, extra=extra)
+        elif level_upper == 'CRITICAL':
+            self.logger.critical(msg, extra=extra)
         else:
-            self.handler.setFormatter(self.info_format)
-            self.logger.critical(msg)
+            # INFO, SUCCESS, USER, CANVAS, WORKSPACE, WORKSPACE_AUTH,
+            # WORKSPACE_PROBE — all emit at INFO severity but keep their
+            # own log_level label on the envelope.
+            self.logger.info(msg, extra=extra)
 
 
 # pylint: disable=missing-class-docstring
@@ -354,13 +303,19 @@ class IsDataclass(Protocol):
     __dataclass_fields__: ClassVar[Dict]
 
 
-def export_csv(csv_name: str, export_data: List[IsDataclass]) -> None:
+def export_csv(csv_name: str, export_data: List[IsDataclass]) -> bool:
     """ Export the data passed in a dataclass to CSV file
 
     Args:
         csv_name: Name of the CSV file to create
         export_data: Dataclass object to create CSV from
+    Returns:
+        True if the file was written successfully, False otherwise
+        (including when there is no data to export).
     """
+    if not export_data:
+        print(f'No data to export to {csv_name}.csv')
+        return False
     try:
         headers = dataclasses.asdict(export_data[0]).keys()
         with open(f'{os.path.join(os.getcwd(), csv_name)}.csv', 'w', encoding='utf-8') as f:
@@ -368,9 +323,10 @@ def export_csv(csv_name: str, export_data: List[IsDataclass]) -> None:
             writer.writeheader()
             for item in export_data:
                 writer.writerow(dataclasses.asdict(item))
-        f.close()
+        return True
     except Exception as e:
         print(e)
+        return False
 
 
 def init_logger(logging_type: str, debug: bool) -> JSONLogger | StdoutLogger:

@@ -124,6 +124,11 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Claude
+.mcp.json
+CLAUDE.md
+LOGGING_ISSUES.md
+
 # App specific
 *.csv
 logging_test.py

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+- Canvas results in `StdoutLogger` were rendered with the red `USER` colour scheme because `msg_level` was set to `'USER'` instead of `'CANVAS'`. Added a dedicated `CANVAS` style branch in `log_to_stdout`. Fixes [#90](https://github.com/PaperMtn/slack-watchman/issues/90)
+- Fixed `AttributeError` crash in `StdoutLogger` when logging file results with no resolved user. The user dict is now coerced via `(message.get('user') or {})` before reading `display_name`/`email`. Fixes [#91](https://github.com/PaperMtn/slack-watchman/issues/91)
+- Removed pointless retry on `log_to_stdout` exception in `StdoutLogger.log`. The previous handler retried with identical arguments and could only fail the same way; replaced with a single contextual error message. Fixes [#92](https://github.com/PaperMtn/slack-watchman/issues/92) (thanks @SAY-5)
+- A formatting failure inside `StdoutLogger.log_to_stdout` no longer terminates the process when debug mode is enabled. The `sys.exit(1)` call has been removed; the traceback is still printed in debug mode and the scan continues. Fixes [#95](https://github.com/PaperMtn/slack-watchman/issues/95)
+- `JSONLogger` no longer subclasses `logging.Logger` (the inheritance was unused — every emission already went through `self.logger`) and no longer stacks duplicate handlers when instantiated more than once. `addHandler` is now guarded so the process-wide singleton from `logging.getLogger('Slack Watchman')` keeps a single handler. Fixes [#98](https://github.com/PaperMtn/slack-watchman/issues/98)
+- `JSONLogger.log` now matches `WORKSPACE_PROBE` (the level the caller actually passes) instead of `WORKSPACE_PROBE_INFORMATION`. Probe results were silently falling through to the catch-all `else` branch and being emitted as `CRITICAL` with the wrong formatter. Fixes [#99](https://github.com/PaperMtn/slack-watchman/issues/99)
+- `JSONLogger.log` now has explicit `WARNING`, `ERROR`, and `CRITICAL` branches that call the matching `self.logger.warning/error/critical` method. Previously all three (and any unknown level) hit the catch-all `else` and were emitted as `CRITICAL`, so JSON output diverged from `StdoutLogger` and lost severity information. Fixes [#100](https://github.com/PaperMtn/slack-watchman/issues/100)
+- `export_csv` now returns a `bool` indicating whether the CSV was written, and its callers in `__init__.py` log a `SUCCESS` only on success and an `ERROR` on failure. Previously a write error was swallowed and the user saw a `Users output to CSV file: ...` success line for a file that was never written. Also corrected the channels CSV success message (it was incorrectly labelled `Users output to CSV file`). Fixes [#102](https://github.com/PaperMtn/slack-watchman/issues/102)
+- `export_csv` now guards against empty input. The previous `dataclasses.asdict(export_data[0])` would raise `IndexError`, which was hidden by the bare `except` and reported only as a stray `print` line. Empty input now returns `False` without opening a file. Fixes [#103](https://github.com/PaperMtn/slack-watchman/issues/103)
+
+### Removed
+- Redundant `f.close()` call in `export_csv` after the `with open(...) as f:` block (the context manager already closes the file). Fixes [#104](https://github.com/PaperMtn/slack-watchman/issues/104)
+
+### Changed
+- Converted the `notify_type` cascade in `StdoutLogger.log` from a series of independent `if`s to an `elif` chain, since the branches are mutually exclusive. Avoids unnecessary string comparisons on every log call. Fixes [#94](https://github.com/PaperMtn/slack-watchman/issues/94)
+- Hoisted the colourising regexes (`_TYPE_COLORER`, `_HEADER_WORDS`) in `loggers.py` to module-level constants instead of recompiling them on every `log_to_stdout` call. Fixes [#96](https://github.com/PaperMtn/slack-watchman/issues/96)
+- Replaced the 13 near-identical `elif` colour branches in `StdoutLogger.log_to_stdout` with a `_LEVEL_STYLES` dict lookup. Behaviour is unchanged for every existing level. Fixes [#97](https://github.com/PaperMtn/slack-watchman/issues/97)
+- Replaced the per-call `handler.setFormatter` mutation in `JSONLogger.log` with a single `_JSONFormatter` that builds the JSON envelope from `record.msg` and an `extra`-supplied `log_level`. Eliminates the eight `*_format` attributes, removes the not-thread-safe handler state swap, and keeps the JSON schema unchanged for every existing level. Fixes [#101](https://github.com/PaperMtn/slack-watchman/issues/101)
+
 ## [4.4.5] - 2026-04-27
 ### Changed
 - Updated dependabot.yml to created PRs against `develop` branch instead of `maaster`
