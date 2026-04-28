@@ -120,11 +120,13 @@ class StdoutLogger:
                           f'    PUBLIC_PERMALINK: {message.get("file").get("permalink_public")} \n' \
                           f'    -----'
             msg_level = 'RESULT'
+        # Retrying log_to_stdout with the same arguments would fail the
+        # same way every time, so log the failure once and drop the
+        # message rather than spinning on a doomed retry (#92).
         try:
             self.log_to_stdout(message, msg_level)
         except Exception as e:
-            print(e)
-            self.log_to_stdout(message, msg_level)
+            print(f"slack_watchman: failed to log message ({msg_level}): {e}")
 
     # pylint: disable=too-many-statements
     def log_to_stdout(self,
