@@ -15,6 +15,9 @@ from colorama import Fore, Back, Style, init
 
 from slack_watchman.utils import EnhancedJSONEncoder
 
+_TYPE_COLORER = re.compile(r'([A-Z]{3,})', re.VERBOSE)
+_HEADER_WORDS = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
+
 
 class StdoutLogger:
     """ Class for logging to stdout. """
@@ -227,11 +230,9 @@ class StdoutLogger:
                 msg_level = '!'
 
             # Make log level word/symbol coloured
-            type_colorer = re.compile(r'([A-Z]{3,})', re.VERBOSE)
-            msg_level = type_colorer.sub(high_color + r'\1' + base_color, msg_level.lower())
+            msg_level = _TYPE_COLORER.sub(high_color + r'\1' + base_color, msg_level.lower())
             # Make header words coloured
-            header_words = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
-            message = header_words.sub(key_color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
+            message = _HEADER_WORDS.sub(key_color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
             sys.stdout.write(
                 f"{reset_all}{style}[{base_color}{msg_level}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
         except Exception:

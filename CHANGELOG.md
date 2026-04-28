@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Converted the `notify_type` cascade in `StdoutLogger.log` from a series of independent `if`s to an `elif` chain, since the branches are mutually exclusive. Avoids unnecessary string comparisons on every log call. Fixes [#94](https://github.com/PaperMtn/slack-watchman/issues/94)
+- Hoisted the colourising regexes (`_TYPE_COLORER`, `_HEADER_WORDS`) in `loggers.py` to module-level constants instead of recompiling them on every `log_to_stdout` call. Fixes [#96](https://github.com/PaperMtn/slack-watchman/issues/96)
 
 ## [4.4.5] - 2026-04-27
 ### Changed
