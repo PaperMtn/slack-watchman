@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `export_csv` now returns a `bool` indicating whether the CSV was written, and its callers in `__init__.py` log a `SUCCESS` only on success and an `ERROR` on failure. Previously a write error was swallowed and the user saw a `Users output to CSV file: ...` success line for a file that was never written. Also corrected the channels CSV success message (it was incorrectly labelled `Users output to CSV file`). Fixes [#102](https://github.com/PaperMtn/slack-watchman/issues/102)
 - `export_csv` now guards against empty input. The previous `dataclasses.asdict(export_data[0])` would raise `IndexError`, which was hidden by the bare `except` and reported only as a stray `print` line. Empty input now returns `False` without opening a file. Fixes [#103](https://github.com/PaperMtn/slack-watchman/issues/103)
 
+### Removed
+- Redundant `f.close()` call in `export_csv` after the `with open(...) as f:` block (the context manager already closes the file). Fixes [#104](https://github.com/PaperMtn/slack-watchman/issues/104)
+
 ### Changed
 - Converted the `notify_type` cascade in `StdoutLogger.log` from a series of independent `if`s to an `elif` chain, since the branches are mutually exclusive. Avoids unnecessary string comparisons on every log call. Fixes [#94](https://github.com/PaperMtn/slack-watchman/issues/94)
 - Hoisted the colourising regexes (`_TYPE_COLORER`, `_HEADER_WORDS`) in `loggers.py` to module-level constants instead of recompiling them on every `log_to_stdout` call. Fixes [#96](https://github.com/PaperMtn/slack-watchman/issues/96)

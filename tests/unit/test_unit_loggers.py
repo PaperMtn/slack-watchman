@@ -249,6 +249,27 @@ def test_export_csv(mock_dict_writer, mock_open_file):
     assert export_csv('test', mock_data) is True
 
 
+def test_export_csv_does_not_double_close_file():
+    """The `with open(...)` block closes the file; export_csv must not call close() a second time."""
+    import dataclasses as _dc
+
+    @_dc.dataclass
+    class Row:
+        id: int
+
+    rows = [Row(id=1)]
+    fake_file = MagicMock()
+    fake_file.__enter__.return_value = fake_file
+    fake_file.__exit__.return_value = False
+
+    with patch('builtins.open', return_value=fake_file):
+        export_csv('once', rows)
+
+    # The `with` block invokes __exit__ which closes the file; export_csv
+    # should not also call .close() explicitly afterwards.
+    fake_file.close.assert_not_called()
+
+
 def test_export_csv_empty_input_returns_false_and_writes_nothing():
     """Empty export_data must not crash on export_data[0] and must not open a file."""
     with patch('builtins.open', new_callable=mock_open) as mock_open_file:

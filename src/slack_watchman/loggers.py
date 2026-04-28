@@ -313,7 +313,6 @@ def export_csv(csv_name: str, export_data: List[IsDataclass]) -> bool:
             writer.writeheader()
             for item in export_data:
                 writer.writerow(dataclasses.asdict(item))
-        f.close()
         return True
     except Exception as e:
         print(e)
