@@ -2,6 +2,8 @@ from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
 
+from colorama import Fore
+
 from slack_watchman.loggers import StdoutLogger, JSONLogger, export_csv, init_logger
 
 
@@ -79,6 +81,32 @@ def test_stdout_logger_notify_type_routing(mock_stdout_logger, notify_type, payl
         mock_log_to_stdout.assert_called_once()
         _, msg_level = mock_log_to_stdout.call_args[0]
         assert msg_level == expected_level
+
+
+@pytest.mark.parametrize(
+    "msg_level, expected_color",
+    [
+        ('NOTIFY', Fore.CYAN),
+        ('INFO', Fore.WHITE),
+        ('WORKSPACE', Fore.LIGHTBLUE_EX),
+        ('WORKSPACE_AUTH', Fore.LIGHTGREEN_EX),
+        ('WORKSPACE_PROBE', Fore.LIGHTGREEN_EX),
+        ('USER', Fore.RED),
+        ('CANVAS', Fore.LIGHTMAGENTA_EX),
+        ('WARNING', Fore.YELLOW),
+        ('SUCCESS', Fore.LIGHTGREEN_EX),
+        ('DEBUG', Fore.WHITE),
+        ('ERROR', Fore.MAGENTA),
+        ('CRITICAL', Fore.RED),
+        ('RESULT', Fore.LIGHTGREEN_EX),
+    ],
+)
+@patch('sys.stdout.write', autospec=True)
+def test_stdout_logger_level_styles(mock_write, mock_stdout_logger, msg_level, expected_color):
+    """Each known msg_level must render with its mapped colour from _LEVEL_STYLES."""
+    mock_stdout_logger.log_to_stdout('payload', msg_level)
+    output = ''.join(str(call.args[0]) for call in mock_write.mock_calls if call.args)
+    assert expected_color in output
 
 
 def test_stdout_logger_regexes_not_compiled_per_call(mock_stdout_logger):

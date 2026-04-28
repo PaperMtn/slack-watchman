@@ -18,6 +18,24 @@ from slack_watchman.utils import EnhancedJSONEncoder
 _TYPE_COLORER = re.compile(r'([A-Z]{3,})', re.VERBOSE)
 _HEADER_WORDS = re.compile(r'([A-Z_0-9]{2,}:)\s', re.VERBOSE)
 
+# msg_level -> (color, style, symbol). symbol=None leaves msg_level untouched.
+_LEVEL_STYLES: Dict[str, tuple] = {
+    'NOTIFY': (Fore.CYAN, Style.NORMAL, None),
+    'INFO': (Fore.WHITE, Style.DIM, '-'),
+    'WORKSPACE': (Fore.LIGHTBLUE_EX, Style.NORMAL, '+'),
+    'WORKSPACE_AUTH': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+    'WORKSPACE_PROBE': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+    'USER': (Fore.RED, Style.NORMAL, '+'),
+    'CANVAS': (Fore.LIGHTMAGENTA_EX, Style.NORMAL, '+'),
+    'WARNING': (Fore.YELLOW, Style.NORMAL, '!'),
+    'SUCCESS': (Fore.LIGHTGREEN_EX, Style.NORMAL, '>>'),
+    'DEBUG': (Fore.WHITE, Style.DIM, '#'),
+    'ERROR': (Fore.MAGENTA, Style.NORMAL, None),
+    'CRITICAL': (Fore.RED, Style.NORMAL, None),
+    'RESULT': (Fore.LIGHTGREEN_EX, Style.NORMAL, '!'),
+}
+_DEFAULT_LEVEL_STYLE = (Fore.WHITE, Style.NORMAL, None)
+
 
 class StdoutLogger:
     """ Class for logging to stdout. """
@@ -148,93 +166,16 @@ class StdoutLogger:
         try:
 
             reset_all = Style.NORMAL + Fore.RESET + Back.RESET
-            key_color = Fore.WHITE
-            base_color = Fore.WHITE
-            high_color = Fore.WHITE
-            style = Style.NORMAL
-
-            if msg_level == "NOTIFY":
-                base_color = Fore.CYAN
-                high_color = Fore.CYAN
-                key_color = Fore.CYAN
-                style = Style.NORMAL
-            elif msg_level == 'INFO':
-                base_color = Fore.WHITE
-                high_color = Fore.WHITE
-                key_color = Fore.WHITE
-                style = Style.DIM
-                msg_level = '-'
-            elif msg_level == 'WORKSPACE':
-                base_color = Fore.LIGHTBLUE_EX
-                high_color = Fore.LIGHTBLUE_EX
-                key_color = Fore.LIGHTBLUE_EX
-                style = Style.NORMAL
-                msg_level = '+'
-            elif msg_level == 'WORKSPACE_AUTH':
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == 'WORKSPACE_PROBE':
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == 'USER':
-                base_color = Fore.RED
-                high_color = Fore.RED
-                key_color = Fore.RED
-                style = Style.NORMAL
-                msg_level = '+'
-            elif msg_level == 'CANVAS':
-                base_color = Fore.LIGHTMAGENTA_EX
-                high_color = Fore.LIGHTMAGENTA_EX
-                key_color = Fore.LIGHTMAGENTA_EX
-                style = Style.NORMAL
-                msg_level = '+'
-            elif msg_level == 'WARNING':
-                base_color = Fore.YELLOW
-                high_color = Fore.YELLOW
-                key_color = Fore.YELLOW
-                style = Style.NORMAL
-                msg_level = '!'
-            elif msg_level == "SUCCESS":
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '>>'
-            elif msg_level == "DEBUG":
-                base_color = Fore.WHITE
-                high_color = Fore.WHITE
-                key_color = Fore.WHITE
-                style = Style.DIM
-                msg_level = '#'
-            elif msg_level == "ERROR":
-                base_color = Fore.MAGENTA
-                high_color = Fore.MAGENTA
-                key_color = Fore.MAGENTA
-                style = Style.NORMAL
-            elif msg_level == "CRITICAL":
-                base_color = Fore.RED
-                high_color = Fore.RED
-                key_color = Fore.RED
-                style = Style.NORMAL
-            elif msg_level == "RESULT":
-                base_color = Fore.LIGHTGREEN_EX
-                high_color = Fore.LIGHTGREEN_EX
-                key_color = Fore.LIGHTGREEN_EX
-                style = Style.NORMAL
-                msg_level = '!'
+            color, style, symbol = _LEVEL_STYLES.get(msg_level, _DEFAULT_LEVEL_STYLE)
+            if symbol is not None:
+                msg_level = symbol
 
             # Make log level word/symbol coloured
-            msg_level = _TYPE_COLORER.sub(high_color + r'\1' + base_color, msg_level.lower())
+            msg_level = _TYPE_COLORER.sub(color + r'\1' + color, msg_level.lower())
             # Make header words coloured
-            message = _HEADER_WORDS.sub(key_color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
+            message = _HEADER_WORDS.sub(color + Style.BRIGHT + r'\1 ' + Fore.WHITE + Style.NORMAL, str(message))
             sys.stdout.write(
-                f"{reset_all}{style}[{base_color}{msg_level}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
+                f"{reset_all}{style}[{color}{msg_level}{Fore.WHITE}]{style} {message}{Fore.WHITE}{Style.NORMAL}\n")
         except Exception:
             if self.debug:
                 traceback.print_exc()
