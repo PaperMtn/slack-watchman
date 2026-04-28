@@ -210,37 +210,48 @@ class StdoutLogger:
         print(' '.ljust(79) + Fore.GREEN)
 
 
+class _JSONFormatter(logging.Formatter):
+    """Single JSON-envelope formatter shared by every JSONLogger emission.
+
+    Reads the canonical level label from `record.log_level` (passed via
+    `extra`) so the handler keeps a single formatter regardless of the
+    incoming level. NOTIFY records additionally carry `scope`, `severity`,
+    and `detection_type` via `extra`, and emit the message as
+    `detection_data` instead of `message`.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        envelope: Dict[str, Any] = {
+            'timestamp': self.formatTime(record),
+            'level': getattr(record, 'log_level', record.levelname),
+        }
+        if hasattr(record, 'detection_type'):
+            envelope['scope'] = getattr(record, 'scope', '')
+            envelope['severity'] = getattr(record, 'severity', '')
+            envelope['detection_type'] = record.detection_type
+            envelope['detection_data'] = record.msg
+        else:
+            envelope['message'] = record.msg
+        return json.dumps(envelope, cls=EnhancedJSONEncoder)
+
+
 class JSONLogger:
     """ Custom logger class for JSON logging"""
 
     def __init__(self, name: str = 'Slack Watchman', **kwargs):
         self.name = name
-        self.notify_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "NOTIFY", "scope": "%(scope)s", "severity": '
-            '"%(severity)s", "detection_type": "%(type)s", "detection_data": %(message)s}')
-        self.info_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}')
-        self.success_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "SUCCESS", "message": "%(message)s"}')
-        self.user_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "USER", "message": %(message)s}')
-        self.workspace_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE", "message": %(message)s}')
-        self.workspace_auth_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_AUTH", "message": %(message)s}')
-        self.workspace_probe_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "WORKSPACE_PROBE", "message": %(message)s}')
-        self.canvas_format = logging.Formatter(
-            '{"timestamp": "%(asctime)s", "level": "CANVAS", "message": %(message)s}')
+        self.formatter = _JSONFormatter()
         self.logger = logging.getLogger(self.name)
-        self.handler = logging.StreamHandler(sys.stdout)
         # logging.getLogger() returns a process-wide singleton, so guard
         # addHandler to avoid stacking duplicate handlers when JSONLogger
         # is instantiated more than once in the same process.
         if not self.logger.handlers:
+            self.handler = logging.StreamHandler(sys.stdout)
+            self.handler.setFormatter(self.formatter)
             self.logger.addHandler(self.handler)
         else:
             self.handler = self.logger.handlers[0]
+            self.handler.setFormatter(self.formatter)
         if kwargs.get('debug'):
             self.logger.setLevel(logging.DEBUG)
         else:
@@ -250,62 +261,31 @@ class JSONLogger:
             level: str,
             msg: str or Dict,
             **kwargs):
-        if level.upper() == 'NOTIFY':
-            self.handler.setFormatter(self.notify_format)
+        level_upper = level.upper()
+        if level_upper == 'NOTIFY':
             self.logger.info(
-                json.dumps(
-                    msg,
-                    cls=EnhancedJSONEncoder),
+                msg,
                 extra={
+                    'log_level': 'NOTIFY',
                     'scope': kwargs.get('scope', ''),
-                    'type': kwargs.get('detect_type', ''),
-                    'severity': kwargs.get('severity', '')})
-        elif level.upper() == 'INFO':
-            self.handler.setFormatter(self.info_format)
-            self.logger.info(msg)
-        elif level.upper() == 'DEBUG':
-            self.handler.setFormatter(self.info_format)
-            self.logger.debug(msg)
-        elif level.upper() == 'USER':
-            self.handler.setFormatter(self.user_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'CANVAS':
-            self.handler.setFormatter(self.canvas_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE':
-            self.handler.setFormatter(self.workspace_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE_AUTH':
-            self.handler.setFormatter(self.workspace_auth_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'WORKSPACE_PROBE':
-            self.handler.setFormatter(self.workspace_probe_format)
-            self.logger.info(json.dumps(
-                msg,
-                cls=EnhancedJSONEncoder))
-        elif level.upper() == 'SUCCESS':
-            self.handler.setFormatter(self.success_format)
-            self.logger.info(msg)
-        elif level.upper() == 'WARNING':
-            self.handler.setFormatter(self.info_format)
-            self.logger.warning(msg)
-        elif level.upper() == 'ERROR':
-            self.handler.setFormatter(self.info_format)
-            self.logger.error(msg)
-        elif level.upper() == 'CRITICAL':
-            self.handler.setFormatter(self.info_format)
-            self.logger.critical(msg)
+                    'severity': kwargs.get('severity', ''),
+                    'detection_type': kwargs.get('detect_type', ''),
+                })
+            return
+        extra = {'log_level': level_upper}
+        if level_upper == 'DEBUG':
+            self.logger.debug(msg, extra=extra)
+        elif level_upper == 'WARNING':
+            self.logger.warning(msg, extra=extra)
+        elif level_upper == 'ERROR':
+            self.logger.error(msg, extra=extra)
+        elif level_upper == 'CRITICAL':
+            self.logger.critical(msg, extra=extra)
         else:
-            self.handler.setFormatter(self.info_format)
-            self.logger.critical(msg)
+            # INFO, SUCCESS, USER, CANVAS, WORKSPACE, WORKSPACE_AUTH,
+            # WORKSPACE_PROBE — all emit at INFO severity but keep their
+            # own log_level label on the envelope.
+            self.logger.info(msg, extra=extra)
 
 
 # pylint: disable=missing-class-docstring

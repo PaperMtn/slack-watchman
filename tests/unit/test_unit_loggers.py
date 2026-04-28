@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch, mock_open
 
 import pytest
@@ -191,21 +192,30 @@ def test_json_logger_severity_levels_route_to_matching_method(mock_json_logger, 
          patch.object(mock_json_logger.logger, other_methods[0]) as other_a, \
          patch.object(mock_json_logger.logger, other_methods[1]) as other_b:
         mock_json_logger.log(level, 'something went wrong')
-        expected_mock.assert_called_once_with('something went wrong')
+        expected_mock.assert_called_once()
+        assert expected_mock.call_args[0][0] == 'something went wrong'
         other_a.assert_not_called()
         other_b.assert_not_called()
 
 
-def test_json_logger_workspace_probe_uses_probe_format(mock_json_logger):
-    """WORKSPACE_PROBE level must route to the workspace_probe_format and logger.info, not the catch-all CRITICAL branch."""
+def test_json_logger_workspace_probe_emits_correct_envelope(mock_json_logger):
+    """WORKSPACE_PROBE must produce a JSON envelope with level=WORKSPACE_PROBE and message=payload."""
     payload = {'team_name': 'Acme', 'team_id': 'T1'}
-    with patch.object(mock_json_logger.handler, 'setFormatter') as mock_set_formatter, \
-         patch.object(mock_json_logger.logger, 'info') as mock_info, \
-         patch.object(mock_json_logger.logger, 'critical') as mock_critical:
+    with patch.object(mock_json_logger.handler.stream, 'write') as mock_write:
         mock_json_logger.log('WORKSPACE_PROBE', payload)
-        mock_set_formatter.assert_called_once_with(mock_json_logger.workspace_probe_format)
-        mock_info.assert_called_once()
-        mock_critical.assert_not_called()
+    output = ''.join(call.args[0] for call in mock_write.mock_calls if call.args)
+    parsed = json.loads(output.strip())
+    assert parsed['level'] == 'WORKSPACE_PROBE'
+    assert parsed['message'] == payload
+
+
+def test_json_logger_does_not_swap_formatter_per_call(mock_json_logger):
+    """The handler formatter should be installed once at construction, not mutated per log call."""
+    with patch.object(mock_json_logger.handler, 'setFormatter') as mock_set_formatter:
+        mock_json_logger.log('INFO', 'hello')
+        mock_json_logger.log('WORKSPACE_PROBE', {'team_id': 'T1'})
+        mock_json_logger.log('NOTIFY', {'match': 'x'}, scope='messages', severity='HIGH', detect_type='aws_keys')
+        mock_set_formatter.assert_not_called()
 
 
 def test_json_logger_log(mock_json_logger):
