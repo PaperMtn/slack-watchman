@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- `find_messages` and `find_files` now run their per-query workers through a bounded `multiprocessing.Pool` instead of starting one `multiprocessing.Process` per search string. The pool is capped at `_DEFAULT_POOL_SIZE` (8), so a signature with N search strings spawns `min(8, N)` workers regardless of how long the list is — memory and file-descriptor usage no longer scale with signature size and the Slack API isn't hit with as many simultaneous requests. Fixes [#113](https://github.com/PaperMtn/slack-watchman/issues/113)
+- Each pool worker now constructs its own `SlackClient` once via a pool initializer (`_init_worker_client`), instead of receiving the parent's pickled client as a task argument. The connection pool / retry config configured on the parent client is therefore reproduced in each worker rather than being silently dropped during pickling. The parent's pre-extracted `session_token` and `cookie_dict` are threaded through, so workers do not redo the cookie -> session-token HTTP roundtrip on startup. Fixes [#114](https://github.com/PaperMtn/slack-watchman/issues/114)
+- `SlackClient.__init__` now accepts keyword-only `session_token` and `cookie_dict` parameters. Existing token / cookie auth paths are unchanged; the new parameters are used by `_init_worker_client` to rebuild a client in each pool worker without re-running `_get_session_token`.
 - `find_messages` and `find_files` now share a single `multiprocessing.Manager` per call inside a `with` block, instead of instantiating a separate `Manager()` for each shared list (results, potential matches, errors). One manager subprocess is started per call and shut down deterministically when the block exits, instead of three managers per call leaking until garbage collection / `atexit`. Fixes [#116](https://github.com/PaperMtn/slack-watchman/issues/116)
 
 ### Fixed

@@ -49,6 +49,47 @@ def test_get_session_token_invalid_cookie(mock_get):
         client = SlackClient(cookie='invalid_cookie', url='https://slack.com')
 
 
+@patch('slack_watchman.clients.slack_client.requests.get')
+def test_init_session_token_skips_workspace_lookup(mock_get):
+    """When `session_token` and `cookie_dict` are supplied, the constructor
+    must not hit the workspace URL to re-extract a session token. This is
+    used to rebuild the client inside Pool worker processes without
+    repeating the cookie -> session_token roundtrip."""
+    client = SlackClient(
+        url='https://example.slack.com',
+        session_token='xoxc-already-have-this',
+        cookie_dict={'d': 'pre-quoted-cookie'},
+    )
+
+    assert client.session_token == 'xoxc-already-have-this'
+    assert client.cookie_dict == {'d': 'pre-quoted-cookie'}
+    assert client.session.headers['Authorization'] == 'Bearer xoxc-already-have-this'
+    mock_get.assert_not_called()
+
+
+def test_init_cookie_dict_is_defensive_copy():
+    """Mutating the dict supplied via `cookie_dict` after construction must
+    not mutate the client's internal state."""
+    incoming = {'d': 'value'}
+    client = SlackClient(
+        url='https://example.slack.com',
+        session_token='xoxc-session',
+        cookie_dict=incoming,
+    )
+    incoming['d'] = 'mutated'
+    assert client.cookie_dict == {'d': 'value'}
+
+
+def test_init_token_takes_precedence_over_session_token():
+    """When both `token` and `session_token` are supplied, bearer-token auth
+    wins (token takes the Authorization header)."""
+    client = SlackClient(
+        token='xoxp-bearer',
+        session_token='xoxc-session',
+    )
+    assert client.session.headers['Authorization'] == 'Bearer xoxp-bearer'
+
+
 @patch('slack_watchman.clients.slack_client.requests.Session.request')
 def test_make_request_success(mock_request):
     mock_response = MagicMock()

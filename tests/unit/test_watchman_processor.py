@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from slack_watchman import watchman_processor
 from slack_watchman.clients.slack_client import SlackClient
 from slack_watchman.models import user, auth_vars, signature
 from slack_watchman.watchman_processor import (
@@ -86,12 +87,24 @@ def _mock_manager_lists(mock_manager, results=None, potential_matches=None, erro
     return inner
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
-@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_messages(mock_manager, mock_process):
-    """Test find_messages function."""
-    mock_logger = MagicMock()
+def _make_mock_slack(token='xoxp-token', url='https://example.slack.com',
+                     session_token='xoxc-session', cookie_dict=None):
+    """Build a minimal SlackClient-shaped mock with the auth attributes
+    `_slack_init_args` reads."""
     mock_slack = MagicMock()
+    mock_slack.token = token
+    mock_slack.url = url
+    mock_slack.session_token = session_token
+    mock_slack.cookie_dict = {} if cookie_dict is None else cookie_dict
+    return mock_slack
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages(mock_manager, mock_pool):
+    """No-match runs log the empty-result message."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -99,16 +112,16 @@ def test_find_messages(mock_manager, mock_process):
 
     find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     mock_logger.log.assert_any_call('INFO', 'No matches found after filtering')
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_messages_logs_worker_errors(mock_manager, mock_process):
+def test_find_messages_logs_worker_errors(mock_manager, mock_pool):
     """find_messages logs an ERROR for each error captured by a worker."""
     mock_logger = MagicMock()
-    mock_slack = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -120,7 +133,7 @@ def test_find_messages_logs_worker_errors(mock_manager, mock_process):
 
     find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     error_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'ERROR']
     assert len(error_calls) == 1
     msg = error_calls[0].args[1]
@@ -129,13 +142,12 @@ def test_find_messages_logs_worker_errors(mock_manager, mock_process):
     assert 'upstream blew up' in msg
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_messages_uses_single_manager_context(mock_manager, mock_process):
-    """find_messages opens exactly one Manager context (and exits it) per call,
-    rather than spawning a separate Manager subprocess per shared list."""
+def test_find_messages_uses_single_manager_context(mock_manager, mock_pool):
+    """find_messages opens exactly one Manager context (and exits it) per call."""
     mock_logger = MagicMock()
-    mock_slack = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -143,18 +155,84 @@ def test_find_messages_uses_single_manager_context(mock_manager, mock_process):
 
     find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     assert mock_manager.call_count == 1
     assert mock_manager.return_value.__enter__.call_count == 1
     assert mock_manager.return_value.__exit__.call_count == 1
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_files(mock_manager, mock_process):
-    """Test find_files function."""
+def test_find_messages_pool_initargs_carry_parent_credentials(mock_manager, mock_pool):
+    """The pool initializer receives the parent client's token, url,
+    session_token and cookie_dict, so each worker can rebuild a SlackClient
+    without redoing the cookie -> session_token HTTP roundtrip."""
     mock_logger = MagicMock()
-    mock_slack = MagicMock()
+    mock_slack = _make_mock_slack(
+        token='xoxp-token',
+        url='https://example.slack.com',
+        session_token='xoxc-session',
+        cookie_dict={'d': 'quoted-cookie'},
+    )
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    _mock_manager_lists(mock_manager)
+
+    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['initializer'] is watchman_processor._init_worker_client
+    assert pool_kwargs['initargs'] == (
+        'xoxp-token',
+        'https://example.slack.com',
+        'xoxc-session',
+        {'d': 'quoted-cookie'},
+    )
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages_pool_size_is_capped(mock_manager, mock_pool):
+    """A signature with many search strings does not spawn one process per
+    string. The pool is capped at `_DEFAULT_POOL_SIZE`."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = [f'q{i}' for i in range(50)]
+
+    _mock_manager_lists(mock_manager)
+
+    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['processes'] == watchman_processor._DEFAULT_POOL_SIZE
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages_pool_size_matches_short_query_list(mock_manager, mock_pool):
+    """When there are fewer queries than the pool cap, only spawn one
+    worker per query."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['q1', 'q2', 'q3']
+
+    _mock_manager_lists(mock_manager)
+
+    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['processes'] == 3
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files(mock_manager, mock_pool):
+    """No-match runs log the empty-result message."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -162,16 +240,16 @@ def test_find_files(mock_manager, mock_process):
 
     find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     mock_logger.log.assert_any_call('INFO', 'No files found after filtering')
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_files_logs_worker_errors(mock_manager, mock_process):
+def test_find_files_logs_worker_errors(mock_manager, mock_pool):
     """find_files logs an ERROR for each error captured by a worker."""
     mock_logger = MagicMock()
-    mock_slack = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -183,7 +261,7 @@ def test_find_files_logs_worker_errors(mock_manager, mock_process):
 
     find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     error_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'ERROR']
     assert len(error_calls) == 1
     msg = error_calls[0].args[1]
@@ -192,12 +270,12 @@ def test_find_files_logs_worker_errors(mock_manager, mock_process):
     assert 'upstream blew up' in msg
 
 
-@patch('slack_watchman.watchman_processor.multiprocessing.Process')
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
-def test_find_files_uses_single_manager_context(mock_manager, mock_process):
+def test_find_files_uses_single_manager_context(mock_manager, mock_pool):
     """find_files opens exactly one Manager context (and exits it) per call."""
     mock_logger = MagicMock()
-    mock_slack = MagicMock()
+    mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
     mock_sig.search_strings = ['test_query']
 
@@ -205,10 +283,58 @@ def test_find_files_uses_single_manager_context(mock_manager, mock_process):
 
     find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
-    mock_process.assert_called_once()
+    mock_pool.assert_called_once()
     assert mock_manager.call_count == 1
     assert mock_manager.return_value.__enter__.call_count == 1
     assert mock_manager.return_value.__exit__.call_count == 1
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_pool_size_is_capped(mock_manager, mock_pool):
+    """find_files also caps the pool at `_DEFAULT_POOL_SIZE`."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = [f'q{i}' for i in range(50)]
+
+    _mock_manager_lists(mock_manager)
+
+    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['processes'] == watchman_processor._DEFAULT_POOL_SIZE
+
+
+def test_init_worker_client_constructs_slack_client_without_session_lookup(monkeypatch):
+    """`_init_worker_client` must construct a SlackClient using the supplied
+    session_token + cookie_dict, *without* hitting the workspace URL to
+    re-extract a session token."""
+
+    fetched = []
+
+    def boom(self):
+        fetched.append(self.url)
+        raise AssertionError(
+            '_init_worker_client must not call _get_session_token in workers'
+        )
+
+    monkeypatch.setattr(SlackClient, '_get_session_token', boom)
+
+    watchman_processor._init_worker_client(
+        token=None,
+        url='https://example.slack.com',
+        session_token='xoxc-session',
+        cookie_dict={'d': 'quoted-cookie'},
+    )
+    try:
+        assert watchman_processor._WORKER_SLACK_CLIENT is not None
+        assert watchman_processor._WORKER_SLACK_CLIENT.session_token == 'xoxc-session'
+        assert watchman_processor._WORKER_SLACK_CLIENT.cookie_dict == {'d': 'quoted-cookie'}
+        assert watchman_processor._WORKER_SLACK_CLIENT.url == 'https://example.slack.com'
+        assert fetched == []
+    finally:
+        watchman_processor._WORKER_SLACK_CLIENT = None
 
 
 @patch('requests.get')

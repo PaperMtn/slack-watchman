@@ -44,12 +44,37 @@ class SlackClient:
         url: Slack workspace URL
     """
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self,
                  token: str = None,
                  cookie: str = None,
-                 url: str = None):
+                 url: str = None,
+                 *,
+                 session_token: str = None,
+                 cookie_dict: Dict[str, str] = None):
+        """ Construct a Slack API client.
+
+        Three auth shapes are supported:
+            1. Token (`token` set): bearer-token auth.
+            2. Cookie (`cookie` + `url` set): the workspace login page is
+               scraped to extract a session token.
+            3. Pre-extracted credentials (`session_token` + `cookie_dict`
+               + `url` set): used when re-creating the client in worker
+               processes — skips the `_get_session_token` HTTP roundtrip
+               so each worker doesn't redo it on startup.
+
+        Args:
+            token: Slack bearer token (`xoxp-...` / `xoxb-...`)
+            cookie: Slack `d` cookie value, used to derive `cookie_dict`
+            url: Slack workspace URL (cookie auth)
+            session_token: Pre-extracted session token. When supplied, the
+                client uses it directly instead of calling
+                `_get_session_token`.
+            cookie_dict: Already-quoted cookie dict. When supplied (and no
+                raw `cookie`), the client uses it verbatim.
+        """
         self.token = token
-        self.session_token = None
+        self.session_token = session_token
         self.url = url
         self.base_url = 'https://slack.com/api'
         self.count = 100
@@ -61,6 +86,8 @@ class SlackClient:
             self.cookie_dict = {
                 'd': urllib.parse.quote(urllib.parse.unquote(cookie))
             }
+        elif cookie_dict is not None:
+            self.cookie_dict = dict(cookie_dict)
         else:
             self.cookie_dict = {}
 
@@ -79,7 +106,8 @@ class SlackClient:
                 'User-Agent': self.user_agent
             })
         else:
-            self.session_token = self._get_session_token()
+            if self.session_token is None:
+                self.session_token = self._get_session_token()
             session.headers.update({
                 'Connection': 'keep-alive, close',
                 'Authorization': f'Bearer {self.session_token}',

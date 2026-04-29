@@ -19,6 +19,64 @@ from slack_watchman.models import (
 )
 from slack_watchman.utils import deduplicate_results
 
+_DEFAULT_POOL_SIZE = 8
+
+# Each worker process holds its own SlackClient, constructed once by
+# `_init_worker_client` when the pool starts up. Workers read it via the
+# module-level global rather than receiving the parent's pickled client.
+_WORKER_SLACK_CLIENT: SlackClient | None = None
+
+
+def _slack_init_args(slack: SlackClient) -> tuple:
+    """ Extract the credentials needed to rebuild a SlackClient inside a
+    worker process.
+
+    Args:
+        slack: The parent process's SlackClient
+    Returns:
+        Tuple of `(token, url, session_token, cookie_dict)` suitable for
+        passing as `Pool(initargs=...)`
+    """
+    return (slack.token, slack.url, slack.session_token, dict(slack.cookie_dict))
+
+
+def _init_worker_client(token, url, session_token, cookie_dict) -> None:
+    """ Pool initializer: build one SlackClient per worker process.
+
+    Skips the workspace-URL roundtrip in `_get_session_token` because the
+    parent has already done it; `session_token` and `cookie_dict` carry the
+    pre-extracted credentials.
+    """
+    global _WORKER_SLACK_CLIENT  # pylint: disable=global-statement
+    _WORKER_SLACK_CLIENT = SlackClient(
+        token=token,
+        url=url,
+        session_token=session_token,
+        cookie_dict=cookie_dict,
+    )
+
+
+def _pool_run_message(args) -> None:
+    """ Pool task wrapper: forward to `_multipro_message_worker` using the
+    worker-local SlackClient set up by `_init_worker_client`.
+    """
+    sig, query, verbose, timeframe, results, potential_matches, errors = args
+    _multipro_message_worker(
+        _WORKER_SLACK_CLIENT, sig, query, verbose, timeframe,
+        results=results, potential_matches=potential_matches, errors=errors,
+    )
+
+
+def _pool_run_file(args) -> None:
+    """ Pool task wrapper: forward to `_multipro_file_worker` using the
+    worker-local SlackClient set up by `_init_worker_client`.
+    """
+    sig, query, verbose, timeframe, results, potential_matches, errors = args
+    _multipro_file_worker(
+        _WORKER_SLACK_CLIENT, sig, query, verbose, timeframe,
+        results=results, potential_matches=potential_matches, errors=errors,
+    )
+
 
 def initiate_slack_connection(auth_info: auth_vars.AuthVars) -> SlackClient:
     """ Create a Slack API object to use for interacting with the Slack API
@@ -92,29 +150,17 @@ def find_messages(slack: SlackClient,
             potential_matches = manager.list()
             errors = manager.list()
 
-            processes = []
-
-            for query in sig.search_strings:
-                p = multiprocessing.Process(
-                    target=_multipro_message_worker,
-                    args=(
-                        slack,
-                        sig,
-                        query,
-                        verbose,
-                        timeframe
-                    ),
-                    kwargs={
-                        'results': results,
-                        'potential_matches': potential_matches,
-                        'errors': errors
-                    }
-                )
-                processes.append(p)
-                p.start()
-
-            for process in processes:
-                process.join()
+            pool_size = max(1, min(_DEFAULT_POOL_SIZE, len(sig.search_strings)))
+            tasks = [
+                (sig, query, verbose, timeframe, results, potential_matches, errors)
+                for query in sig.search_strings
+            ]
+            with multiprocessing.Pool(
+                processes=pool_size,
+                initializer=_init_worker_client,
+                initargs=_slack_init_args(slack),
+            ) as pool:
+                pool.map(_pool_run_message, tasks)
 
             for err in errors:
                 logger.log(
@@ -212,29 +258,17 @@ def find_files(slack: SlackClient,
             potential_matches = manager.list()
             errors = manager.list()
 
-            processes = []
-
-            for query in sig.search_strings:
-                p = multiprocessing.Process(
-                    target=_multipro_file_worker,
-                    args=(
-                        slack,
-                        sig,
-                        query,
-                        verbose,
-                        timeframe
-                    ),
-                    kwargs={
-                        'results': results,
-                        'potential_matches': potential_matches,
-                        'errors': errors
-                    }
-                )
-                processes.append(p)
-                p.start()
-
-            for process in processes:
-                process.join()
+            pool_size = max(1, min(_DEFAULT_POOL_SIZE, len(sig.search_strings)))
+            tasks = [
+                (sig, query, verbose, timeframe, results, potential_matches, errors)
+                for query in sig.search_strings
+            ]
+            with multiprocessing.Pool(
+                processes=pool_size,
+                initializer=_init_worker_client,
+                initargs=_slack_init_args(slack),
+            ) as pool:
+                pool.map(_pool_run_file, tasks)
 
             for err in errors:
                 logger.log(
