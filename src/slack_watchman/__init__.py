@@ -33,6 +33,31 @@ from slack_watchman.models import (
 
 OUTPUT_LOGGER: JSONLogger
 
+_TIMEFRAME_DELTAS = {
+    'd': 86400,
+    'w': 604800,
+    'm': 2592000,
+    'a': 1576800000,
+}
+
+
+def _compute_timeframe(tm: str, now: int) -> str:
+    """ Format an `after:` operator date in UTC.
+
+    Slack interprets `after:` in the workspace timezone, which isn't
+    available here, so UTC is the next best anchor — it removes the
+    off-by-one drift the previous `time.localtime` formatter caused when
+    the host TZ differed from the workspace TZ.
+
+    Args:
+        tm: Timeframe selector ('d', 'w', 'm', or 'a')
+        now: Current epoch seconds (UTC)
+    Returns:
+        ISO-format date string (YYYY-MM-DD) in UTC
+    """
+    delta = _TIMEFRAME_DELTAS.get(tm, _TIMEFRAME_DELTAS['a'])
+    return time.strftime('%Y-%m-%d', time.gmtime(now - delta))
+
 
 def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
     """ Validates configuration and authentication settings for Slack Watchman.
@@ -263,18 +288,7 @@ def main():
             if vars(args).get(deprecated_arg):
                 OUTPUT_LOGGER.log('WARNING', f'Argument `--{deprecated_arg}` is deprecated, and has been ignored')
 
-        if tm == 'd':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 86400))
-        elif tm == 'w':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 604800))
-        elif tm == 'm':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 2592000))
-        else:
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 1576800000))
+        timeframe = _compute_timeframe(tm, int(time.time()))
 
         if probe_domain:
             unauthenticated_probe(probe_domain, project_metadata)

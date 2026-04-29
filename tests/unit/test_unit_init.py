@@ -1,8 +1,9 @@
+import time
 from unittest.mock import patch
 
 import pytest
 
-from slack_watchman import main
+from slack_watchman import _compute_timeframe, main
 
 
 def test_main_handles_exception_before_init_logger(capfd, monkeypatch):
@@ -41,3 +42,32 @@ def test_main_handles_timeout_before_init_logger(capfd, monkeypatch):
     output = capfd.readouterr().err + capfd.readouterr().out
     assert "'str' object has no attribute 'log'" not in output
     assert "'NoneType' object has no attribute 'log'" not in output
+
+
+@pytest.mark.parametrize("tm,delta", [('d', 86400), ('w', 604800), ('m', 2592000), ('a', 1576800000)])
+def test_compute_timeframe_formats_in_utc(tm, delta):
+    """The `after:` operator date is formatted in UTC, not the host's
+    local timezone. Pre-fix the code used `time.localtime`, which made
+    the result depend on `$TZ` and caused an off-by-one boundary skew
+    between hosts and the workspace timezone."""
+    # 2024-10-31 23:59:59 UTC: a timestamp that lands on a UTC date
+    # boundary which most non-UTC TZs would round to a different day.
+    now = 1730419199
+    expected = time.strftime('%Y-%m-%d', time.gmtime(now - delta))
+    assert _compute_timeframe(tm, now) == expected
+
+
+def test_compute_timeframe_does_not_call_localtime(monkeypatch):
+    """If anyone reintroduces `time.localtime` here the off-by-one bug
+    comes back. Trap localtime calls for the duration of the helper to
+    catch that regression independently of the host's actual TZ."""
+    calls = []
+    real_localtime = time.localtime
+
+    def trap(*args, **kwargs):
+        calls.append(args)
+        return real_localtime(*args, **kwargs)
+
+    monkeypatch.setattr('slack_watchman.time.localtime', trap)
+    _compute_timeframe('d', 1730419199)
+    assert calls == []
