@@ -218,10 +218,12 @@ def _multipro_message_worker(slack: SlackClient,
         # reused for every subsequent match in this worker.
         user_cache: Dict = {}
         channel_cache: Dict = {}
+        compiled_patterns = [re.compile(pattern) for pattern in sig.patterns]
         for message in message_list:
-            for pattern in sig.patterns:
-                r = re.compile(pattern)
-                if r.search(str(message.get('text'))):
+            text = str(message.get('text'))
+            for r in compiled_patterns:
+                match = r.search(text)
+                if match:
                     user_id = message.get('user')
                     if user_id:
                         if user_id not in user_cache:
@@ -244,7 +246,7 @@ def _multipro_message_worker(slack: SlackClient,
 
                     message['user'] = u
                     message['conversation'] = c
-                    match_string = r.search(str(message.get('text'))).group(0)
+                    match_string = match.group(0)
                     message = post.create_message_from_dict(message)
 
                     watchman_id = hashlib.md5(f'{match_string}.{message.timestamp}'.encode()).hexdigest()

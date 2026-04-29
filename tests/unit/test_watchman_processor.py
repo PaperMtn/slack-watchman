@@ -481,6 +481,97 @@ def test_multipro_message_worker(mock_post, mock_conversation, mock_user):
 @patch('slack_watchman.watchman_processor.user')
 @patch('slack_watchman.watchman_processor.conversation')
 @patch('slack_watchman.watchman_processor.post')
+def test_multipro_message_worker_compiles_patterns_once(
+    mock_post, mock_conversation, mock_user
+):
+    """`re.compile` should run once per signature pattern, not once per
+    (message, pattern) pair. Pre-fix the call sat inside the per-message
+    loop, so a worker processing 100 messages with 3 patterns would
+    compile 300 times instead of 3."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'secret', r'token']
+
+    mock_slack.page_api_search.return_value = [
+        {'text': 'has a secret', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'has a token', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'nothing here', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'another secret', 'user': 'U1', 'channel': {'id': 'C1'}},
+    ]
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_conversation.create_from_dict.return_value = 'MockConversation'
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1')
+
+    with patch('slack_watchman.watchman_processor.re.compile',
+               wraps=watchman_processor.re.compile) as mock_compile:
+        _multipro_message_worker(
+            slack=mock_slack,
+            sig=mock_sig,
+            query='test_query',
+            verbose=False,
+            timeframe='7d',
+            results=[],
+            potential_matches=[],
+            errors=[],
+        )
+
+    assert mock_compile.call_count == len(mock_sig.patterns)
+
+
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
+def test_multipro_message_worker_searches_text_once_per_pattern(
+    mock_post, mock_conversation, mock_user
+):
+    """`Pattern.search` should be called once per (message, pattern), not
+    twice. Pre-fix the worker called search() once for the truthy check
+    and a second time on the matching path to extract `.group(0)`."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'secret']
+
+    # Two matching messages × one pattern × one search call each = 2.
+    # Pre-fix this would have been 4 (2 calls per matching message).
+    mock_slack.page_api_search.return_value = [
+        {'text': 'has a secret here', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'another secret line', 'user': 'U1', 'channel': {'id': 'C1'}},
+    ]
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_conversation.create_from_dict.return_value = 'MockConversation'
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1')
+
+    real_compile = watchman_processor.re.compile
+    compiled = []
+
+    def tracking_compile(pattern):
+        c = real_compile(pattern)
+        wrapper = MagicMock(wraps=c)
+        compiled.append(wrapper)
+        return wrapper
+
+    with patch('slack_watchman.watchman_processor.re.compile',
+               side_effect=tracking_compile):
+        _multipro_message_worker(
+            slack=mock_slack,
+            sig=mock_sig,
+            query='test_query',
+            verbose=False,
+            timeframe='7d',
+            results=[],
+            potential_matches=[],
+            errors=[],
+        )
+
+    total_searches = sum(c.search.call_count for c in compiled)
+    assert total_searches == 2
+
+
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
 @pytest.mark.parametrize(
     "channel_value",
     [
