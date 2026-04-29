@@ -202,8 +202,10 @@ def find_messages(slack: SlackClient,
                 logger.log('SUCCESS', f'{len(results)} total matches found after filtering')
                 return results
             logger.log('INFO', 'No matches found after filtering')
+            return []
     except Exception as e:  # pylint: disable=broad-except
         logger.log('CRITICAL', e)
+        return []
 
 
 # pylint: disable=too-many-locals,too-many-nested-blocks
@@ -321,9 +323,11 @@ def find_files(slack: SlackClient,
                 logger.log('SUCCESS', f'{len(results)} total files found after filtering')
                 return results
             logger.log('INFO', 'No files found after filtering')
+            return []
 
     except Exception as e:  # pylint: disable=broad-except
         logger.log('CRITICAL', e)
+        return []
 
 
 # pylint: disable=too-many-nested-blocks

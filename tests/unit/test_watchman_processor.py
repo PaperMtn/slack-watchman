@@ -102,7 +102,7 @@ def _make_mock_slack(token='xoxp-token', url='https://example.slack.com',
 @patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
 def test_find_messages(mock_manager, mock_pool):
-    """No-match runs log the empty-result message."""
+    """No-match runs log the empty-result message and return []."""
     mock_logger = MagicMock()
     mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
@@ -110,10 +110,31 @@ def test_find_messages(mock_manager, mock_pool):
 
     _mock_manager_lists(mock_manager)
 
-    find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+    result = find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
     mock_pool.assert_called_once()
     mock_logger.log.assert_any_call('INFO', 'No matches found after filtering')
+    # Annotated `-> List[Dict]`: must be [], not None.
+    assert result == []
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_messages_returns_empty_list_on_exception(mock_manager, mock_pool):
+    """When the outer block raises, `find_messages` still honours its
+    `List[Dict]` annotation and returns []."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    mock_manager.side_effect = RuntimeError('manager exploded')
+
+    result = find_messages(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    assert result == []
+    critical_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'CRITICAL']
+    assert len(critical_calls) == 1
 
 
 @patch('slack_watchman.watchman_processor.multiprocessing.Pool')
@@ -230,7 +251,7 @@ def test_find_messages_pool_size_matches_short_query_list(mock_manager, mock_poo
 @patch('slack_watchman.watchman_processor.multiprocessing.Pool')
 @patch('slack_watchman.watchman_processor.multiprocessing.Manager')
 def test_find_files(mock_manager, mock_pool):
-    """No-match runs log the empty-result message."""
+    """No-match runs log the empty-result message and return []."""
     mock_logger = MagicMock()
     mock_slack = _make_mock_slack()
     mock_sig = MagicMock()
@@ -238,10 +259,31 @@ def test_find_files(mock_manager, mock_pool):
 
     _mock_manager_lists(mock_manager)
 
-    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+    result = find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
 
     mock_pool.assert_called_once()
     mock_logger.log.assert_any_call('INFO', 'No files found after filtering')
+    # Annotated `-> List[Dict]`: must be [], not None.
+    assert result == []
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_returns_empty_list_on_exception(mock_manager, mock_pool):
+    """When the outer block raises, `find_files` still honours its
+    `List[Dict]` annotation and returns []."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    mock_manager.side_effect = RuntimeError('manager exploded')
+
+    result = find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    assert result == []
+    critical_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'CRITICAL']
+    assert len(critical_calls) == 1
 
 
 @patch('slack_watchman.watchman_processor.multiprocessing.Pool')
