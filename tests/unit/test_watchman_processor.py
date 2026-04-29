@@ -490,6 +490,95 @@ def test_multipro_message_worker_handles_missing_channel(
     mock_slack.get_conversation_info.assert_not_called()
 
 
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
+def test_multipro_message_worker_caches_user_and_channel_lookups(
+    mock_post, mock_conversation, mock_user
+):
+    """A worker that sees the same user/channel ID across multiple matches
+    must only call `get_user_info` / `get_conversation_info` once per ID."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'secret']
+
+    # Three matches: U1/C1 appears twice, U2/C2 once. Expect 2 user.info
+    # calls and 2 conversation.info calls (not 3 of each).
+    mock_slack.page_api_search.return_value = [
+        {'text': 'a secret', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'another secret', 'user': 'U1', 'channel': {'id': 'C1'}},
+        {'text': 'one more secret', 'user': 'U2', 'channel': {'id': 'C2'}},
+    ]
+    mock_user.create_from_dict.side_effect = lambda d, v: f"User({d.get('id') or d})"
+    mock_conversation.create_from_dict.side_effect = lambda d, v: f"Conv({d.get('id') or d})"
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1')
+
+    results = []
+    _multipro_message_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='secret',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=[],
+        errors=[],
+    )
+
+    assert len(results) == 3
+    assert mock_slack.get_user_info.call_count == 2
+    assert mock_slack.get_conversation_info.call_count == 2
+    user_call_args = sorted(c.args[0] for c in mock_slack.get_user_info.call_args_list)
+    channel_call_args = sorted(c.args[0] for c in mock_slack.get_conversation_info.call_args_list)
+    assert user_call_args == ['U1', 'U2']
+    assert channel_call_args == ['C1', 'C2']
+
+
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.post')
+@pytest.mark.parametrize(
+    "file_types",
+    [['zip'], None],
+    ids=['with_file_types', 'no_file_types'],
+)
+def test_multipro_file_worker_caches_user_lookups(mock_post, mock_user, file_types):
+    """A worker that sees the same file owner across multiple matches must
+    only call `get_user_info` once per user ID. Covers both the file_types
+    and no-file_types branches."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.file_types = file_types
+
+    mock_slack.page_api_search.return_value = [
+        {'name': 'a.zip', 'filetype': 'zip', 'user': 'U1'},
+        {'name': 'b.zip', 'filetype': 'zip', 'user': 'U1'},
+        {'name': 'c.zip', 'filetype': 'zip', 'user': 'U2'},
+    ]
+    mock_user.create_from_dict.side_effect = lambda d, v: f"User({d.get('id') or d})"
+    mock_post.create_file_from_dict.return_value = MagicMock(
+        created='2024-01-01', permalink_public='https://example.com/file'
+    )
+
+    results = []
+    _multipro_file_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='zip',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=[],
+        errors=[],
+    )
+
+    assert len(results) == 3
+    assert mock_slack.get_user_info.call_count == 2
+    user_call_args = sorted(c.args[0] for c in mock_slack.get_user_info.call_args_list)
+    assert user_call_args == ['U1', 'U2']
+
+
 def test_multipro_message_worker_captures_exception():
     """Worker exceptions are appended to the shared errors list rather than propagating."""
     mock_slack = MagicMock(spec=SlackClient)

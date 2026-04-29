@@ -78,6 +78,31 @@ def _pool_run_file(args) -> None:
     )
 
 
+def _resolve_file_user(slack: SlackClient, file_dict: Dict, verbose: bool,
+                       cache: Dict) -> object:
+    """ Resolve a file's owner via `users.info`, caching by user ID.
+
+    Returns `None` when the file has no owner, or when an already-resolved
+    dataclass has somehow been threaded through `file_dict['user']` (this
+    matches the existing defensive check in the file-types branch).
+
+    Args:
+        slack: SlackClient used for the lookup
+        file_dict: Raw file dict from `search.files`
+        verbose: Whether to populate verbose model fields
+        cache: Per-worker dict, keyed by user ID; mutated in place
+    Returns:
+        Resolved User dataclass, or None
+    """
+    user_id = file_dict.get('user')
+    if not user_id or dataclasses.is_dataclass(user_id):
+        return None
+    if user_id not in cache:
+        user_dict = slack.get_user_info(user_id).get('user')
+        cache[user_id] = user.create_from_dict(user_dict, verbose)
+    return cache[user_id]
+
+
 def initiate_slack_connection(auth_info: auth_vars.AuthVars) -> SlackClient:
     """ Create a Slack API object to use for interacting with the Slack API
     First tries to get the API token from the environment variable(s):
@@ -181,7 +206,7 @@ def find_messages(slack: SlackClient,
         logger.log('CRITICAL', e)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,too-many-nested-blocks
 def _multipro_message_worker(slack: SlackClient,
                              sig: signature.Signature,
                              query: str,
@@ -192,20 +217,31 @@ def _multipro_message_worker(slack: SlackClient,
     try:
         message_list = slack.page_api_search(query, 'search.messages', 'messages', timeframe)
         kwargs.get('potential_matches').append(len(message_list))
+        # Per-worker caches: each unique user/channel ID is resolved once and
+        # reused for every subsequent match in this worker.
+        user_cache: Dict = {}
+        channel_cache: Dict = {}
         for message in message_list:
             for pattern in sig.patterns:
                 r = re.compile(pattern)
                 if r.search(str(message.get('text'))):
-                    if message.get('user'):
-                        user_dict = slack.get_user_info(message.get('user')).get('user')
-                        u = user.create_from_dict(user_dict, verbose)
+                    user_id = message.get('user')
+                    if user_id:
+                        if user_id not in user_cache:
+                            user_dict = slack.get_user_info(user_id).get('user')
+                            user_cache[user_id] = user.create_from_dict(user_dict, verbose)
+                        u = user_cache[user_id]
                     else:
                         u = message.get('username')
 
                     channel_id = (message.get('channel') or {}).get('id')
                     if channel_id:
-                        channel_dict = slack.get_conversation_info(channel_id).get('channel')
-                        c = conversation.create_from_dict(channel_dict, verbose)
+                        if channel_id not in channel_cache:
+                            channel_dict = slack.get_conversation_info(channel_id).get('channel')
+                            channel_cache[channel_id] = conversation.create_from_dict(
+                                channel_dict, verbose
+                            )
+                        c = channel_cache[channel_id]
                     else:
                         c = None
 
@@ -301,6 +337,8 @@ def _multipro_file_worker(slack: SlackClient,
     try:
         message_list = slack.page_api_search(query, 'search.files', 'files', timeframe)
         kwargs.get('potential_matches').append(len(message_list))
+        # Per-worker cache: each unique file owner is resolved once.
+        user_cache: Dict = {}
         for file_dict in message_list:
             name = (file_dict.get('name') or '').lower()
             filetype = (file_dict.get('filetype') or '').lower()
@@ -308,11 +346,7 @@ def _multipro_file_worker(slack: SlackClient,
                 for file_type in sig.file_types:
                     if query.replace('\"', '').lower() in name \
                             and file_type.lower() in filetype:
-                        if file_dict.get('user') and not dataclasses.is_dataclass(file_dict.get('user')):
-                            user_dict = slack.get_user_info(file_dict.get('user')).get('user')
-                            u = user.create_from_dict(user_dict, verbose)
-                        else:
-                            u = None
+                        u = _resolve_file_user(slack, file_dict, verbose, user_cache)
 
                         f = post.create_file_from_dict(file_dict)
                         watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
@@ -324,11 +358,7 @@ def _multipro_file_worker(slack: SlackClient,
                         kwargs.get('results').append(results_dict)
             else:
                 if query.replace('\"', '').lower() in name:
-                    if file_dict.get('user'):
-                        user_dict = slack.get_user_info(file_dict.get('user')).get('user')
-                        u = user.create_from_dict(user_dict, verbose)
-                    else:
-                        u = None
+                    u = _resolve_file_user(slack, file_dict, verbose, user_cache)
 
                     f = post.create_file_from_dict(file_dict)
                     watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
