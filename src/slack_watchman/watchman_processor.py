@@ -1,4 +1,3 @@
-import dataclasses
 import hashlib
 import json
 import multiprocessing
@@ -82,20 +81,16 @@ def _resolve_file_user(slack: SlackClient, file_dict: Dict, verbose: bool,
                        cache: Dict) -> object:
     """ Resolve a file's owner via `users.info`, caching by user ID.
 
-    Returns `None` when the file has no owner, or when an already-resolved
-    dataclass has somehow been threaded through `file_dict['user']` (this
-    matches the existing defensive check in the file-types branch).
-
     Args:
         slack: SlackClient used for the lookup
         file_dict: Raw file dict from `search.files`
         verbose: Whether to populate verbose model fields
         cache: Per-worker dict, keyed by user ID; mutated in place
     Returns:
-        Resolved User dataclass, or None
+        Resolved User dataclass, or None when the file has no owner
     """
     user_id = file_dict.get('user')
-    if not user_id or dataclasses.is_dataclass(user_id):
+    if not user_id:
         return None
     if user_id not in cache:
         user_dict = slack.get_user_info(user_id).get('user')

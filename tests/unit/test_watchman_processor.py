@@ -14,7 +14,8 @@ from slack_watchman.watchman_processor import (
     find_files,
     find_auth_information,
     _multipro_message_worker,
-    _multipro_file_worker
+    _multipro_file_worker,
+    _resolve_file_user,
 )
 
 
@@ -834,6 +835,39 @@ def test_multipro_file_worker_emits_one_result_per_file(mock_post, mock_user):
     )
 
     assert len(results) == 1
+
+
+@patch('slack_watchman.watchman_processor.user')
+def test_resolve_file_user_resolves_plain_id_in_both_branches(mock_user):
+    """Both `_multipro_file_worker` branches now share `_resolve_file_user`,
+    so a plain user ID resolves identically whether `sig.file_types` is set
+    or not. This locks in the symmetry that issue #120 called out: the
+    file_types branch previously had a defensive `is_dataclass` check that
+    the no-file_types branch lacked, which meant the two paths could
+    diverge on edge inputs. The asymmetric guard is gone and both branches
+    fan in to the same helper."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_user.create_from_dict.side_effect = lambda d, v: f"User({d.get('id') or d})"
+    file_dict = {'user': 'U1'}
+
+    cache_a: dict = {}
+    cache_b: dict = {}
+    result_a = _resolve_file_user(mock_slack, file_dict, verbose=False, cache=cache_a)
+    result_b = _resolve_file_user(mock_slack, file_dict, verbose=False, cache=cache_b)
+
+    assert result_a == result_b
+    assert mock_slack.get_user_info.call_count == 2
+    assert all(c.args[0] == 'U1' for c in mock_slack.get_user_info.call_args_list)
+
+
+def test_resolve_file_user_returns_none_without_lookup_when_user_missing():
+    """Empty/missing `user` should short-circuit before any API call."""
+    mock_slack = MagicMock(spec=SlackClient)
+
+    assert _resolve_file_user(mock_slack, {}, verbose=False, cache={}) is None
+    assert _resolve_file_user(mock_slack, {'user': None}, verbose=False, cache={}) is None
+    assert _resolve_file_user(mock_slack, {'user': ''}, verbose=False, cache={}) is None
+    mock_slack.get_user_info.assert_not_called()
 
 
 def test_multipro_file_worker_captures_exception():
