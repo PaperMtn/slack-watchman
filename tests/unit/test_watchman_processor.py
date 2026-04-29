@@ -799,6 +799,43 @@ def test_multipro_file_worker_handles_null_name_and_filetype(
     assert results == []
 
 
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.post')
+def test_multipro_file_worker_emits_one_result_per_file(mock_post, mock_user):
+    """A file whose filetype substring-matches multiple `sig.file_types`
+    entries should still produce exactly one entry on the shared results
+    list. Without the fix, the per-file_type loop appended a duplicate
+    result_dict for every matching file_type, which dedup later collapsed
+    but only after wasting IPC and memory."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    # Both 'zip' and 'ip' substring-match the file's filetype 'zip'.
+    mock_sig.file_types = ['zip', 'ip']
+
+    mock_slack.page_api_search.return_value = [
+        {'name': 'secrets.zip', 'filetype': 'zip', 'user': 'U1'},
+    ]
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_post.create_file_from_dict.return_value = MagicMock(
+        created='2024-01-01', permalink_public='https://example.com/file'
+    )
+
+    results = []
+    _multipro_file_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='zip',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=[],
+        errors=[],
+    )
+
+    assert len(results) == 1
+
+
 def test_multipro_file_worker_captures_exception():
     """File worker exceptions are appended to the shared errors list rather than propagating."""
     mock_slack = MagicMock(spec=SlackClient)

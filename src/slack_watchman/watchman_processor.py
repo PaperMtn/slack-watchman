@@ -347,19 +347,19 @@ def _multipro_file_worker(slack: SlackClient,
             name = (file_dict.get('name') or '').lower()
             filetype = (file_dict.get('filetype') or '').lower()
             if sig.file_types:
-                for file_type in sig.file_types:
-                    if query.replace('\"', '').lower() in name \
-                            and file_type.lower() in filetype:
-                        u = _resolve_file_user(slack, file_dict, verbose, user_cache)
 
-                        f = post.create_file_from_dict(file_dict)
-                        watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
-                        results_dict = {
-                            'file': f,
-                            'user': u,
-                            'watchman_id': watchman_id
-                        }
-                        kwargs.get('results').append(results_dict)
+                if query.replace('\"', '').lower() in name and any(
+                        file_type.lower() in filetype for file_type in sig.file_types):
+                    u = _resolve_file_user(slack, file_dict, verbose, user_cache)
+
+                    f = post.create_file_from_dict(file_dict)
+                    watchman_id = hashlib.md5(f'{f.created}.{f.permalink_public}'.encode()).hexdigest()
+                    results_dict = {
+                        'file': f,
+                        'user': u,
+                        'watchman_id': watchman_id
+                    }
+                    kwargs.get('results').append(results_dict)
             else:
                 if query.replace('\"', '').lower() in name:
                     u = _resolve_file_user(slack, file_dict, verbose, user_cache)
