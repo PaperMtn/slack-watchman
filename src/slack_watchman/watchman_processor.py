@@ -2,7 +2,7 @@ import hashlib
 import json
 import multiprocessing
 import re
-from typing import List, Dict
+from typing import Any, Dict, List
 
 import requests
 from bs4 import BeautifulSoup
@@ -386,7 +386,7 @@ def _multipro_file_worker(slack: SlackClient,
 
 def find_auth_information(domain_url: str,
                           logger: JSONLogger | StdoutLogger | None = None
-                          ) -> Dict[str, List[str]] | None:
+                          ) -> Dict[str, Any] | None:
     """ Get domain authentication information from the Slack workspace
 
     Slack returns the domains that can be used to create accounts on the workspace

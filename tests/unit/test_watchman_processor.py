@@ -401,6 +401,16 @@ def test_find_auth_information(mock_bs, mock_requests):
     assert auth_info['paid_team'] is True
     assert auth_info['join_url'] == 'https://join.slack.com/t/example/signup'
 
+    # The return type was annotated `Dict[str, List[str]] | None` but the
+    # payload mixes lists, bools, strings and None — the annotation has
+    # been widened to `Dict[str, Any] | None`. Lock that in by asserting
+    # the returned dict really is heterogeneous.
+    value_types = {type(v) for v in auth_info.values()}
+    assert bool in value_types
+    assert str in value_types
+    assert list in value_types
+    assert type(None) in value_types
+
 
 def test_find_auth_information_no_props_node():
     """Test find_auth_information when no props node is found."""
