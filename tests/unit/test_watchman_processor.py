@@ -413,6 +413,55 @@ def test_find_auth_information_no_props_node():
         assert result is None
 
 
+def test_find_auth_information_returns_none_on_request_exception():
+    """A network failure must not propagate. Pre-fix the unauthenticated
+    scrape would raise out of `find_auth_information` and abort the
+    entire authenticated scan in `__init__.py:311`."""
+    import requests as _requests
+    mock_logger = MagicMock()
+    with patch('requests.get', side_effect=_requests.ConnectionError('boom')):
+        result = find_auth_information('https://example.slack.com', logger=mock_logger)
+
+    assert result is None
+    warning_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'WARNING']
+    assert len(warning_calls) == 1
+    assert 'example.slack.com' in warning_calls[0].args[1]
+
+
+@patch('slack_watchman.watchman_processor.BeautifulSoup')
+@patch('requests.get')
+def test_find_auth_information_returns_none_on_invalid_json(mock_requests, mock_bs):
+    """A `data-props` blob that isn't valid JSON must return None
+    instead of propagating `JSONDecodeError`."""
+    mock_response = MagicMock()
+    mock_response.text = '<html></html>'
+    mock_requests.return_value = mock_response
+
+    mock_props_node = MagicMock()
+    mock_props_node.get.return_value = 'not-json{'
+    mock_soup = MagicMock()
+    mock_soup.find.return_value = mock_props_node
+    mock_bs.return_value = mock_soup
+
+    mock_logger = MagicMock()
+    result = find_auth_information('https://example.slack.com', logger=mock_logger)
+
+    assert result is None
+    warning_calls = [c for c in mock_logger.log.call_args_list if c.args[0] == 'WARNING']
+    assert len(warning_calls) == 1
+
+
+def test_find_auth_information_returns_none_without_logger():
+    """The logger argument is optional — failures still don't propagate
+    when no logger is supplied (this preserves the existing test
+    contract that passes only `domain_url`)."""
+    import requests as _requests
+    with patch('requests.get', side_effect=_requests.Timeout('slow')):
+        result = find_auth_information('https://example.slack.com')
+
+    assert result is None
+
+
 @patch('slack_watchman.watchman_processor.user')
 @patch('slack_watchman.watchman_processor.conversation')
 @patch('slack_watchman.watchman_processor.post')

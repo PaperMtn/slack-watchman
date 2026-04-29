@@ -181,7 +181,7 @@ def unauthenticated_probe(workspace_domain: str,
                                  'and return any available authentication information.')
     OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
     try:
-        domain_information = watchman_processor.find_auth_information(workspace_domain)
+        domain_information = watchman_processor.find_auth_information(workspace_domain, logger=OUTPUT_LOGGER)
         if domain_information:
             OUTPUT_LOGGER.log('WORKSPACE_PROBE', domain_information, detect_type='Workspace Probe',
                               notify_type='workspace_probe')
@@ -308,7 +308,8 @@ def main():
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
         OUTPUT_LOGGER.log('INFO', 'Finding workspace authentication options')
-        workspace_auth = watchman_processor.find_auth_information(domain_url=workspace_information.url)
+        workspace_auth = watchman_processor.find_auth_information(
+            domain_url=workspace_information.url, logger=OUTPUT_LOGGER)
         if workspace_auth:
             OUTPUT_LOGGER.log('WORKSPACE_AUTH', workspace_auth, detect_type='Workspace Auth',
                               notify_type='workspace_auth')

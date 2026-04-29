@@ -384,7 +384,9 @@ def _multipro_file_worker(slack: SlackClient,
         return None
 
 
-def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
+def find_auth_information(domain_url: str,
+                          logger: JSONLogger | StdoutLogger | None = None
+                          ) -> Dict[str, List[str]] | None:
     """ Get domain authentication information from the Slack workspace
 
     Slack returns the domains that can be used to create accounts on the workspace
@@ -392,15 +394,22 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
 
     Args:
         domain_url: URL of domain to enumerate
+        logger: Optional logger; receives a WARNING on transient
+            failures (network errors, malformed `data-props`, missing
+            tags). When omitted, failures are silently turned into
+            `None` so the caller's "no info found" branch runs.
     Returns:
         A dictionary with results or None if no results
     """
 
-    response = requests.get(domain_url, timeout=60)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    props_node = soup.find('div', {'id': 'props_node'})
+    try:
+        response = requests.get(domain_url, timeout=60)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        props_node = soup.find('div', {'id': 'props_node'})
 
-    if props_node:
+        if not props_node:
+            return None
+
         data_props = props_node.get('data-props')
         props_data = json.loads(data_props)
 
@@ -423,3 +432,10 @@ def find_auth_information(domain_url: str) -> Dict[str, List[str]] | None:
             output['join_url'] = 'N/A'
 
         return output
+    except (requests.RequestException, json.JSONDecodeError, AttributeError) as e:
+        if logger is not None:
+            logger.log(
+                'WARNING',
+                f'Could not retrieve workspace auth information from {domain_url}: {e!r}'
+            )
+        return None
