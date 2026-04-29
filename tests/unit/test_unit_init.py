@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from slack_watchman import _compute_timeframe, main
+from slack_watchman import _build_canvas_url, _compute_timeframe, main
 
 
 def test_main_handles_exception_before_init_logger(capfd, monkeypatch):
@@ -55,6 +55,22 @@ def test_compute_timeframe_formats_in_utc(tm, delta):
     now = 1730419199
     expected = time.strftime('%Y-%m-%d', time.gmtime(now - delta))
     assert _compute_timeframe(tm, now) == expected
+
+
+@pytest.mark.parametrize(
+    "workspace_url",
+    [
+        'https://example.slack.com/',
+        'https://example.slack.com',
+    ],
+    ids=['with_trailing_slash', 'without_trailing_slash'],
+)
+def test_build_canvas_url_handles_trailing_slash_either_way(workspace_url):
+    """`team.info` may or may not include a trailing slash on the
+    workspace URL. Pre-fix the bare concat produced
+    `https://example.slack.comcanvas/C123` when it didn't."""
+    assert _build_canvas_url(workspace_url, 'C123') == \
+        'https://example.slack.com/canvas/C123'
 
 
 def test_compute_timeframe_does_not_call_localtime(monkeypatch):

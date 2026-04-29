@@ -59,6 +59,22 @@ def _compute_timeframe(tm: str, now: int) -> str:
     return time.strftime('%Y-%m-%d', time.gmtime(now - delta))
 
 
+def _build_canvas_url(workspace_url: str, channel_id: str) -> str:
+    """ Build a Slack Canvas URL from a workspace base URL.
+
+    Slack's `team.info` may or may not include a trailing slash on the
+    workspace URL; previous string concat produced
+    `https://x.slack.comcanvas/...` when it didn't.
+
+    Args:
+        workspace_url: Workspace base URL from `team.info`
+        channel_id: Channel ID to append
+    Returns:
+        Canvas URL with exactly one slash between base and path
+    """
+    return f"{workspace_url.rstrip('/')}/canvas/{channel_id}"
+
+
 def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
     """ Validates configuration and authentication settings for Slack Watchman.
     Authentication tokens from environment variables take precedence over config file values.
@@ -356,7 +372,7 @@ def main():
                 if not channel.canvas_empty and channel.canvas_id:
                     canvas_information = {
                         'channel_name': channel.name,
-                        'canvas_url': f'{workspace_information.url}canvas/{channel.id}'
+                        'canvas_url': _build_canvas_url(workspace_information.url, channel.id)
                     }
                     OUTPUT_LOGGER.log('CANVAS', canvas_information, detect_type='Canvas',
                                       notify_type='canvas')
