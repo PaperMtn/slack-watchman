@@ -220,7 +220,9 @@ def _multipro_message_worker(slack: SlackClient,
         channel_cache: Dict = {}
         compiled_patterns = [re.compile(pattern) for pattern in sig.patterns]
         for message in message_list:
-            text = str(message.get('text'))
+            text = message.get('text')
+            if not text:
+                continue
             for r in compiled_patterns:
                 match = r.search(text)
                 if match:

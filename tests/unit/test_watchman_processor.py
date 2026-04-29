@@ -573,6 +573,57 @@ def test_multipro_message_worker_searches_text_once_per_pattern(
 @patch('slack_watchman.watchman_processor.conversation')
 @patch('slack_watchman.watchman_processor.post')
 @pytest.mark.parametrize(
+    "missing_text_message",
+    [
+        {'user': 'U1', 'channel': {'id': 'C1'}},                  # 'text' key absent
+        {'text': None, 'user': 'U1', 'channel': {'id': 'C1'}},    # 'text' explicitly None
+        {'text': '', 'user': 'U1', 'channel': {'id': 'C1'}},      # 'text' empty string
+    ],
+    ids=['text_missing', 'text_none', 'text_empty'],
+)
+def test_multipro_message_worker_skips_messages_with_no_text(
+    mock_post, mock_conversation, mock_user, missing_text_message
+):
+    """Messages with no text must not be regex-searched. Pre-fix the
+    worker did `str(message.get('text'))`, which made `None` -> the
+    literal string `'None'`; a permissive signature regex (here, the
+    pattern `r'None'`) would then false-positive match a message that
+    has no real text behind it."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'None']
+
+    mock_slack.page_api_search.return_value = [missing_text_message]
+    mock_user.create_from_dict.return_value = 'MockUser'
+    mock_conversation.create_from_dict.return_value = 'MockConversation'
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1')
+
+    results = []
+    errors = []
+
+    _multipro_message_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='test_query',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=[],
+        errors=errors,
+    )
+
+    assert errors == []
+    assert results == []
+    # No user/channel resolution should happen for a skipped message.
+    mock_slack.get_user_info.assert_not_called()
+    mock_slack.get_conversation_info.assert_not_called()
+
+
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
+@pytest.mark.parametrize(
     "channel_value",
     [
         None,                # channel is explicitly None
