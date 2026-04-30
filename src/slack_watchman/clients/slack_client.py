@@ -236,8 +236,8 @@ class SlackClient:
                 params['limit'], params['cursor'] = 200, cursor
                 r = self._make_request(url, params=params).json()
                 for value in r.get(scope):
-                    cursor = r.get('response_metadata').get('next_cursor')
                     results.append(value)
+                cursor = r.get('response_metadata').get('next_cursor')
 
         return results
 

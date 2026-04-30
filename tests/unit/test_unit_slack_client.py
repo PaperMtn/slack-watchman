@@ -233,6 +233,44 @@ def test_make_request_429_retries_exhausted(mock_request):
     assert 'retries exhausted' in str(excinfo.value)
 
 
+def test_cursor_api_search_advances_cursor_on_empty_page():
+    """`cursor_api_search` must advance the cursor every iteration, even when a page
+    returns an empty `scope` list. The previous implementation only updated `cursor`
+    inside the inner per-item loop, so an empty page left `cursor` stuck on the
+    previous value and the while loop would re-request the same cursor forever."""
+    pages = [
+        {
+            'ok': 'True',
+            'members': [{'id': 'U1'}],
+            'response_metadata': {'next_cursor': 'cursor-2'},
+        },
+        {
+            'ok': 'True',
+            'members': [],
+            'response_metadata': {'next_cursor': 'cursor-3'},
+        },
+        {
+            'ok': 'True',
+            'members': [{'id': 'U2'}],
+            'response_metadata': {'next_cursor': ''},
+        },
+    ]
+    seen_cursors = []
+
+    def fake_make_request(_url, params=None, **_kwargs):
+        seen_cursors.append(params['cursor'])
+        response = MagicMock()
+        response.json.return_value = pages[len(seen_cursors) - 1]
+        return response
+
+    client = SlackClient(token='mock_token')
+    with patch.object(client, '_make_request', side_effect=fake_make_request):
+        results = client.cursor_api_search('users.list', 'members')
+
+    assert results == [{'id': 'U1'}, {'id': 'U2'}]
+    assert seen_cursors == ['', 'cursor-2', 'cursor-3']
+
+
 @patch('slack_watchman.clients.slack_client.SlackClient._make_request')
 def test_get_user_info(mock_make_request):
     mock_make_request.return_value.json.return_value = {'ok': True, 'user': {'id': 'U123', 'name': 'Test User'}}
