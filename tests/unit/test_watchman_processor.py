@@ -45,15 +45,13 @@ def test_initiate_slack_connection_cookie(mock_slack_client, mock_auth_vars):
     mock_slack_client.assert_called_once_with(cookie='mock_cookie', url='https://slack.com')
 
 
-@patch('slack_watchman.watchman_processor.SlackClient')
-def test_get_users(mock_slack_client):
+def test_get_users():
     """Test get_users function."""
     mock_slack = MagicMock()
     mock_slack.cursor_api_search.return_value = [
         {'id': 'U123', 'deleted': False},
         {'id': 'U456', 'deleted': True},  # Deleted user should be ignored
     ]
-    mock_slack_client.return_value = mock_slack
     users = get_users(mock_slack, verbose=False)
 
     assert len(users) == 1
@@ -61,15 +59,13 @@ def test_get_users(mock_slack_client):
     mock_slack.cursor_api_search.assert_called_once_with('users.list', 'members')
 
 
-@patch('slack_watchman.watchman_processor.SlackClient')
-def test_get_channels(mock_slack_client):
+def test_get_channels():
     """Test get_channels function."""
     mock_slack = MagicMock()
     mock_slack.cursor_api_search.return_value = [
         {'id': 'C123', 'name': 'general'},
         {'id': 'C456', 'name': 'random'},
     ]
-    mock_slack_client.return_value = mock_slack
     channels = get_channels(mock_slack, verbose=False)
 
     assert len(channels) == 2
@@ -349,6 +345,55 @@ def test_find_files_pool_size_is_capped(mock_manager, mock_pool):
     assert pool_kwargs['processes'] == watchman_processor._DEFAULT_POOL_SIZE
 
 
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_pool_size_matches_short_query_list(mock_manager, mock_pool):
+    """When there are fewer queries than the pool cap, only spawn one
+    worker per query (mirror of the same test for find_messages)."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack()
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['q1', 'q2', 'q3']
+
+    _mock_manager_lists(mock_manager)
+
+    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['processes'] == 3
+
+
+@patch('slack_watchman.watchman_processor.multiprocessing.Pool')
+@patch('slack_watchman.watchman_processor.multiprocessing.Manager')
+def test_find_files_pool_initargs_carry_parent_credentials(mock_manager, mock_pool):
+    """The pool initializer for `find_files` receives the parent client's
+    token, url, session_token and cookie_dict — same contract as
+    `find_messages`. Without this, each file worker would re-extract a
+    session token via `_get_session_token` on startup."""
+    mock_logger = MagicMock()
+    mock_slack = _make_mock_slack(
+        token='xoxp-token',
+        url='https://example.slack.com',
+        session_token='xoxc-session',
+        cookie_dict={'d': 'quoted-cookie'},
+    )
+    mock_sig = MagicMock()
+    mock_sig.search_strings = ['test_query']
+
+    _mock_manager_lists(mock_manager)
+
+    find_files(mock_slack, mock_logger, mock_sig, verbose=False, timeframe='7d')
+
+    pool_kwargs = mock_pool.call_args.kwargs
+    assert pool_kwargs['initializer'] is watchman_processor._init_worker_client
+    assert pool_kwargs['initargs'] == (
+        'xoxp-token',
+        'https://example.slack.com',
+        'xoxc-session',
+        {'d': 'quoted-cookie'},
+    )
+
+
 def test_init_worker_client_constructs_slack_client_without_session_lookup(monkeypatch):
     """`_init_worker_client` must construct a SlackClient using the supplied
     session_token + cookie_dict, *without* hitting the workspace URL to
@@ -396,6 +441,20 @@ def test_find_auth_information(mock_bs, mock_requests):
     mock_bs.return_value = mock_soup
 
     auth_info = find_auth_information('https://example.slack.com')
+
+    # Lock the output schema so a silent rename / drop / addition in the
+    # `output = {...}` literal can't slip past unnoticed.
+    assert set(auth_info.keys()) == {
+        'formatted_email_domains',
+        'join_url',
+        'user_oauth',
+        'paid_team',
+        'team_name',
+        'team_id',
+        'standard_auth_enabled',
+        'sso_enabled',
+        'two_factor_required',
+    }
 
     assert auth_info['team_name'] is None
     assert auth_info['paid_team'] is True
@@ -732,6 +791,63 @@ def test_multipro_message_worker_handles_missing_channel(
     # No conversation should be resolved when channel id is unavailable
     mock_conversation.create_from_dict.assert_not_called()
     mock_slack.get_conversation_info.assert_not_called()
+
+
+@patch('slack_watchman.watchman_processor.user')
+@patch('slack_watchman.watchman_processor.conversation')
+@patch('slack_watchman.watchman_processor.post')
+@pytest.mark.parametrize(
+    "raw_user_field",
+    [None, '', 'missing'],
+    ids=['user_none', 'user_empty', 'user_absent'],
+)
+def test_multipro_message_worker_falls_back_to_username_when_user_id_missing(
+    mock_post, mock_conversation, mock_user, raw_user_field
+):
+    """When `message['user']` is falsy (or absent), the worker must use
+    `message.get('username')` instead of calling `users.info`. Bot and
+    system messages typically come back without a `user` field but with a
+    `username` set — the fallback is the only way they get attributed."""
+    mock_slack = MagicMock(spec=SlackClient)
+    mock_sig = MagicMock(spec=signature.Signature)
+    mock_sig.name = 'test_sig'
+    mock_sig.patterns = [r'secret']
+
+    message = {'text': 'has a secret', 'username': 'incoming-webhook',
+               'channel': {'id': 'C1'}}
+    if raw_user_field == 'missing':
+        # leave 'user' key absent
+        pass
+    else:
+        message['user'] = raw_user_field
+
+    mock_slack.page_api_search.return_value = [message]
+    mock_conversation.create_from_dict.return_value = 'MockConversation'
+    mock_post.create_message_from_dict.return_value = MagicMock(timestamp='1')
+
+    sent_messages = []
+    mock_post.create_message_from_dict.side_effect = lambda m: (
+        sent_messages.append(dict(m)) or MagicMock(timestamp='1')
+    )
+
+    results = []
+    _multipro_message_worker(
+        slack=mock_slack,
+        sig=mock_sig,
+        query='secret',
+        verbose=False,
+        timeframe='7d',
+        results=results,
+        potential_matches=[],
+        errors=[],
+    )
+
+    assert len(results) == 1
+    # No users.info call when there's no user_id to resolve.
+    mock_slack.get_user_info.assert_not_called()
+    mock_user.create_from_dict.assert_not_called()
+    # The raw username string is what gets attached to the outgoing message.
+    assert sent_messages[0]['user'] == 'incoming-webhook'
 
 
 @patch('slack_watchman.watchman_processor.user')
