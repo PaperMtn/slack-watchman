@@ -31,7 +31,7 @@ from slack_watchman.models import (
     auth_vars
 )
 
-OUTPUT_LOGGER: JSONLogger
+OUTPUT_LOGGER: StdoutLogger | JSONLogger
 
 _TIMEFRAME_DELTAS = {
     'd': 86400,
@@ -376,7 +376,7 @@ def main():
                     }
                     OUTPUT_LOGGER.log('CANVAS', canvas_information, detect_type='Canvas',
                                       notify_type='canvas')
-        if everything or not pii and not secrets:
+        if everything or (not pii and not secrets):
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
             for signature_object in signature_list:
                 for scope in signature_object.scope:
