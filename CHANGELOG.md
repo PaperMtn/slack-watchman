@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [4.6.0] - 2026-05-04
+### Changed
+- **[High]** Message and file workers now cache `users.info` and `conversations.info` lookups by ID for the lifetime of the worker, eliminating redundant API calls per match. Fixes [#117](https://github.com/PaperMtn/slack-watchman/issues/117)
+- **[High]** `find_messages` and `find_files` now use a bounded `multiprocessing.Pool` (capped at 8) instead of one `Process` per search string, preventing memory and file-descriptor usage from scaling with signature size. Fixes [#113](https://github.com/PaperMtn/slack-watchman/issues/113)
+- **[High]** Pool workers now construct their own `SlackClient` via `_init_worker_client` instead of unpickling the parent client, preserving connection pool and retry config across workers. Fixes [#114](https://github.com/PaperMtn/slack-watchman/issues/114)
+- **[High]** `SlackClient.__init__` accepts new keyword-only `session_token` and `cookie_dict` parameters, used by pool workers to skip re-running `_get_session_token` on startup.
+- **[High]** `find_messages` and `find_files` now share a single `multiprocessing.Manager` per call, replacing three per-call managers that leaked until GC. Fixes [#116](https://github.com/PaperMtn/slack-watchman/issues/116)
+
+### Fixed
+- **[Critical]** Worker exceptions (rate-limit exhaustion, malformed payloads, `AttributeError`) are now caught and reported via a shared `errors` list instead of silently killing the child process. Fixes [#108](https://github.com/PaperMtn/slack-watchman/issues/108)
+- **[Critical]** `_multipro_message_worker` no longer crashes on messages with no `channel` field (DMs, tombstoned messages, bot events). Fixes [#109](https://github.com/PaperMtn/slack-watchman/issues/109)
+- **[Critical]** `_multipro_file_worker` no longer crashes when a file's `name` or `filetype` is `None` (deleted/redacted/tombstoned states). Fixes [#110](https://github.com/PaperMtn/slack-watchman/issues/110)
+- **[Critical]** `main()` error handler no longer crashes with `AttributeError` when an exception is raised before `init_logger` runs; falls back to `traceback.print_exc()` when the logger is uninitialised. Fixes [#111](https://github.com/PaperMtn/slack-watchman/issues/111)
+- **[High]** `SlackClient._make_request` now honours the `Retry-After` header on 429s (falling back to 90s), loops back through `_make_request` for consecutive 429s, and raises after a configurable retry cap. Fixes [#115](https://github.com/PaperMtn/slack-watchman/issues/115)
+- **[Medium]** Canvas URLs are now built via `_build_canvas_url()`, which normalises the trailing slash on the workspace URL before concatenation. Fixes [#126](https://github.com/PaperMtn/slack-watchman/issues/126)
+- **[Medium]** `after:` query timeframes are now computed in UTC (`time.gmtime`) instead of local time, fixing off-by-one-day windows on CI/cloud hosts; refactored into a `_compute_timeframe()` helper. Fixes [#125](https://github.com/PaperMtn/slack-watchman/issues/125)
+- **[Medium]** `find_auth_information` return type widened to `Dict[str, Any] | None` to reflect the actual mixed-type payload. Fixes [#124](https://github.com/PaperMtn/slack-watchman/issues/124)
+- **[Medium]** `find_auth_information` now catches `RequestException`, `JSONDecodeError`, and `AttributeError`, returning `None` with a `WARNING` instead of aborting the scan on transient scrape failures. Fixes [#123](https://github.com/PaperMtn/slack-watchman/issues/123)
+- **[Medium]** `find_messages` and `find_files` now explicitly return `[]` on no-match and exception paths instead of implicit `None`. Fixes [#118](https://github.com/PaperMtn/slack-watchman/issues/118)
+- **[Medium]** `_multipro_file_worker` no longer appends a duplicate result per `sig.file_types` entry; replaced per-type loop with a single `any()` check. Fixes [#119](https://github.com/PaperMtn/slack-watchman/issues/119)
+- **[Medium]** Removed dead `is_dataclass` guard and unused `dataclasses` import from `_resolve_file_user`. Fixes [#120](https://github.com/PaperMtn/slack-watchman/issues/120)
+- **[Medium]** `_multipro_message_worker` now skips messages with no `text` instead of coercing `None` to the string `'None'`, preventing false positives on attachment-only and system messages. Fixes [#122](https://github.com/PaperMtn/slack-watchman/issues/122)
+- **[Medium]** `_multipro_message_worker` now compiles each pattern once per worker and reuses the `Match` object, eliminating per-message recompilation and a duplicate `search` call on the match path. Fixes [#121](https://github.com/PaperMtn/slack-watchman/issues/121)
+- **[Low]** `cursor_api_search` now updates `cursor` once per page after items are collected, fixing a potential infinite loop on empty pages with a non-empty `next_cursor`.
+- **[Low]** `OUTPUT_LOGGER` annotation in `__init__.py` widened to `StdoutLogger | JSONLogger`.
+- **[Low]** Added explicit parentheses to `if everything or (not pii and not secrets):` for readability; no behaviour change.
+
 ## [4.5.0] - 2026-04-28
 ### Fixed
 - Canvas results in `StdoutLogger` were rendered with the red `USER` colour scheme because `msg_level` was set to `'USER'` instead of `'CANVAS'`. Added a dedicated `CANVAS` style branch in `log_to_stdout`. Fixes [#90](https://github.com/PaperMtn/slack-watchman/issues/90)

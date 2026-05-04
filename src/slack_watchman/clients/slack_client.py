@@ -11,6 +11,29 @@ from urllib3.util import Retry
 
 from slack_watchman import exceptions
 
+_RATE_LIMIT_DEFAULT_BACKOFF = 90
+_RATE_LIMIT_MAX_RETRIES = 5
+
+
+def _parse_retry_after(value, default: int = _RATE_LIMIT_DEFAULT_BACKOFF) -> int:
+    """ Parse a `Retry-After` header value into a number of seconds to wait.
+
+    Slack returns the value as an integer number of seconds. Fall back to
+    `default` when the header is missing or not parseable as an integer.
+
+    Args:
+        value: Raw header value, or None
+        default: Fallback to use when the header is missing/unparseable
+    Returns:
+        Number of seconds to wait before retrying
+    """
+    if value is None:
+        return default
+    try:
+        return max(0, int(value))
+    except (TypeError, ValueError):
+        return default
+
 
 class SlackClient:
     """ Class to interact with the Slack API
@@ -21,12 +44,37 @@ class SlackClient:
         url: Slack workspace URL
     """
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self,
                  token: str = None,
                  cookie: str = None,
-                 url: str = None):
+                 url: str = None,
+                 *,
+                 session_token: str = None,
+                 cookie_dict: Dict[str, str] = None):
+        """ Construct a Slack API client.
+
+        Three auth shapes are supported:
+            1. Token (`token` set): bearer-token auth.
+            2. Cookie (`cookie` + `url` set): the workspace login page is
+               scraped to extract a session token.
+            3. Pre-extracted credentials (`session_token` + `cookie_dict`
+               + `url` set): used when re-creating the client in worker
+               processes — skips the `_get_session_token` HTTP roundtrip
+               so each worker doesn't redo it on startup.
+
+        Args:
+            token: Slack bearer token (`xoxp-...` / `xoxb-...`)
+            cookie: Slack `d` cookie value, used to derive `cookie_dict`
+            url: Slack workspace URL (cookie auth)
+            session_token: Pre-extracted session token. When supplied, the
+                client uses it directly instead of calling
+                `_get_session_token`.
+            cookie_dict: Already-quoted cookie dict. When supplied (and no
+                raw `cookie`), the client uses it verbatim.
+        """
         self.token = token
-        self.session_token = None
+        self.session_token = session_token
         self.url = url
         self.base_url = 'https://slack.com/api'
         self.count = 100
@@ -38,6 +86,8 @@ class SlackClient:
             self.cookie_dict = {
                 'd': urllib.parse.quote(urllib.parse.unquote(cookie))
             }
+        elif cookie_dict is not None:
+            self.cookie_dict = dict(cookie_dict)
         else:
             self.cookie_dict = {}
 
@@ -56,7 +106,8 @@ class SlackClient:
                 'User-Agent': self.user_agent
             })
         else:
-            self.session_token = self._get_session_token()
+            if self.session_token is None:
+                self.session_token = self._get_session_token()
             session.headers.update({
                 'Connection': 'keep-alive, close',
                 'Authorization': f'Bearer {self.session_token}',
@@ -74,7 +125,9 @@ class SlackClient:
             raise exceptions.InvalidCookieError(self.url) from e
 
     # pylint: disable=too-many-positional-arguments
-    def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True):
+    def _make_request(self, url, params=None, data=None, method='GET', verify_ssl=True, *,
+                      _retries: int = _RATE_LIMIT_MAX_RETRIES):
+        response = None
         try:
             relative_url = '/'.join((self.base_url, url))
             response = self.session.request(
@@ -95,19 +148,23 @@ class SlackClient:
                 return response
 
         except HTTPError as http_error:
-            if response.status_code == 429:
-                print('WARNING', 'Slack API rate limit reached - cooling off')
-                time.sleep(90)
-                return self.session.request(
-                    method,
-                    relative_url,
+            if response is not None and response.status_code == 429:
+                if _retries <= 0:
+                    raise HTTPError(
+                        f'HTTPError: rate limit retries exhausted: {http_error}'
+                    ) from http_error
+                retry_after = _parse_retry_after(response.headers.get('Retry-After'))
+                print('WARNING', f'Slack API rate limit reached - cooling off for {retry_after}s')
+                time.sleep(retry_after)
+                return self._make_request(
+                    url,
                     params=params,
                     data=data,
-                    cookies=self.cookie_dict,
-                    verify=verify_ssl,
-                    timeout=30)
-            else:
-                raise HTTPError(f'HTTPError: {http_error}') from http_error
+                    method=method,
+                    verify_ssl=verify_ssl,
+                    _retries=_retries - 1,
+                )
+            raise HTTPError(f'HTTPError: {http_error}') from http_error
         except Exception as e:
             raise e
 
@@ -179,8 +236,8 @@ class SlackClient:
                 params['limit'], params['cursor'] = 200, cursor
                 r = self._make_request(url, params=params).json()
                 for value in r.get(scope):
-                    cursor = r.get('response_metadata').get('next_cursor')
                     results.append(value)
+                cursor = r.get('response_metadata').get('next_cursor')
 
         return results
 

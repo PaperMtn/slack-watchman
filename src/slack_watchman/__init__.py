@@ -31,7 +31,48 @@ from slack_watchman.models import (
     auth_vars
 )
 
-OUTPUT_LOGGER: JSONLogger
+OUTPUT_LOGGER: StdoutLogger | JSONLogger
+
+_TIMEFRAME_DELTAS = {
+    'd': 86400,
+    'w': 604800,
+    'm': 2592000,
+    'a': 1576800000,
+}
+
+
+def _compute_timeframe(tm: str, now: int) -> str:
+    """ Format an `after:` operator date in UTC.
+
+    Slack interprets `after:` in the workspace timezone, which isn't
+    available here, so UTC is the next best anchor — it removes the
+    off-by-one drift the previous `time.localtime` formatter caused when
+    the host TZ differed from the workspace TZ.
+
+    Args:
+        tm: Timeframe selector ('d', 'w', 'm', or 'a')
+        now: Current epoch seconds (UTC)
+    Returns:
+        ISO-format date string (YYYY-MM-DD) in UTC
+    """
+    delta = _TIMEFRAME_DELTAS.get(tm, _TIMEFRAME_DELTAS['a'])
+    return time.strftime('%Y-%m-%d', time.gmtime(now - delta))
+
+
+def _build_canvas_url(workspace_url: str, channel_id: str) -> str:
+    """ Build a Slack Canvas URL from a workspace base URL.
+
+    Slack's `team.info` may or may not include a trailing slash on the
+    workspace URL; previous string concat produced
+    `https://x.slack.comcanvas/...` when it didn't.
+
+    Args:
+        workspace_url: Workspace base URL from `team.info`
+        channel_id: Channel ID to append
+    Returns:
+        Canvas URL with exactly one slash between base and path
+    """
+    return f"{workspace_url.rstrip('/')}/canvas/{channel_id}"
 
 
 def validate_conf(cookie_auth: bool) -> auth_vars.AuthVars:
@@ -181,7 +222,7 @@ def unauthenticated_probe(workspace_domain: str,
                                  'and return any available authentication information.')
     OUTPUT_LOGGER.log('SUCCESS', f'Workspace: {workspace_domain}')
     try:
-        domain_information = watchman_processor.find_auth_information(workspace_domain)
+        domain_information = watchman_processor.find_auth_information(workspace_domain, logger=OUTPUT_LOGGER)
         if domain_information:
             OUTPUT_LOGGER.log('WORKSPACE_PROBE', domain_information, detect_type='Workspace Probe',
                               notify_type='workspace_probe')
@@ -206,7 +247,7 @@ def unauthenticated_probe(workspace_domain: str,
 def main():
     global OUTPUT_LOGGER
     try:
-        OUTPUT_LOGGER = ''
+        OUTPUT_LOGGER = None
         start_time = time.time()
         project_metadata = metadata.metadata('slack-watchman')
         parser = argparse.ArgumentParser(description="Monitoring and enumerating Slack for exposed secrets")
@@ -263,18 +304,7 @@ def main():
             if vars(args).get(deprecated_arg):
                 OUTPUT_LOGGER.log('WARNING', f'Argument `--{deprecated_arg}` is deprecated, and has been ignored')
 
-        if tm == 'd':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 86400))
-        elif tm == 'w':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 604800))
-        elif tm == 'm':
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 2592000))
-        else:
-            now = int(time.time())
-            timeframe = time.strftime('%Y-%m-%d', time.localtime(now - 1576800000))
+        timeframe = _compute_timeframe(tm, int(time.time()))
 
         if probe_domain:
             unauthenticated_probe(probe_domain, project_metadata)
@@ -308,7 +338,8 @@ def main():
         OUTPUT_LOGGER.log('USER', calling_user, detect_type='User', notify_type='user')
         OUTPUT_LOGGER.log('WORKSPACE', workspace_information, detect_type='Workspace', notify_type='workspace')
         OUTPUT_LOGGER.log('INFO', 'Finding workspace authentication options')
-        workspace_auth = watchman_processor.find_auth_information(domain_url=workspace_information.url)
+        workspace_auth = watchman_processor.find_auth_information(
+            domain_url=workspace_information.url, logger=OUTPUT_LOGGER)
         if workspace_auth:
             OUTPUT_LOGGER.log('WORKSPACE_AUTH', workspace_auth, detect_type='Workspace Auth',
                               notify_type='workspace_auth')
@@ -341,11 +372,11 @@ def main():
                 if not channel.canvas_empty and channel.canvas_id:
                     canvas_information = {
                         'channel_name': channel.name,
-                        'canvas_url': f'{workspace_information.url}canvas/{channel.id}'
+                        'canvas_url': _build_canvas_url(workspace_information.url, channel.id)
                     }
                     OUTPUT_LOGGER.log('CANVAS', canvas_information, detect_type='Canvas',
                                       notify_type='canvas')
-        if everything or not pii and not secrets:
+        if everything or (not pii and not secrets):
             OUTPUT_LOGGER.log('INFO', 'Searching for PII and Secrets')
             for signature_object in signature_list:
                 for scope in signature_object.scope:
@@ -380,11 +411,17 @@ def main():
                                      f' {str(datetime.timedelta(seconds=time.time() - start_time))}')
 
     except TimeoutError as e:
-        OUTPUT_LOGGER.log('ERROR', e)
-        OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
-    except Exception as e:
-        OUTPUT_LOGGER.log('CRITICAL', e)
-        OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        if OUTPUT_LOGGER is not None:
+            OUTPUT_LOGGER.log('ERROR', e)
+            OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        else:
+            traceback.print_exc()
+    except Exception as e:  # pylint: disable=broad-except
+        if OUTPUT_LOGGER is not None:
+            OUTPUT_LOGGER.log('CRITICAL', e)
+            OUTPUT_LOGGER.log('DEBUG', traceback.format_exc())
+        else:
+            traceback.print_exc()
         sys.exit(1)
 
 
