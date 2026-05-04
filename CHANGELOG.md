@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [4.6.0] - 2026-05-04
 ### Changed
 - **[High]** Message and file workers now cache `users.info` and `conversations.info` lookups by ID for the lifetime of the worker. Previously every match triggered fresh API calls, so a worker with 1000 matches that referenced 5 unique users + 3 unique channels made 2000 API round trips; it now makes 8. Caches are per-worker (no cross-worker IPC), and the file worker preserves its existing defensive `is_dataclass` check via a small `_resolve_file_user` helper. Fixes [#117](https://github.com/PaperMtn/slack-watchman/issues/117)
 - **[High]** `find_messages` and `find_files` now run their per-query workers through a bounded `multiprocessing.Pool` instead of starting one `multiprocessing.Process` per search string. The pool is capped at `_DEFAULT_POOL_SIZE` (8), so a signature with N search strings spawns `min(8, N)` workers regardless of how long the list is — memory and file-descriptor usage no longer scale with signature size and the Slack API isn't hit with as many simultaneous requests. Fixes [#113](https://github.com/PaperMtn/slack-watchman/issues/113)
