@@ -11,7 +11,7 @@ import requests
 from slack_watchman.loggers import JSONLogger, StdoutLogger
 from slack_watchman.models.signature import Signature, create_from_dict
 
-SIGNATURE_URL = 'https://github.com/PaperMtn/watchman-signatures/archive/main.zip'
+SIGNATURE_URL = 'https://github.com/loadsmart/watchman-signatures/archive/main.zip'
 
 
 class SignatureDownloader:
