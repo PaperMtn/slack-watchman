@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [4.6.1] - 2026-08-29
 ### Changed
 - Bumped `urllib3` (2.6.3 -> 2.7.0), `idna` (3.10 -> 3.19), and `soupsieve` (2.6 -> 2.9.2) to resolve open Dependabot alerts. Fixes [#131](https://github.com/PaperMtn/slack-watchman/pull/131), [#132](https://github.com/PaperMtn/slack-watchman/pull/132), [#133](https://github.com/PaperMtn/slack-watchman/pull/133)
 
