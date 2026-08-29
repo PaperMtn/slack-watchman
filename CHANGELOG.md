@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.6.1] - 2026-08-29
+### Changed
+- Bumped `urllib3` (2.6.3 -> 2.7.0), `idna` (3.10 -> 3.19), and `soupsieve` (2.6 -> 2.9.2) to resolve open Dependabot alerts. Fixes [#131](https://github.com/PaperMtn/slack-watchman/pull/131), [#132](https://github.com/PaperMtn/slack-watchman/pull/132), [#133](https://github.com/PaperMtn/slack-watchman/pull/133)
+
 ## [4.6.0] - 2026-05-04
 ### Changed
 - **[High]** Message and file workers now cache `users.info` and `conversations.info` lookups by ID for the lifetime of the worker, eliminating redundant API calls per match. Fixes [#117](https://github.com/PaperMtn/slack-watchman/issues/117)
